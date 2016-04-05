@@ -45,7 +45,7 @@ module.exports =
         @animationDuration = if enabled then 300 else 0
 
       @minimalWidth = 5
-      @originalWidth = 200
+      @originalWidth = atom.config.get('symbols-tree-view.defaultWidth')
       atom.config.observe 'symbols-tree-view.autoHide', (autoHide) =>
         unless autoHide
           @width(@originalWidth)
@@ -114,6 +114,7 @@ module.exports =
         @sortByNameScopes = atom.config.get('symbols-tree-view.sortByNameScopes')
         if @sortByNameScopes.indexOf(@getScopeName()) != -1
           @cachedStatus[editor].nowSortStatus[0] = true
+          @treeView.sortByName()
         {@nowTypeStatus, @nowSortStatus} = @cachedStatus[editor]
 
       @contextMenu.addMenu(type, @nowTypeStatus[type], toggleTypeVisible) for type in types

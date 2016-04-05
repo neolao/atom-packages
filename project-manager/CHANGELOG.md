@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.9.7
+Apm seem to have screwed up with publishing.
+
+## 2.9.6
+Missed including a node package.
+
+## 2.9.5
+Recursion should be fixed now.
+
+## 2.9.4
+Fix recursion that could happen in some cases.
+
 ## 2.9.3
 Just publishing to add the correct changelog. See 2.9.1
 

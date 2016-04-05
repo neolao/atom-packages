@@ -33,22 +33,21 @@ export default class CSONDB {
 
   find(callback=null) {
     this.readFile(results => {
-      let projects = [];
-      let result = null;
-      let template = null;
-      let key;
+      const projects = [];
 
-      for (key in results) {
-        result = results[key];
-        template = result.template || null;
-        result._id = key;
+      for (const key in results) {
+        let result = results[key];
+        const template = result.template || null;
 
-        if (typeof result.paths === 'undefined') {
+        if (this.isProject(result) === false) {
           continue;
         }
 
+        result._id = key;
         if (template && results[template] !== null) {
-          result = _.deepExtend(result, results[template]);
+          const templateSettings = results[template];
+          const projectSettings = result;
+          result = _.deepExtend({}, templateSettings, projectSettings);
         }
 
         for (let i in result.paths) {
@@ -70,6 +69,18 @@ export default class CSONDB {
     });
   }
 
+  isProject(settings) {
+    if (typeof settings.paths === 'undefined') {
+      return false;
+    }
+
+    if (settings.paths.length === 0) {
+      return false;
+    }
+
+    return true;
+  }
+
   add(props, callback) {
     this.readFile(projects => {
       const id = this.generateID(props.title);
@@ -77,7 +88,10 @@ export default class CSONDB {
 
       this.writeFile(projects, () => {
         atom.notifications.addSuccess(`${props.title} has been added`);
-        callback(id);
+
+        if (callback) {
+          callback(id);
+        }
       });
     });
   }
@@ -86,6 +100,7 @@ export default class CSONDB {
     if (!props._id) {
       return false;
     }
+
     const id = props._id;
     delete props._id;
 
@@ -192,13 +207,13 @@ export default class CSONDB {
     return `${filedir}/${filename}`;
   }
 
-  readFile(callback) {
+  readFile(callback=null) {
     const exists = fs.existsSync(this.file());
+    let projects = null;
+
     if (exists) {
       try {
-        let projects = CSON.readFileSync(this.file()) || {};
-        callback(projects);
-        return projects;
+        projects = CSON.readFileSync(this.file()) || {};
       } catch (error) {
         console.log(error);
         const message = `Failed to load ${path.basename(this.file())}`;
@@ -207,15 +222,20 @@ export default class CSONDB {
       }
     } else {
       fs.writeFileSync(this.file(), '{}');
-      callback({});
-      return {};
+      projects = {};
     }
+
+    if (callback) {
+      callback(projects);
+    }
+
+    return projects;
   }
 
   writeFile(projects, callback) {
     try {
       CSON.writeFileSync(this.file(), projects);
-    } catch(e) {
+    } catch (e) {
       console.log(e);
     }
 
