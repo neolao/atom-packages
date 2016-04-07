@@ -16,7 +16,7 @@ class SemanticLintTest extends IndexedTest
         $command = new SemanticLint();
         $command->setIndexDatabase($indexDatabase);
 
-        return $command->semanticLint($path, false);
+        return $command->semanticLint($path, file_get_contents($path));
     }
 
     public function testReportsUnknownClassesWithNoNamespace()
@@ -82,8 +82,15 @@ class SemanticLintTest extends IndexedTest
             [
                 'name'      => 'A\B',
                 'namespace' => 'A',
-                'start'     => 114,
-                'end'       => 115
+                'start'     => 120,
+                'end'       => 121
+            ],
+
+            [
+                'name'      => 'A\C',
+                'namespace' => 'A',
+                'start'     => 120,
+                'end'       => 121
             ]
         ]);
     }

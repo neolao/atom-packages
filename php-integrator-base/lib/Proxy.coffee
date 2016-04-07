@@ -77,7 +77,6 @@ class Proxy
 
         return response?.result
 
-
     ###*
      * Performs an asynchronous request to the PHP side.
      *
@@ -292,6 +291,75 @@ class Proxy
         )
 
     ###*
+     * Fetches the type of the specified variable at the specified location.
+     *
+     * @param {string}      name   The variable to fetch, including its leading dollar sign.
+     * @param {string}      file   The path to the file to examine.
+     * @param {string|null} source The source code to search. May be null if a file is passed instead.
+     * @param {number}      offset The character offset into the file to examine.
+     * @param {boolean}     async
+     *
+     * @return {Promise|Object}
+    ###
+    getVariableType: (name, file, source, offset, async = false) ->
+        if not file?
+            throw 'A path to a file must be passed!'
+
+        if source? and not async
+            throw 'Passing direct file contents is only supported for asynchronous calls!'
+
+        parameters = ['--variable-type', '--database=' + @getIndexDatabasePath(), '--name=' + name, '--offset=' + offset]
+
+        if file?
+            parameters.push('--file=' + file)
+
+        if source?
+            parameters.push('--stdin')
+
+        return @performRequest(
+            parameters,
+            async,
+            null,
+            source
+        )
+
+    ###*
+     * Deduces the resulting type of an expression based on its parts.
+     *
+     * @param {array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
+     * @param {string}      file   The path to the file to examine.
+     * @param {string|null} source The source code to search. May be null if a file is passed instead.
+     * @param {number}      offset The character offset into the file to examine.
+     * @param {boolean}     async
+     *
+     * @return {Promise|Object}
+    ###
+    deduceType: (parts, file, source, offset, async = false) ->
+        if not file?
+            throw 'A path to a file must be passed!'
+
+        if source? and not async
+            throw 'Passing direct file contents is only supported for asynchronous calls!'
+
+        parameters = ['--deduce-type', '--database=' + @getIndexDatabasePath(), '--offset=' + offset]
+
+        if file?
+            parameters.push('--file=' + file)
+
+        if source?
+            parameters.push('--stdin')
+
+        for part in parts
+            parameters.push('--part=' + part)
+
+        return @performRequest(
+            parameters,
+            async,
+            null,
+            source
+        )
+
+    ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
      * @param {string}      path                   The full path to the file  or folder to refresh.
@@ -303,18 +371,26 @@ class Proxy
     ###
     reindex: (path, source, progressStreamCallback) ->
         if not path
-            throw new Error('No class name passed!')
+            throw new Error('No filename passed!')
 
-        progressStreamCallbackWrapper = (output) =>
-            # Sometimes we receive multiple lines in bulk, so we must ensure it remains split correctly.
-            percentages = output.toString('ascii').split("\n")
-            percentages.pop() # Ditch the empty value.
+        progressStreamCallbackWrapper = null
 
-            for percentage in percentages
-                progressStreamCallback(percentage)
+        if progressStreamCallback?
+            progressStreamCallbackWrapper = (output) =>
+                # Sometimes we receive multiple lines in bulk, so we must ensure it remains split correctly.
+                percentages = output.toString('ascii').split("\n")
+                percentages.pop() # Ditch the empty value.
+
+                for percentage in percentages
+                    progressStreamCallback(percentage)
+
+        parameters = ['--reindex', '--database=' + @getIndexDatabasePath(), '--source=' + path, '--stream-progress']
+
+        if source?
+            parameters.push('--stdin')
 
         return @performRequest(
-            ['--reindex', '--database=' + @getIndexDatabasePath(), '--source=' + path, '--stream-progress', '--stdin'],
+            parameters,
             true,
             progressStreamCallbackWrapper,
             source

@@ -27,7 +27,7 @@ interface StorageInterface
      *
      * @return array
      */
-    public function getStructuralElementTypeMap();
+    public function getStructureTypeMap();
 
     /**
      * Retrieves the ID of the file with the specified path.
@@ -45,7 +45,7 @@ interface StorageInterface
      *
      * @return int|null
      */
-    public function getStructuralElementId($fqsen);
+    public function getStructureId($fqsen);
 
     /**
      * @param int $fileId
@@ -108,7 +108,7 @@ interface StorageInterface
      * @param int   $fileId
      * @param int[] $excludedIds
      */
-    public function deleteExcludedStructuralElementsByFileId($fileId, array $excludedIds);
+    public function deleteExcludedStructuresByFileId($fileId, array $excludedIds);
 
     /**
      * Inserts the specified index item into the storage.
@@ -129,12 +129,18 @@ interface StorageInterface
      */
     public function update($indexStorageItem, $id, array $data);
 
-    /// @inherited
+    /**
+     * @inheritDoc
+     */
     public function beginTransaction();
 
-    /// @inherited
+    /**
+     * @inheritDoc
+     */
     public function commitTransaction();
 
-    /// @inherited
+    /**
+     * @inheritDoc
+     */
     public function rollbackTransaction();
 }

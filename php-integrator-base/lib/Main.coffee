@@ -305,6 +305,29 @@ module.exports =
             @statusBarManager = null
 
     ###*
+     * Synchronizes internally with changes to the current project folders.
+    ###
+    syncWithAtomProjectFolders: () ->
+        projectDirectories = @fetchProjectDirectories()
+
+        if projectDirectories.length > 0
+            @attemptProjectIndex()
+
+            successHandler = (repository) =>
+                return if not repository?
+                return if not repository.async?
+
+                # Will trigger on things such as git checkout.
+                repository.async.onDidChangeStatuses () =>
+                    @attemptProjectIndex()
+
+            failureHandler = () =>
+                return
+
+            for projectDirectory in projectDirectories
+                atom.project.repositoryForDirectory(projectDirectory).then(successHandler, failureHandler)
+
+    ###*
      * Activates the package.
     ###
     activate: ->
@@ -328,7 +351,7 @@ module.exports =
         @proxy = new CachingProxy(@configuration)
 
         emitter = new Emitter()
-        @parser = new Parser(@proxy)
+        @parser = new Parser()
 
         @service = new Service(@proxy, @parser, emitter)
 
@@ -337,14 +360,11 @@ module.exports =
 
         # In rare cases, the package is loaded faster than the project gets a chance to load. At that point, no project
         # directory is returned. The onDidChangePaths listener below will also catch that case.
-        if @fetchProjectDirectories().length > 0
-            @attemptProjectIndex()
+        @syncWithAtomProjectFolders()
 
         @disposables.add atom.project.onDidChangePaths (projectPaths) =>
-            # NOTE: This listener is also invoked at shutdown with an empty array as argument, this makes sure we don't
-            # try to reindex then.
-            if @fetchProjectDirectories().length > 0
-                @attemptProjectIndex()
+            # NOTE: This listener is also invoked at shutdown with an empty array as argument.
+            @syncWithAtomProjectFolders()
 
         @disposables.add atom.workspace.observeTextEditors (editor) =>
             # Wait a while for the editor to stabilize so we don't reindex multiple times after an editor opens just
@@ -368,16 +388,10 @@ module.exports =
 
         return if not path
 
-        isContainedInProject = false
-
-        for projectDirectory in atom.project.getDirectories()
-            if path.indexOf(projectDirectory.path) != -1
-                isContainedInProject = true
-                break
-
-        # Do not try to index files outside the project.
-        if isContainedInProject
-            @attemptFileIndex(path, editor.getBuffer().getText())
+        for projectDirectory in @fetchProjectDirectories()
+            if projectDirectory.contains(path)
+                @attemptFileIndex(path, editor.getBuffer().getText())
+                return
 
     ###*
      * Deactivates the package.

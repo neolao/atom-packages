@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-annotations",
   "main": "./lib/Main",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Shows annotations (e.g. for overriden methods interface implementations) in your PHP source code.",
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~0.7.0": "setService"
+        "~0.8.0": "setService"
       }
     }
   },
@@ -34,16 +34,16 @@
     "url": "https://github.com/Gert-dev/php-integrator-annotations/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-annotations#readme",
-  "_id": "php-integrator-annotations@0.3.2",
-  "_shasum": "acd68a67f8e0a6755257fb591640c5af768dea6b",
-  "_resolved": "file:../d-116222-94201-1sn7hto/package.tgz",
-  "_from": "../d-116222-94201-1sn7hto/package.tgz",
+  "_id": "php-integrator-annotations@0.4.0",
+  "_shasum": "39ef8739cedb1b6396743f57bd8d3e855d23ae6f",
+  "_resolved": "file:../d-11637-60178-1afiio0/package.tgz",
+  "_from": "../d-11637-60178-1afiio0/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
       {
         "name": "jquery",
-        "version": "2.2.2",
+        "version": "2.2.3",
         "path": "node_modules/sub-atom/node_modules/jquery/dist/jquery.js"
       }
     ],

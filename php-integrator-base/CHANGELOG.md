@@ -1,9 +1,51 @@
+## 0.8.0
+### Features and enhancements
+* Some internal logic has been rewritten to support working asynchronously. The existing list of packages have already been adjusted to make use of this change, which will improve apparant responsiveness across the board.
+* Memory-mapped I/O is now enabled on the SQLite back end on systems that support it. This can drastically improve performance and latency of some queries. (In a local test with a large codebase, this literally halved a large class information fetch from 250 milliseconds down to 125 milliseconds).
+* A project index will now be triggered when the repository (if present) changes statusses. This isn't as aggressive as a file monitor, but will at least remove the annoyance of having to manually rescan when checking out a different branch to avoid incorrect data being served. Events that will trigger this involve:
+  * Doing a checkout to switch to a different branch.
+  * Modifying a file from the project tree externally and then coming back to Atom.
+
+### Bugs fixed
+* Fixed PHP 7 anonymous classes still being parsed.
+* Fixed a rare error relating to an "undefined progressStreamCallback".
+* Fixed arrays of class names (e.g. `Foo[]`) in docblocks not being semantically linted.
+* Fixed `getInvocationInfoAt` incorrectly walking past control keywords such as `elseif`.
+
+### Changes for developers
+* Almost all service methods now have an async parameter. It is recommended that you always use this functionality as it will ensure the editor remains responsive for the end user. In a future release, support for synchronous calls **will _probably_ be removed**.
+* Changes to the service
+  * A new method `deduceType` has been added.
+  * A new method `getVariableTypeByOffset` has been added.
+  * `getVariableType`, `getResultingTypeAt`, `resolveTypeAt` and `getInvocationInfoAt` have received an additional parameter, `async`, that will make them (mostly) asynchronous.
+  * `getVariableType` and `getResultingTypeAt` have been rewritten in PHP. Class types returned by these methods will now _always_ be absolute and _always_ include a leading slash. Previously the returned type was _sometimes_ relative to the current file and _sometimes_ absolute. To make things worse, absolute types _sometimes_ contained a leading slash, leading to confusion. (Scalar types will still not include a leading slash.)
+  * A new property `hasDocumentation` is now returned for items already having the `hasDocblock` property. The latter will still return false if the docblock is inherited from the parent, but the former will return true in that case.
+  * The following methods have been removed, they were barely used and just provided very thin wrappers over existing functionality:
+    * `getClassMember`
+    * `getClassMemberAt`
+    * `getClassConstant`
+    * `getClassConstantAt`
+    * `getClassMethod`
+    * `getClassMethodAt`
+    * `getClassProperty`
+    * `getClassPropertyAt`
+    * `getClassSelectorFromEvent` (didn't really belong in the base package).
+
+## 0.7.2
+### Bugs fixed
+* Fixed minor error where the service version was bumped incorrectly.
+
 ## 0.7.1
 ### Bugs fixed
 * Fixed semantic linting not marking use statements in docblocks as used when their types were used inside a type union (e.g. `string|DateTime`).
 * Fixed semantic linting not checking if class names in docblocks existed when they occurred inside a type union (e.g. `string|DateTime`).
 * Fixed semantic linting not validating class names that were used inside function calls or in class constant fetching.
 * Fixed semantic linting marking use statements as unused whilst they were being used inside function calls or in class constant fetching.
+
+### Changes for developers
+* Changes to the service
+  * Methods will now contain information about whether they are abstract or not.
+  * Methods will now contain information about whether the method they override was abstract or not.
 
 ## 0.7.0
 ### Features and enhancements

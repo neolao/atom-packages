@@ -10,84 +10,84 @@ interface ProviderInterface
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawInfo($id);
+    public function getStructureRawInfo($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawParents($id);
+    public function getStructureRawParents($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawChildren($id);
+    public function getStructureRawChildren($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawInterfaces($id);
+    public function getStructureRawInterfaces($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawImplementors($id);
+    public function getStructureRawImplementors($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawTraits($id);
+    public function getStructureRawTraits($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawTraitUsers($id);
+    public function getStructureRawTraitUsers($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawConstants($id);
+    public function getStructureRawConstants($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawProperties($id);
+    public function getStructureRawProperties($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementRawMethods($id);
+    public function getStructureRawMethods($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementTraitAliasesAssoc($id);
+    public function getStructureTraitAliasesAssoc($id);
 
     /**
      * @param int $id
      *
-     * @return array
+     * @return \Traversable
      */
-    public function getStructuralElementTraitPrecedencesAssoc($id);
+    public function getStructureTraitPrecedencesAssoc($id);
 }

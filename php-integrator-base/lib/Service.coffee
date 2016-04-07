@@ -32,18 +32,6 @@ class Service
     constructor: (@proxy, @parser, @indexingEventEmitter) ->
 
     ###*
-     * Creates a popover with the specified constructor arguments.
-    ###
-    createPopover: () ->
-        return new Popover(arguments...)
-
-    ###*
-     * Creates an attached popover with the specified constructor arguments.
-    ###
-    createAttachedPopover: () ->
-        return new AttachedPopover(arguments...)
-
-    ###*
      * Clears the autocompletion cache. Most fetching operations such as fetching constants, autocompletion, fetching
      * members, etc. are cached when they are first retrieved. This clears the cache, forcing them to be retrieved
      # again. Clearing the cache is automatically performed, so this method is usually unnecessary.
@@ -142,6 +130,34 @@ class Service
         return @proxy.getAvailableVariables(file, source, offset, async)
 
     ###*
+     * Fetches the type of the specified variable at the specified location.
+     *
+     * @param {string}      name   The variable to fetch, including its leading dollar sign.
+     * @param {string}      file   The path to the file to examine.
+     * @param {string|null} source The source code to search. May be null if a file is passed instead.
+     * @param {number}      offset The character offset into the file to examine.
+     * @param {boolean}     async
+     *
+     * @return {Promise|Object}
+    ###
+    getVariableTypeByOffset: (name, file, source, offset, async = false) ->
+        return @proxy.getVariableType(name, file, source, offset, async)
+
+    ###*
+     * Deduces the resulting type of an expression based on its parts.
+     *
+     * @param {array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
+     * @param {string}      file   The path to the file to examine.
+     * @param {string|null} source The source code to search. May be null if a file is passed instead.
+     * @param {number}      offset The character offset into the file to examine.
+     * @param {boolean}     async
+     *
+     * @return {Promise|Object}
+    ###
+    deduceType: (parts, file, source, offset, async = false) ->
+        return @proxy.deduceType(parts, file, source, offset, async)
+
+    ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
      * @param {string}      path                   The full path to the file  or folder to refresh.
@@ -192,32 +208,6 @@ class Service
         @indexingEventEmitter.on('php-integrator-base:indexing-failed', callback)
 
     ###*
-     * Gets the correct selector for the class or namespace that is part of the specified event.
-     *
-     * @param  {jQuery.Event}  event  A jQuery event.
-     *
-     * @return {object|null} A selector to be used with jQuery.
-    ###
-    getClassSelectorFromEvent: (event) ->
-        selector = event.currentTarget
-
-        $ = require 'jquery'
-
-        if $(selector).parent().hasClass('function argument')
-            return $(selector).parent().children('.namespace, .class:not(.operator):not(.constant)')
-
-        if $(selector).prev().hasClass('namespace') && $(selector).hasClass('class')
-            return $([$(selector).prev()[0], selector])
-
-        if $(selector).next().hasClass('class') && $(selector).hasClass('namespace')
-           return $([selector, $(selector).next()[0]])
-
-        if $(selector).prev().hasClass('namespace') || $(selector).next().hasClass('inherited-class')
-            return $(selector).parent().children('.namespace, .inherited-class')
-
-        return selector
-
-    ###*
      * Determines the current class' FQCN based on the specified buffer position.
      *
      * @param {TextEditor} editor         The editor that contains the class (needed to resolve relative class names).
@@ -227,7 +217,30 @@ class Service
      * @return {Promise|string|null}
     ###
     determineCurrentClassName: (editor, bufferPosition, async = false) ->
-        return @parser.determineCurrentClassName(editor, bufferPosition, async)
+        path = editor.getPath()
+
+        if not async
+            classesInFile = @proxy.getClassListForFile(editor.getPath())
+
+            for name,classInfo of classesInFile
+                if bufferPosition.row >= classInfo.startLine and bufferPosition.row <= classInfo.endLine
+                    return name
+
+            return null
+
+        return new Promise (resolve, reject) =>
+            path = editor.getPath()
+
+            if not path?
+                reject()
+                return
+
+            return @proxy.getClassListForFile(path, true).then (classesInFile) =>
+                for name,classInfo of classesInFile
+                    if bufferPosition.row >= classInfo.startLine and bufferPosition.row <= classInfo.endLine
+                        resolve(name)
+
+                resolve(null)
 
     ###*
      * Convenience function that resolves types using {@see resolveType}, automatically determining the correct
@@ -236,23 +249,14 @@ class Service
      * @param {TextEditor} editor         The editor.
      * @param {Point}      bufferPosition The location of the type.
      * @param {string}     type           The (local) type to resolve.
+     * @param {boolean}    async
      *
-     * @return {string|null}
+     * @return {Promise|string|null}
      *
      * @example In a file with namespace A\B, determining C could lead to A\B\C.
     ###
-    resolveTypeAt: (editor, bufferPosition, type) ->
-        return @parser.resolveTypeAt(editor, bufferPosition, type)
-
-    ###*
-     * Indicates if the specified type is a basic type (e.g. int, array, object, etc.).
-     *
-     * @param {string} type
-     *
-     * @return {boolean}
-    ###
-    isBasicType: (type) ->
-        return @parser.isBasicType(type)
+    resolveTypeAt: (editor, bufferPosition, type, async = false) ->
+        return @resolveType(editor.getPath(), bufferPosition.row + 1, type, async)
 
     ###*
      * Retrieves all variables that are available at the specified buffer position.
@@ -261,7 +265,7 @@ class Service
      * @param {Range}      bufferPosition
      * @param {bool}       async
      *
-     * @return {Object}
+     * @return {Promise|Object}
     ###
     getAvailableVariables: (editor, bufferPosition, async = false) ->
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
@@ -275,167 +279,22 @@ class Service
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition
      * @param {string}     name
+     * @param {boolean}    async
      *
-     * @return {string|null}
+     * @return {Promise|string|null}
     ###
-    getVariableType: (editor, bufferPosition, name) ->
-        return @parser.getVariableType(editor, bufferPosition, name)
+    getVariableType: (editor, bufferPosition, name, async = false) ->
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
-    ###*
-     * Retrieves contextual information about the class member at the specified location in the editor. This is
-     * essentially the same as {@see getClassMember}, but will automatically determine the class based on the code at
-     * the specified location.
-     *
-     * @param {TextEditor} editor         The text editor to use.
-     * @param {Point}      bufferPosition The cursor location of the member.
-     * @param {string}     name           The name of the member to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassMemberAt: (editor, bufferPosition, name) ->
-        className = @getResultingTypeAt(editor, bufferPosition, true)
+        bufferText = null
 
-        members = @getClassMember(className, name)
+        if async
+            bufferText = editor.getBuffer().getText()
 
-        # Methods and properties can share the same name, which one is being used depends on the context, so we have
-        # to disambiguate in this case.
-        if members.method and members.property
-            if @parser.isUsingProperty(editor, bufferPosition)
-                return members.property
+        result = @getVariableType(name, editor.getPath(), bufferText, offset, async)
 
-            else
-                return members.method
-
-        return members.method if members.method
-        return members.property if members.property
-        return members.constant if members.constant
-
-        return null
-
-    ###*
-     * Same as {@see getClassMemberAt}, but only returns methods.
-     *
-     * @param {TextEditor} editor         The text editor to use.
-     * @param {Point}      bufferPosition The cursor location of the member.
-     * @param {string}     name           The name of the member to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassMethodAt: (editor, bufferPosition, name) ->
-        if @parser.isUsingProperty(editor, bufferPosition)
-            return null
-
-        className = @getResultingTypeAt(editor, bufferPosition, true)
-
-        return @getClassMethod(className, name)
-
-    ###*
-     * Same as {@see getClassMemberAt}, but only returns properties.
-     *
-     * @param {TextEditor} editor         The text editor to use.
-     * @param {Point}      bufferPosition The cursor location of the member.
-     * @param {string}     name           The name of the member to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassPropertyAt: (editor, bufferPosition, name) ->
-        if not @parser.isUsingProperty(editor, bufferPosition)
-            return null
-
-        className = @getResultingTypeAt(editor, bufferPosition, true)
-
-        return @getClassProperty(className, name)
-
-    ###*
-     * Same as {@see getClassMemberAt}, but only returns constants.
-     *
-     * @param {TextEditor} editor         The text editor to use.
-     * @param {Point}      bufferPosition The cursor location of the member.
-     * @param {string}     name           The name of the member to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassConstantAt: (editor, bufferPosition, name) ->
-        className = @getResultingTypeAt(editor, bufferPosition, true)
-
-        return @getClassConstant(className, name)
-
-    ###*
-     * Retrieves information about members of the specified class. Note that this always returns an object, as there may
-     * be multiple members (e.g. methods and properties) sharing the same name. The object's properties are 'method',
-     * 'property' and 'constant'.
-     *
-     * @param {string} className The full name of the class to examine.
-     * @param {string} name      The name of the member to retrieve information about.
-     *
-     * @return {Object}
-    ###
-    getClassMember: (className, name) ->
-        return {
-            method   : @getClassMethod(className, name)
-            property : @getClassProperty(className, name)
-            constant : @getClassConstant(className, name)
-        }
-
-    ###*
-     * Retrieves information about the specified method of the specified class.
-     *
-     * @param {string} className The full name of the class to examine.
-     * @param {string} name      The name of the method to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassMethod: (className, name) ->
-        try
-            classInfo = @proxy.getClassInfo(className)
-
-        catch
-            return null
-
-        if name of classInfo.methods
-            return classInfo.methods[name]
-
-        return null
-
-    ###*
-     * Retrieves information about the specified property of the specified class.
-     *
-     * @param {string} className The full name of the class to examine.
-     * @param {string} name      The name of the property to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassProperty: (className, name) ->
-        try
-            classInfo = @proxy.getClassInfo(className)
-
-        catch
-            return null
-
-        if name of classInfo.properties
-            return classInfo.properties[name]
-
-        return null
-
-    ###*
-     * Retrieves information about the specified constant of the specified class.
-     *
-     * @param {string} className The full name of the class to examine.
-     * @param {string} name      The name of the constant to retrieve information about.
-     *
-     * @return {Object|null}
-    ###
-    getClassConstant: (className, name) ->
-        try
-            classInfo = @proxy.getClassInfo(className)
-
-        catch
-            return null
-
-        if name of classInfo.constants
-            return classInfo.constants[name]
-
-        return null
+        return null if not result
+        return result
 
     ###*
      * Retrieves the class that is being used (called) at the specified location in the buffer. Note that this does not
@@ -451,16 +310,17 @@ class Service
      *                                       is still writing code, e.g. "$this->foo()->b" would normally return the
      *                                       type (class) of 'b', as it is the last element, but as the user is still
      *                                       writing code, you may instead be interested in the type of 'foo()' instead.
+     * @param {boolean}    async
      *
      * @throws an error if one of the elements in the call stack does not exist, which can happen if the user is writing
      *         invalid code.
      *
-     * @return {string|null}
+     * @return {Promise|string|null}
      *
      * @example Invoking it on MyMethod::foo()->bar() will ask what class 'bar' is invoked on, which will whatever type
      *          foo returns.
     ###
-    getResultingTypeAt: (editor, bufferPosition, ignoreLastElement) ->
+    getResultingTypeAt: (editor, bufferPosition, ignoreLastElement, async = false) ->
         callStack = @parser.retrieveSanitizedCallStackAt(editor, bufferPosition)
 
         if ignoreLastElement
@@ -468,7 +328,14 @@ class Service
 
         return null if not callStack or callStack.length == 0
 
-        return @parser.getResultingTypeFromCallStack(editor, bufferPosition, callStack)
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
+
+        bufferText = null
+
+        if async
+            bufferText = editor.getBuffer().getText()
+
+        return @deduceType(callStack, editor.getPath(), bufferText, offset, async)
 
     ###*
      * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
@@ -476,13 +343,42 @@ class Service
      *
      * @param {TextEditor} editor
      * @param {Point}      bufferPosition
+     * @param {boolean}    async
      *
      * @example "$this->test(1, function () {},| 2);" (where the vertical bar denotes the cursor position) will yield
      *          ['$this', 'test'].
      *
-     * @return {Object|null} With elements 'callStack' (array) as well as 'argumentIndex' which denotes the argument in
-     *                       the parameter list the position is located at. Returns 'null' if not in a method or
-     *                       function call.
+     * @return {Promise"Object|null} With elements 'callStack' (array) as well as 'argumentIndex' which denotes the
+     *                               argument in the parameter list the position is located at. Returns 'null' if not
+     *                               in a method or function call.
     ###
-    getInvocationInfoAt: (editor, bufferPosition) ->
-        return @parser.getInvocationInfoAt(editor, bufferPosition)
+    getInvocationInfoAt: (editor, bufferPosition, async = false) ->
+        result = @parser.getInvocationInfoAt(editor, bufferPosition)
+
+        if not async
+            return result
+
+        return new Promise (resolve, reject) =>
+            resolve(result)
+
+    ###*
+     * Creates a popover with the specified constructor arguments.
+    ###
+    createPopover: () ->
+        return new Popover(arguments...)
+
+    ###*
+     * Creates an attached popover with the specified constructor arguments.
+    ###
+    createAttachedPopover: () ->
+        return new AttachedPopover(arguments...)
+
+    ###*
+     * Indicates if the specified type is a basic type (e.g. int, array, object, etc.).
+     *
+     * @param {string} type
+     *
+     * @return {boolean}
+    ###
+    isBasicType: (type) ->
+        return /^(string|int|bool|float|object|mixed|array|resource|void|null|callable|false|true|self|static|parent|\$this)$/i.test(type)

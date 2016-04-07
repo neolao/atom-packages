@@ -19,16 +19,46 @@ class ClassConstantProvider extends AbstractProvider
      * @param {string}     term
     ###
     getInfoFor: (editor, bufferPosition, term) ->
-        try
-            member = @service.getClassConstantAt(editor, bufferPosition, term)
-
-        catch error
-            return null
+        member = @getClassConstantAt(editor, bufferPosition, term)
 
         return null unless member
         return null unless member.declaringStructure.filename
 
         return member
+
+    ###*
+     * Returns the class constant used at the specified location.
+     *
+     * @param {TextEditor} editor         The text editor to use.
+     * @param {Point}      bufferPosition The cursor location of the member.
+     * @param {string}     name           The name of the member to retrieve information about.
+     *
+     * @return {Object|null}
+    ###
+    getClassConstantAt: (editor, bufferPosition, name) ->
+        className = @service.getResultingTypeAt(editor, bufferPosition, true)
+
+        return @getClassConstant(className, name)
+
+    ###*
+     * Retrieves information about the specified constant of the specified class.
+     *
+     * @param {string} className The full name of the class to examine.
+     * @param {string} name      The name of the constant to retrieve information about.
+     *
+     * @return {Object|null}
+    ###
+    getClassConstant: (className, name) ->
+        try
+            classInfo = @service.getClassInfo(className)
+
+        catch
+            return null
+
+        if name of classInfo.constants
+            return classInfo.constants[name]
+
+        return null
 
     ###*
      * @inheritdoc

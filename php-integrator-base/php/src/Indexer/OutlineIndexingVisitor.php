@@ -3,6 +3,7 @@
 namespace PhpIntegrator\Indexer;
 
 use PhpParser\Node;
+use PhpParser\NodeTraverser;
 
 use PhpParser\NodeVisitor\NameResolver;
 
@@ -15,7 +16,7 @@ class OutlineIndexingVisitor extends NameResolver
     /**
      * @var array
      */
-    protected $structuralElements = [];
+    protected $structures = [];
 
     /**
      * @var array
@@ -30,7 +31,7 @@ class OutlineIndexingVisitor extends NameResolver
     /**
      * @var Node\Stmt\Class_|null
      */
-    protected $currentStructuralElement;
+    protected $currentStructure;
 
     /**
      * @inheritDoc
@@ -48,6 +49,11 @@ class OutlineIndexingVisitor extends NameResolver
         } elseif ($node instanceof Node\Stmt\Const_) {
             $this->parseConstantNode($node);
         } elseif ($node instanceof Node\Stmt\Class_) {
+            if ($node->isAnonymous()) {
+                // Ticket #45 - Skip PHP 7 anonymous classes.
+                return NodeTraverser::DONT_TRAVERSE_CHILDREN;
+            }
+
             $this->parseClassNode($node);
         } elseif ($node instanceof Node\Stmt\Interface_) {
             $this->parseInterfaceNode($node);
@@ -68,11 +74,7 @@ class OutlineIndexingVisitor extends NameResolver
     {
         parent::enterNode($node);
 
-        if (!isset($node->namespacedName)) {
-            return; // Ticket #45 - This could potentially not be set for PHP 7 anonymous classes.
-        }
-
-        $this->currentStructuralElement = $node;
+        $this->currentStructure = $node;
 
         $interfaces = [];
 
@@ -80,7 +82,7 @@ class OutlineIndexingVisitor extends NameResolver
             $interfaces[] = $implementedName->toString();
         }
 
-        $this->structuralElements[$node->namespacedName->toString()] = [
+        $this->structures[$node->namespacedName->toString()] = [
             'name'       => $node->name,
             'type'       => 'class',
             'startLine'  => $node->getLine(),
@@ -107,7 +109,7 @@ class OutlineIndexingVisitor extends NameResolver
             return;
         }
 
-        $this->currentStructuralElement = $node;
+        $this->currentStructure = $node;
 
         $extendedInterfaces = [];
 
@@ -115,7 +117,7 @@ class OutlineIndexingVisitor extends NameResolver
             $extendedInterfaces[] = $extends->toString();
         }
 
-        $this->structuralElements[$node->namespacedName->toString()] = [
+        $this->structures[$node->namespacedName->toString()] = [
             'name'       => $node->name,
             'type'       => 'interface',
             'startLine'  => $node->getLine(),
@@ -140,9 +142,9 @@ class OutlineIndexingVisitor extends NameResolver
             return;
         }
 
-        $this->currentStructuralElement = $node;
+        $this->currentStructure = $node;
 
-        $this->structuralElements[$node->namespacedName->toString()] = [
+        $this->structures[$node->namespacedName->toString()] = [
             'name'       => $node->name,
             'type'       => 'trait',
             'startLine'  => $node->getLine(),
@@ -162,13 +164,13 @@ class OutlineIndexingVisitor extends NameResolver
         parent::enterNode($node);
 
         foreach ($node->traits as $traitName) {
-            $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['traits'][] =
+            $this->structures[$this->currentStructure->namespacedName->toString()]['traits'][] =
                 $traitName->toString();
         }
 
         foreach ($node->adaptations as $adaptation) {
             if ($adaptation instanceof Node\Stmt\TraitUseAdaptation\Alias) {
-                $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['traitAliases'][] = [
+                $this->structures[$this->currentStructure->namespacedName->toString()]['traitAliases'][] = [
                     'name'                       => $adaptation->method,
                     'alias'                      => $adaptation->newName,
                     'trait'                      => $adaptation->trait ? $adaptation->trait->toString() : null,
@@ -178,7 +180,7 @@ class OutlineIndexingVisitor extends NameResolver
                     'isInheritingAccessModifier' => ($adaptation->newModifier === null)
                 ];
             } elseif ($adaptation instanceof Node\Stmt\TraitUseAdaptation\Precedence) {
-                $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['traitPrecedences'][] = [
+                $this->structures[$this->currentStructure->namespacedName->toString()]['traitPrecedences'][] = [
                     'name'  => $adaptation->method,
                     'trait' => $adaptation->trait->toString()
                 ];
@@ -192,7 +194,7 @@ class OutlineIndexingVisitor extends NameResolver
     protected function parseClassPropertyNode(Node\Stmt\Property $node)
     {
         foreach ($node->props as $property) {
-            $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['properties'][] = [
+            $this->structures[$this->currentStructure->namespacedName->toString()]['properties'][] = [
                 'name'        => $property->name,
                 'startLine'   => $node->getLine(),
                 'endLine'     => $node->getAttribute('endLine'),
@@ -268,7 +270,7 @@ class OutlineIndexingVisitor extends NameResolver
 
         parent::enterNode($node);
 
-        $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['methods'][] = [
+        $this->structures[$this->currentStructure->namespacedName->toString()]['methods'][] = [
             'name'           => $node->name,
             'startLine'      => $node->getLine(),
             'endLine'        => $node->getAttribute('endLine'),
@@ -290,7 +292,7 @@ class OutlineIndexingVisitor extends NameResolver
     protected function parseClassConstantNode(Node\Stmt\ClassConst $node)
     {
         foreach ($node->consts as $const) {
-            $this->structuralElements[$this->currentStructuralElement->namespacedName->toString()]['constants'][] = [
+            $this->structures[$this->currentStructure->namespacedName->toString()]['constants'][] = [
                 'name'       => $const->name,
                 'startLine'  => $node->getLine(),
                 'endLine'    => $node->getAttribute('endLine'),
@@ -319,8 +321,8 @@ class OutlineIndexingVisitor extends NameResolver
      */
     public function leaveNode(Node $node)
     {
-        if ($this->currentStructuralElement === $node) {
-            $this->currentStructuralElement = null;
+        if ($this->currentStructure === $node) {
+            $this->currentStructure = null;
         }
     }
 
@@ -329,9 +331,9 @@ class OutlineIndexingVisitor extends NameResolver
      *
      * @return array
      */
-    public function getStructuralElements()
+    public function getStructures()
     {
-        return $this->structuralElements;
+        return $this->structures;
     }
 
     /**

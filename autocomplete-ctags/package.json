@@ -1,7 +1,7 @@
 {
   "name": "autocomplete-ctags",
   "main": "./lib/main",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Autocomplete-plus provider for ctags",
   "keywords": [
     "autocomplete",
@@ -80,10 +80,10 @@
     "url": "https://github.com/aki77/atom-autocomplete-ctags/issues"
   },
   "homepage": "https://github.com/aki77/atom-autocomplete-ctags#readme",
-  "_id": "autocomplete-ctags@0.4.0",
-  "_shasum": "9c9749dedb6d2f143bc427275bca698bce1058c0",
-  "_resolved": "file:../d-11636-47048-537hi4/package.tgz",
-  "_from": "../d-11636-47048-537hi4/package.tgz",
+  "_id": "autocomplete-ctags@0.4.1",
+  "_shasum": "c70b408b725f2e5ab11846632a173c527af16dc4",
+  "_resolved": "file:../d-11637-60171-12ece8m/package.tgz",
+  "_from": "../d-11637-60171-12ece8m/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [

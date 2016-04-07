@@ -1,0 +1,75 @@
+{
+  "name": "php-integrator-autocomplete-plus",
+  "main": "./lib/Main",
+  "version": "0.7.0",
+  "description": "Provides autocompletion for your PHP source code.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gert-dev/php-integrator-autocomplete-plus.git"
+  },
+  "license": "GPL-3.0",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "providedServices": {
+    "autocomplete.provider": {
+      "versions": {
+        "2.0.0": "getProviders"
+      }
+    }
+  },
+  "consumedServices": {
+    "php-integrator.service": {
+      "versions": {
+        "~0.8.0": "setService"
+      }
+    }
+  },
+  "dependencies": {},
+  "keywords": [
+    "php",
+    "autocompletion",
+    "autocomplete-plus",
+    "integrator",
+    "integration",
+    "php-integrator"
+  ],
+  "readme": "# php-integrator-autocomplete-plus\n<p align=\"right\">\n:coffee:\n<a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YKTNLZCRHMRTJ\">Send me some coffee beans</a>\n</p>\n\nThis package provides autocompletion for your PHP source code using [PHP Integrator](https://github.com/Gert-dev/php-integrator-base) as well as Atom's [autocomplete-plus](https://github.com/atom/autocomplete-plus).\n\n**Note that the [php-integrator-base](https://github.com/Gert-dev/php-integrator-base) package is required and needs to be set up correctly for this package to function correctly.**\n\nWhat is included?\n  * Autocompletion for local variable names.\n  * Autocompletion for global functions and constants.\n  * Autocompletion (snippets) for tag names in docblocks.\n  * Autocompletion for class, interface and trait members.\n  * Autocompletion for class, interface and trait names as well as their constructors.\n  * Automatic adding of use statements when class names are autocompleted (with a somewhat intelligent positioning).\n    * Included is a command to sort the current use statements.\n\n![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/Gert-dev/php-integrator-autocomplete-plus/issues"
+  },
+  "homepage": "https://github.com/Gert-dev/php-integrator-autocomplete-plus#readme",
+  "_id": "php-integrator-autocomplete-plus@0.7.0",
+  "_shasum": "97057137191b67a0a5f6dcb32f4846978286ca81",
+  "_resolved": "file:../d-11637-60808-19vxitd/package.tgz",
+  "_from": "../d-11637-60808-19vxitd/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".coffee": [
+        "lib/AbstractProvider.coffee",
+        "lib/AtomConfig.coffee",
+        "lib/ClassProvider.coffee",
+        "lib/Config.coffee",
+        "lib/ConstantProvider.coffee",
+        "lib/DocBlockProvider.coffee",
+        "lib/FunctionProvider.coffee",
+        "lib/GlobalVariableProvider.coffee",
+        "lib/KeywordProvider.coffee",
+        "lib/MagicConstantProvider.coffee",
+        "lib/Main.coffee",
+        "lib/MemberProvider.coffee",
+        "lib/SnippetProvider.coffee",
+        "lib/TypeHintNewVariableNameProvider.coffee",
+        "lib/Utility.coffee",
+        "lib/VariableProvider.coffee"
+      ],
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
+}

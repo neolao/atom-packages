@@ -34,25 +34,13 @@ Note that folders that aren't readable (no permission) will be silently ignored!
 
 Some features may or may not work outside these restrictions. **Don't forget to open the settings page after installing to set up the package!**
 
-#### Common problems
-Error reporting currently isn't ideal and is on the roadmap for improvement. A list of common problems:
-  * No sqlite extension enabled in `php.ini`.
-  * No `date.timezone` set in `php.ini` (some PHP versions complain about this).
-
 ## I'm a package developer - How do I use this?
 You can very easily start using the service by simply consuming the service in your package (see also the `package.json` and `Main.coffee` files of the packages listed above for an example). The service is a single exposed class, which is located in the [Service.coffee](https://github.com/Gert-dev/php-integrator-base/blob/master/lib/Service.coffee) file, along with docblocks explaining what they do and what they accept as parameters.
 
 As the service allows fetching information about the code base, other packages can do all kinds of interesting things with it that brings Atom closer to an IDE for PHP, yet completely open-source. Here are some idea's of things that could be done with the service (besides what the existing packages listed above already do):
 * A package listing all the classes implementing an interface, using a trait, or extending another class.
+* A package performing a semantic lint on an entire project, showing various problems with each file in a navigatable list.
 * An (UML?) class diagram builder that creates a visual representation of the relations between all classes in a code base (i.e. their implemented interfaces, base classes and traits).
-* A refactoring package that allows:
-  * ... automatically adding methods that are present in an interface of the current class but aren't present yet in the current file.
-  * ... automatically creating methods and/or properties when they don't exist yet (e.g. on alt-enter).
-  * ... generating, updating and linting docblocks.
-
-## What does not work?
-Most of the issue reports indicate things that are missing, but indexing should be working fairly well in general. There are also some things that won't be supported because they are fairly complex to implement (usually for fairly little benefit). These limitations may also affect other packages using the provided service:
-
-* `static` and `self` behave mostly like `$this` in **non-static** contexts, i.e. they can also access non-static members.
+* Most of the existing packages could use new improvements, contributions are most welcome.
 
 ![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)
