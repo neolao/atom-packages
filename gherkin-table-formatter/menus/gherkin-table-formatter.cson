@@ -1,0 +1,12 @@
+# See https://atom.io/docs/latest/creating-a-package#menus for more details
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Gherkin Table Formatter'
+      'submenu': [
+        { 'label': 'Format', 'command': 'gherkin-table-formatter:format' }
+      ]
+    ]
+  }
+]

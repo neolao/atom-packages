@@ -1,0 +1,97 @@
+{
+  "name": "gherkin-table-formatter",
+  "main": "./lib/gherkin-table-formatter",
+  "version": "0.0.2",
+  "description": "A simple plugin to format tables in gherkin.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stan3/gherkin-table-formatter.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "wcwidth": "1.*"
+  },
+  "readme": "# Markdown Table Formatter\n\nA simple plugin to format tables in gherkin files.\n\nBased on the [Markdown table formatter plugin](https://github.com/fcrespo82/atom-markdown-table-formatter)\n\n## Usage\n\nSelect the table you want to format and them hit `alt-shift-T` to format it.\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/stan3/gherkin-table-formatter/issues"
+  },
+  "homepage": "https://github.com/stan3/gherkin-table-formatter#readme",
+  "_id": "gherkin-table-formatter@0.0.2",
+  "_shasum": "a85e2ebcfb1a3b151fbdef436790d52d59be7bc7",
+  "_resolved": "file:../d-116314-46691-ol10s3/package.tgz",
+  "_from": "../d-116314-46691-ol10s3/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [
+      {
+        "name": "wcwidth",
+        "version": "1.0.0",
+        "path": "node_modules/wcwidth/index.js"
+      },
+      {
+        "name": "defaults",
+        "version": "1.0.3",
+        "path": "node_modules/wcwidth/node_modules/defaults/index.js"
+      },
+      {
+        "name": "clone",
+        "version": "1.0.2",
+        "path": "node_modules/wcwidth/node_modules/defaults/node_modules/clone/clone.js"
+      }
+    ],
+    "extensions": {
+      ".json": [
+        "coffeelint.json",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/package.json",
+        "node_modules/wcwidth/node_modules/defaults/package.json",
+        "node_modules/wcwidth/package.json",
+        "package.json"
+      ],
+      ".coffee": [
+        "lib/gherkin-table-formatter.coffee",
+        "lib/table-formatter.coffee"
+      ],
+      ".js": [
+        "node_modules/wcwidth/combining.js",
+        "node_modules/wcwidth/index.js",
+        "node_modules/wcwidth/node_modules/defaults/index.js",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/clone.js",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/test.js",
+        "node_modules/wcwidth/node_modules/defaults/test.js"
+      ]
+    },
+    "folders": [
+      {
+        "paths": [
+          "",
+          "lib",
+          "spec"
+        ],
+        "dependencies": {
+          "wcwidth": "1.*"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/wcwidth",
+          "node_modules/wcwidth/test"
+        ],
+        "dependencies": {
+          "defaults": "^1.0.0"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/wcwidth/node_modules/defaults"
+        ],
+        "dependencies": {
+          "clone": "^1.0.2"
+        }
+      }
+    ]
+  }
+}
