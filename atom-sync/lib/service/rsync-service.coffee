@@ -26,14 +26,15 @@ module.exports = (opt = {}) ->
     src = opt.src
     dst = opt.dst
     config = opt.config
-    flags = config?.flags ? 'avzpur'
+    flags = config.option?.flags ? 'avzpur'
     success = opt.success
     error = opt.error
     progress = opt.progress
+    shell = config.option?.shell ? 'ssh'
 
     rsync = new Rsync()
-        .shell 'ssh'
-        .flags 'avzpu'
+        .shell shell
+        .flags flags
         .source src
         .destination dst
         .output (data) ->
@@ -43,6 +44,7 @@ module.exports = (opt = {}) ->
     rsync.exclude config.option.exclude if config.option?.exclude
     rsync.execute (err, code, cmd) =>
         if err
+            console.log err, code, cmd
             error? (yellowpage[code] ? err.message), cmd
         else
             success?()

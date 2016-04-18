@@ -11,6 +11,7 @@ atom-sync is an Atom package to sync files bidirectionally between remote host a
 ### Feature ###
 * Sync over ssh+rsync — still [secure](http://www.sakana.fr/blog/2008/05/07/securing-automated-rsync-over-ssh/), but much [faster](http://stackoverflow.com/questions/20244585/what-is-the-difference-between-scp-and-rsync).
 * [Multi-Folder Projects](http://blog.atom.io/2015/04/15/multi-folder-projects.html) with different sync config files supported
+* Triggers conditionally run commands after successful uploading
 
 ### Prerequisite ###
 * Ensure you have `ssh` and `rsync` installed.
@@ -25,7 +26,7 @@ atom-sync is an Atom package to sync files bidirectionally between remote host a
 ### Notice ###
 * Password based login is not supported—at least yet, you have to [assign your key file](https://www.linode.com/docs/security/use-public-key-authentication-with-ssh) and better host name in .ssh/config in advanced. Try to [Simplify Your Life With an SSH Config File](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/).
 
-### Config File ###
+### Config File (and Tutorial) ###
 > .sync-config.cson
 
 ```
@@ -43,6 +44,7 @@ behaviour:
                             # instead of syncing single file or folder
 option:
     deleteFiles: true       # Delete files during syncing
+    autoHideDelay: 1500     # Time delay to hide console
     exclude: [              # Excluding patterns
         '.sync-config.cson'
         '.git'
@@ -50,20 +52,57 @@ option:
         'tmp'
         'vendor'
     ]
+    flags: 'avzpur'         # Advanced option: rsync flags
+    shell: 'ssh'
+trigger:                    # Triggers fire after uploading file successfully
+                            # which STARTS with following patterns
+
+    "*": "uptime"            # Wildcard trigger for any file uploaded
+
+    "resources/scripts/coffee": [   # Any file under %PROJECT_ROOT%/resources/scripts/coffee \
+                                    # being uploaded will fire this trigger
+
+        "echo Compile coffeescript to js ..."
+        "coffee -b --output js/ --compile coffee/"
+        "ls public/js/|xargs -I@ echo \\t@"       # You can also pipe commands but don't \
+                                                  # forget to escape special characters
+    ]
+    "resources/scripts/sass": [
+        "echo Compile sass to css ..."
+        "sass --update resources/scripts/sass:public/css"
+    ]
 ```
 
+### Introduction to Trigger ###
+#### Config ####
+```
+trigger:
+    "*": [
+        "echo \'<span class=warning>Every time you\\'ll see me</span>\'"
+    ]
+    "coffee": [
+        "echo Compile coffeescript to js ..."
+        "mkdir -p js"
+        "coffee -b --output js/ --compile coffee/"
+        "ls js/|xargs -I@ echo \\t@"
+    ]
+    "sass/style.sass": [
+        "echo Compile sass to css ..."
+        "mkdir -p css"
+        "sass --update sass:css"
+    ]
+```
+#### Result ####
+![trigger](https://cloud.githubusercontent.com/assets/586262/14584004/a2cf2872-0466-11e6-9908-5f035a8b4e46.gif)
+
 ### Keybindings ###
-* `ctrl`+`alt`+`l` Toggle log window
+* `ctrl`+`alt`+`l` (Windows/Linux) `cmd`+`alt`+`l` (Mac) Toggle log window
 
 ### Known Problems ###
-* You have to `Sync Local -> Remote` manually after renaming and deleteing files.
+* You have to `Sync Local -> Remote` manually after renaming and deleting files.
 
 ### Roadmap ###
-* Refactoring
-* ConsoleView::clean() and btnClean
-* --list-only and confirm dialogue
 * Listen to events
   * Create folders
   * Rename files/folders
   * What about deleting?
-* SSH parameters in config file e.g. public key, port et al.

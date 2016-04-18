@@ -1,0 +1,97 @@
+{
+  "name": "markdown-table-formatter",
+  "main": "./lib/markdown-table-formatter",
+  "version": "2.8.3",
+  "description": "A simple markdown plugin to format tables.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fcrespo82/atom-markdown-table-formatter.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "wcwidth": "1.*"
+  },
+  "readme": "# Markdown Table Formatter\n\nA simple markdown plugin to format tables.\n\nBased on the awesome [Improved Markdown table commands for TextMate](http://www.leancrew.com/all-this/2012/03/improved-markdown-table-commands-for-textmate/) work from [Dr. Drang (@drdrang)](https://twitter.com/drdrang)\n\n[Changelog](https://github.com/fcrespo82/atom-markdown-table-formatter/blob/master/CHANGELOG.md)\n\n\n## Usage\n\nThere are two basic ways of using this plugin.\n\n1. Select the table you want to format and them hit `alt-shift-T` to format it.\n2. If you didn't select any table the entire document (default) will be scanned, by the plugin, for tables and format all of them.\n\n### Settings & Keybindings\n\n![Settings image](https://github.com/fcrespo82/atom-markdown-table-formatter/raw/master/settings.png)\n\n## Tips\n\n### How to style the tables correctly if you use non-monospace fonts\n\n```css\natom-text-editor::shadow .table.gfm {\n    font-family: monospace;\n}\n```\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/fcrespo82/atom-markdown-table-formatter/issues"
+  },
+  "homepage": "https://github.com/fcrespo82/atom-markdown-table-formatter#readme",
+  "_id": "markdown-table-formatter@2.8.3",
+  "_shasum": "b943a0437df2bbcc29e729c21fafbe929dd931eb",
+  "_resolved": "file:../d-116315-77357-1xmf6ax/package.tgz",
+  "_from": "../d-116315-77357-1xmf6ax/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [
+      {
+        "name": "wcwidth",
+        "version": "1.0.0",
+        "path": "node_modules/wcwidth/index.js"
+      },
+      {
+        "name": "defaults",
+        "version": "1.0.3",
+        "path": "node_modules/wcwidth/node_modules/defaults/index.js"
+      },
+      {
+        "name": "clone",
+        "version": "1.0.2",
+        "path": "node_modules/wcwidth/node_modules/defaults/node_modules/clone/clone.js"
+      }
+    ],
+    "extensions": {
+      ".json": [
+        "coffeelint.json",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/package.json",
+        "node_modules/wcwidth/node_modules/defaults/package.json",
+        "node_modules/wcwidth/package.json",
+        "package.json"
+      ],
+      ".coffee": [
+        "lib/markdown-table-formatter.coffee",
+        "lib/table-formatter.coffee"
+      ],
+      ".js": [
+        "node_modules/wcwidth/combining.js",
+        "node_modules/wcwidth/index.js",
+        "node_modules/wcwidth/node_modules/defaults/index.js",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/clone.js",
+        "node_modules/wcwidth/node_modules/defaults/node_modules/clone/test.js",
+        "node_modules/wcwidth/node_modules/defaults/test.js"
+      ]
+    },
+    "folders": [
+      {
+        "paths": [
+          "",
+          "lib",
+          "spec"
+        ],
+        "dependencies": {
+          "wcwidth": "1.*"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/wcwidth",
+          "node_modules/wcwidth/test"
+        ],
+        "dependencies": {
+          "defaults": "^1.0.0"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/wcwidth/node_modules/defaults"
+        ],
+        "dependencies": {
+          "clone": "^1.0.2"
+        }
+      }
+    ]
+  }
+}

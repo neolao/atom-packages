@@ -1,3 +1,4 @@
+_ = require 'lodash'
 path = require 'path'
 fs = require 'fs-plus'
 log = require '../helper/logger-helper'
@@ -8,6 +9,9 @@ configHelper = require '../helper/config-helper'
 module.exports = ServiceController =
     console: consoleHelper
     config: configHelper
+
+    debug: ->
+        log arguments
 
     destory: ->
         @console.destory()
@@ -37,7 +41,7 @@ module.exports = ServiceController =
             config = @config.assert obj
         catch err
             @console.show()
-            @console.log "<span class='error'>#{err}</span>\n"
+            @console.error "#{err}\n"
             return
 
         relativePath = @config.getRelativePath obj
@@ -53,6 +57,7 @@ module.exports = ServiceController =
                     src = obj + (if fs.isDirectorySync obj then path.sep else '')
                     dst = @genRemoteString config.remote.user, config.remote.host,
                         if fs.isDirectorySync obj then path.join config.remote.path, relativePath else path.dirname (path.join config.remote.path, relativePath)
+
             when 'down'
                 if config.behaviour?.alwaysSyncAll is true
                     # A hack to prevent a newly created file being deleted
@@ -69,31 +74,58 @@ module.exports = ServiceController =
             else
                 return
 
-        @sync src, dst, config
+        @sync src, dst, config, 'rsync-service', =>
+            if direction is 'up' and config.trigger
+                @fireTriggers obj, config
+
 
     # Core
     genRemoteString: (user, remoteAddr, remotePath) ->
         result = "#{remoteAddr}:#{remotePath}"
         result = "#{user}@#{result}" if user
 
-    sync: (src, dst, config = {}, provider = 'rsync-service') ->
+    sync: (src, dst, config = {}, provider, complete) ->
+        delay = config.option?.autoHideDelay or 1500
+
         @console.show() if not config.behaviour.forgetConsole
-        @console.log "<span class='info'>Syncing from #{src} to #{dst}</span> ..."
+        @console.info "=> Syncing from #{src} to #{dst} ..."
 
         (require '../service/' + provider)
             src: src,
             dst: dst,
             config: config,
+
             progress: (msg) =>
                 @console.log msg
+
             success: =>
-                @console.log "<span class='success'>Sync completed without error.</span>\n"
+                @console.success "Sync completed without error.\n"
+                complete() if complete
                 if config.behaviour?.autoHideConsole
                     clearTimeout @_timer
                     @_timer = setTimeout (=>
                         @console.hide()
-                    ), 1500
+                    ), delay
+
             error: (err, cmd) =>
-                #atom.notifications.addError "#{err}, please review your config file."
-                #console.error cmd
-                @console.log "<span class='error'>#{err}, plese review your config file.</span>\n"
+                @console.error "#{err}, please review your config file.\n"
+
+    fireTriggers: (path, config) ->
+        rpath = @config.getRelativePath path
+        tasks = _.flattenDeep _.filter config.trigger, (o, i) => (i is '*') or rpath.startsWith i
+
+        if tasks?.length > 0
+            tasks.unshift "cd #{config.remote.path}"
+
+            cmd = _.map tasks, (x) ->
+                x.replace ';', '\\;'
+            .join ';'
+
+            ssh = new (require 'node-sshclient').SSH
+                hostname: config.remote.host
+                user: config.remote.user
+
+            @console.info "=> Firing triggers ..."
+            ssh.command cmd, '', (out) =>
+                @console.log out.stdout
+                @console.success "Done.\n"
