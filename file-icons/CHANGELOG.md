@@ -4,6 +4,18 @@ All notable changes to the project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+[1.7.6] - 2016-04-22
+--------------------
+### Added
+- **New icons:** BYOND, Clean, Click, Common Lisp, Coq, Creole, Cython, Darcs, Diff, E, Eagle, Ecere, Eiffel, EmberScript, Factor, Fancy, Fantom, Flux, FreeMarker, Frege, GameMaker, GAMS, GAP, Genshi, Gentoo, Godot, Golo, Gosu, Grammatical Framework, GraphQL, Graveviz, Harbour, Hashicorp, Hy, Idris, IGOR Pro, Inform 7, Io, Ioke, NVIDIA, Patch, Perl 6, Pointwise
+- **Support:** Composer (`composer.phar`), Cycript (`.cy`), DNS Zones (`.arpa`, `.zone`), Dust (`.dust`), Dylan (`.dylan`, `.dyl`, `.intr`, `.lid`), ECL (`.ecl`, `.eclxml`), Formatted (`.eam.fs`), Forth (`.4th`, `.fth`, `.forth`, `.frt`), G-code (`.gco`, `.gcode`), Grace (`.grace`), Graph Modelling Language (`.gml`)
+
+### Changed
+- Generic config icon now used for `.conf` files instead of nginx logo [[`#331`](https://github.com/DanBrooker/file-icons/issues/331)]
+- Python icon is now blue instead of orange [[`#199`](https://github.com/DanBrooker/file-icons/issues/199)]
+- Visual Basic files now distinguished by Visual Studio icon
+
+
 [1.7.5] - 2016-04-20
 --------------------
 ### Added
@@ -670,7 +682,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release.
 
 
-[Unreleased]: https://github.com/DanBrooker/file-icons/compare/v1.7.5...HEAD
+[Unreleased]: https://github.com/DanBrooker/file-icons/compare/v1.7.6...HEAD
+[1.7.6]:  https://github.com/DanBrooker/file-icons/releases/tag/v1.7.6
 [1.7.5]:  https://github.com/DanBrooker/file-icons/releases/tag/v1.7.5
 [1.7.4]:  https://github.com/DanBrooker/file-icons/releases/tag/v1.7.4
 [1.7.3]:  https://github.com/DanBrooker/file-icons/releases/tag/v1.7.3
