@@ -1,5 +1,24 @@
+### 2.18.6
+  - Fix keys & values named type & declare being highlighted as js keywords. [Fixes #172 ](https://github.com/gandm/language-babel/issues/172)
+  - Scope flow variant polymorph operators <+T,-V>
+
+### 2.18.5
+  - Grammar incorrectly parsed a returned object literal. [Fixes #171](https://github.com/gandm/language-babel/issues/171)
+
+### 2.18.4
+  - Make literal-object grammar recursive to fix nested object methods.
+
+### 2.18.3
+  - Improve detection of object literals. [Fixes #170](https://github.com/gandm/language-babel/issues/170)
+
+### 2.18.2
+  - Fix function call td.function() being interpreted as a function definition. [Fixes #169](https://github.com/gandm/language-babel/issues)
+
+### 2.18.1
+  - Incorrect scope for arrow function async keyword inside object literal. [Fixes](https://github.com/gandm/language-babel/issues/168)
+
 ### 2.18.0
-  - Allow flow syntax to be used within files that use ASI. 
+  - Allow flow syntax to be used within files that use ASI.
   - Use two forms of scoping for interpolated strings. [Fixes](https://github.com/gandm/language-babel/issues/167)
 
 ### 2.17.3

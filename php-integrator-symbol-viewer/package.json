@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-symbol-viewer",
   "main": "./lib/Main",
-  "version": "0.5.8",
+  "version": "0.6.0",
   "description": "Atom package providing side panel with class information.",
   "repository": {
     "type": "git",
@@ -37,10 +37,10 @@
     "url": "https://github.com/tocjent/php-integrator-symbol-viewer/issues"
   },
   "homepage": "https://github.com/tocjent/php-integrator-symbol-viewer#readme",
-  "_id": "php-integrator-symbol-viewer@0.5.8",
-  "_shasum": "e75bbe0b0f0823ce34039ffcef8794e1a3158720",
-  "_resolved": "file:../d-116321-13752-1wis140/package.tgz",
-  "_from": "../d-116321-13752-1wis140/package.tgz",
+  "_id": "php-integrator-symbol-viewer@0.6.0",
+  "_shasum": "9436b89968d0e381c34ede4ec92724401418f7c0",
+  "_resolved": "file:../d-11642-21465-16rrjq2/package.tgz",
+  "_from": "../d-11642-21465-16rrjq2/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -72,6 +72,7 @@
         "lib/StaticMethodsListView.js",
         "lib/StaticPropertiesListView.js",
         "lib/StaticPropertyDetailsView.js",
+        "lib/TogglePanelButtonView.js",
         "node_modules/event-kit/lib/composite-disposable.js",
         "node_modules/event-kit/lib/disposable.js",
         "node_modules/event-kit/lib/emitter.js",

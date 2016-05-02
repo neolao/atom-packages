@@ -1,0 +1,27 @@
+{BufferedProcess} = require 'atom'
+fs = require 'fs-plus'
+
+module.exports =
+class PlantUml
+  constructor: () ->
+  @writeAndOpenPng:(umlFilePath, pngFilePath, charset) ->
+    command = 'plantuml'
+    args = ['-failfast2', umlFilePath]
+    if charset
+      args = args.concat('-charset', charset)
+    exit = (code) ->
+      if PlantUml.isRegeneratedPng(pngFilePath, startTime)
+        atom.workspace.open(pngFilePath, {
+          split: 'right'
+          activatePane: false
+        })
+      else
+        atom.notifications.addWarning('PlantUml could not generate file.', {
+          detail:'Please make sure PlantUml can write
+           to location of original file.'})
+
+    startTime = Date.now()
+    new BufferedProcess({command, args, exit})
+
+  @isRegeneratedPng:(pngFilePath, startTime) ->
+    fs.isFileSync(pngFilePath) and fs.statSync(pngFilePath).mtime > startTime

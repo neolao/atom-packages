@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="../dist/svg-pan-zoom.js"></script>
+    <style>
+
+        html, body, #main, #svg {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #main {
+            position:relative;
+        }
+
+        #svg {
+            position:absolute;
+        }
+
+  </style>
+  </head>
+
+  <body>
+    <h1>Demo for svg-pan-zoom: In-line SVG</h1>
+
+    <div id="main">
+        <svg width="100%"
+             height="100%"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="-10,-10,20,20"
+             id="svg">
+            <g>
+                <circle stroke="red" fill="blue" stroke-width="1" cx="0" cy="0" r="10" />
+            </g>
+        </svg>
+    </div>
+
+    <script>
+      // Don't use window.onLoad like this in production, because it can only listen to one function.
+      window.onload = function() {
+        window.svgPanZoomInstance = svgPanZoom('#svg');
+        // Expose to window namespase for testing purposes
+        // window.svgPanZoomInstance = svgPanZoom('#svgImage', {
+        //   zoomEnabled: true,
+        //   controlIconsEnabled: true,
+        //   fit: true,
+        //   center: true,
+        //   minZoom: 0.1
+        // });
+      };
+
+// function step1() {
+//   return new Promise(function(resolve, reject) {
+//     console.log('step1')
+//     // setTimeout(resolve, 1000)
+//     setTimeout(reject, 1000)
+//   })
+// }
+
+// function step2() {
+//   return new Promise(function(resolve, reject) {
+//     console.log('step2')
+//     setTimeout(function(){
+//       resolve({done: true})
+//     }, 1000)
+//     // setTimeout(reject, 1000)
+//   })
+// }
+
+// function step3() {
+//   return new Promise(function(resolve, reject) {
+//     console.log('step3')
+//     setTimeout(resolve, 1000)
+//     // setTimeout(reject, 1000)
+//   })
+// }
+
+// step1()
+//   .catch(step2)
+//   .catch(step3)
+//   .then(function(data){
+//     console.log('done', data)
+//   })
+//   .catch(function(){
+//     console.log('failed')
+//   })
+
+    </script>
+
+  </body>
+
+</html>

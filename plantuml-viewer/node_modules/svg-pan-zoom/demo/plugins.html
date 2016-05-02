@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="../dist/svg-pan-zoom.js"></script>
+    <script src="../src/plugins/plugin-pointer-events.js"></script>
+    <script src="./plugins.js"></script>
+    <style>
+
+        html, body, #main, .svg {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #main {
+            position:relative;
+        }
+
+        .svg {
+            position:relative;
+            width: 200px;
+            height: 200px;
+            float: left;
+        }
+
+  </style>
+  </head>
+
+  <body>
+    <h1>Demo for svg-pan-zoom: In-line SVG</h1>
+
+    <div id="main">
+        <svg width="300"
+             height="300"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="-10,-10,20,20"
+             class="svg"
+             id="svg1">
+            <g>
+                <circle stroke="darkred" fill="blue" stroke-width="1" cx="0" cy="0" r="10" />
+            </g>
+        </svg>
+
+        <svg width="300"
+             height="300"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="-10,-10,20,20"
+             class="svg"
+             id="svg2">
+            <g>
+                <circle stroke="yellow" fill="green" stroke-width="1" cx="0" cy="0" r="10" />
+            </g>
+        </svg>
+
+        <svg width="300"
+             height="300"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="-10,-10,20,20"
+             class="svg"
+             id="svg3">
+            <g class="my-group">
+                <circle stroke="darkred" fill="green" stroke-width="1" cx="0" cy="0" r="10" />
+            </g>
+        </svg>
+
+        <svg width="300"
+             height="300"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="-10,-10,20,20"
+             class="svg"
+             id="svg4">
+            <g>
+                <circle stroke="black" fill="darkred" stroke-width="1" cx="0" cy="0" r="10" />
+            </g>
+        </svg>
+
+        <svg width="300"
+             height="300"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="0,0,50,200"
+             class="svg"
+             style="border: 1px solid black;"
+             id="svg5">
+            <g>
+                <rect x="0" y="40" width="100" height="100" fill="yellow"/>
+            </g>
+        </svg>
+    </div>
+
+    <script>
+      // Warning! If window.onload was set before, we'll override it here
+      // If you use jQuery then a better approach is to use document ready shorthand
+      // http://learn.jquery.com/using-jquery-core/document-ready/
+      window.onload = function() {
+        // Loads all plugins
+        window.svgPanZoomInstance1 = svgPanZoom('#svg1');
+
+        // Load one plugin by name
+        window.svgPanZoomInstance2 = svgPanZoom('#svg2', {
+          plugins: [
+            'unique'
+          ]
+        });
+
+        // Loads plugins by name
+        window.svgPanZoomInstance3 = svgPanZoom('#svg3', {
+          plugins: [
+            'unique',
+            'shared',
+            'pointer-events'
+          ]
+        , 'pointer-events': {
+            eventsListenerElement: document.querySelector('#svg3 .my-group')
+          }
+        });
+
+        window.svgPanZoomInstance3.on('render', function() {
+            console.log('3rd just rendered')
+        })
+
+        // Don't load any plugin
+        window.svgPanZoomInstance4 = svgPanZoom('#svg4', {
+          plugins: []
+        });
+      };
+
+    </script>
+
+  </body>
+
+</html>
