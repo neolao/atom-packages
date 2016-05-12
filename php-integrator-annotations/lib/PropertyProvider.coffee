@@ -16,36 +16,25 @@ class MethodProvider extends AbstractProvider
 
         return if not path
 
-        try
-            classesInEditor = @service.getClassListForFile(path)
-
-        catch error
-            return
-
         successHandler = (classInfo) =>
             return if not classInfo
 
             for name, property of classInfo.properties
                 continue if not property.override
+                continue if property.declaringStructure.name != classInfo.name
 
-                regex = new RegExp("^([\\t\\ ]*)(?:public|protected|private)\\s+\\$" + name + "\\s+")
+                range = new Range([property.startLine - 1, 0], [property.startLine, -1])
 
-                range = new Range([classInfo.startLine, 0], [classInfo.endLine + 1, 0])
-
-                editor.scanInBufferRange(regex, range, (matchInfo) =>
-                    # Remove the spacing from the range.
-                    matchInfo.range.start.column += matchInfo.match[1].length
-
-                    @placeAnnotation(editor, matchInfo.range, @extractAnnotationInfo(property))
-
-                    matchInfo.stop()
-                )
+                @placeAnnotation(editor, range, @extractAnnotationInfo(property))
 
         failureHandler = () =>
             # Just do nothing.
 
-        for name,classInfo of classesInEditor
-            @service.getClassInfo(name, true).then(successHandler, failureHandler)
+        getClassListHandler = (classesInEditor) =>
+            for name,classInfo of classesInEditor
+                @service.getClassInfo(name).then(successHandler, failureHandler)
+
+        @service.getClassListForFile(path).then(getClassListHandler, failureHandler)
 
     ###*
      * Fetches annotation info for the specified context.

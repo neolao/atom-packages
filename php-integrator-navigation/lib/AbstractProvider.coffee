@@ -135,6 +135,8 @@ class AbstractProvider
      *
      * @param {TextEditor}  editor
      * @param {HTMLElement} selector
+     *
+     * @return {boolean}
     ###
     isValidForNavigation: (editor, selector) ->
         return true
@@ -157,11 +159,17 @@ class AbstractProvider
 
         text = @getClickedTextByEvent(editor, event)
 
-        if @isValid(editor, bufferPosition, text)
-            $(selector).addClass('php-integrator-navigation-navigation-possible')
+        successHandler = (isValid) =>
+            if isValid
+                $(selector).addClass('php-integrator-navigation-navigation-possible')
 
-        else
+            else
+                $(selector).addClass('php-integrator-navigation-navigation-impossible')
+
+        failureHandler = () =>
             $(selector).addClass('php-integrator-navigation-navigation-impossible')
+
+        @activePromise = @isValid(editor, bufferPosition, text).then(successHandler, failureHandler)
 
     ###*
      * Handles a mouse out event.
@@ -175,8 +183,15 @@ class AbstractProvider
         return unless selector
         return unless @isValidForNavigation(editor, selector)
 
-        $(selector).removeClass('php-integrator-navigation-navigation-possible')
-        $(selector).removeClass('php-integrator-navigation-navigation-impossible')
+        cleanupHandler = () ->
+            $(selector).removeClass('php-integrator-navigation-navigation-possible')
+            $(selector).removeClass('php-integrator-navigation-navigation-impossible')
+
+        if @activePromise
+            @activePromise.then(cleanupHandler)
+
+        else
+            cleanupHandler()
 
     ###*
      * Handles a mouse click event.
@@ -240,7 +255,7 @@ class AbstractProvider
      * @param {Point}      bufferPosition
      * @param {string}     term           Term to search for.
      *
-     * @return {boolean}
+     * @return {Promise}
     ###
     isValid: (editor, bufferPosition, term) ->
         throw new Error("This method is abstract and must be implemented!")

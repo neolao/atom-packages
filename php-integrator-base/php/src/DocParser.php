@@ -7,6 +7,11 @@ namespace PhpIntegrator;
  */
 class DocParser
 {
+    /**
+     * PSR-5 and/or phpDocumentor docblock tags.
+     *
+     * @var string
+     */
     const VAR_TYPE        = '@var';
     const PARAM_TYPE      = '@param';
     const THROWS          = '@throws';
@@ -19,11 +24,27 @@ class DocParser
     const PROPERTY_READ   = '@property-read';
     const PROPERTY_WRITE  = '@property-write';
 
+    const CATEGORY        = '@category';
+    const SUBPACKAGE      = '@subpackage';
+    const LINK            = '@link';
+
     const DESCRIPTION     = 'description';
     const INHERITDOC      = '{@inheritDoc}';
 
+    /**
+     * Non-standard tags.
+     *
+     * @var string
+     */
+    const ANNOTATION      = '@Annotation';
+
     const TYPE_SPLITTER   = '|';
-    const TAG_START_REGEX = '/^\s*(?:\/\*)?\*\s+\@.+(?:\*\/)?$/';
+    const TAG_START_REGEX = '/^\s*(?:\/\*)?\*\s+(\@.+)(?:\*\/)?$/';
+
+    /**
+     * @var DocblockAnalyzer|null
+     */
+    protected $docblockAnalyzer;
 
     /**
      * Parse the comment string to get its elements.
@@ -48,7 +69,7 @@ class DocParser
         $docblock = is_string($docblock) ? $docblock : null;
 
         if ($docblock) {
-            preg_match_all('/\*\s+(@[a-z-]+)([^@]*)(?:\n|\*\/)/', $docblock, $matches, PREG_SET_ORDER);
+            preg_match_all('/\*\s+(@[a-zA-Z-][a-z-]*)([^@]*)(?:\n|\*\/)/', $docblock, $matches, PREG_SET_ORDER);
 
             foreach ($matches as $match) {
                 if (!isset($tags[$match[1]])) {
@@ -80,7 +101,13 @@ class DocParser
 
             static::PROPERTY       => 'filterProperty',
             static::PROPERTY_READ  => 'filterPropertyRead',
-            static::PROPERTY_WRITE => 'filterPropertyWrite'
+            static::PROPERTY_WRITE => 'filterPropertyWrite',
+
+            static::CATEGORY       => 'filterCategory',
+            static::SUBPACKAGE     => 'filterSubpackage',
+            static::LINK           => 'filterLink',
+
+            static::ANNOTATION     => 'filterAnnotation'
         ];
 
         foreach ($filters as $filter) {
@@ -178,9 +205,24 @@ class DocParser
             foreach ($tags[static::PARAM_TYPE] as $tag) {
                 list($type, $variableName, $description) = $this->filterParameterTag($tag, 3);
 
+                $isVariadic = false;
+                $isReference = false;
+
+                if (mb_strpos($variableName, '...') === 0) {
+                    $isVariadic = true;
+                    $variableName = mb_substr($variableName, mb_strlen('...'));
+                }
+
+                if (mb_strpos($variableName, '&amp;') === 0) {
+                    $isReference = true;
+                    $variableName = mb_substr($variableName, mb_strlen('&amp;'));
+                }
+
                 $params[$variableName] = [
                     'type'        => $type,
-                    'description' => $description
+                    'description' => $description,
+                    'isVariadic'  => $isVariadic,
+                    'isReference' => $isReference
                 ];
             }
         }
@@ -471,6 +513,87 @@ class DocParser
     }
 
     /**
+     * @param string $docblock
+     * @param string $itemName
+     * @param array  $tags
+     *
+     * @return array
+     */
+    protected function filterCategory($docblock, $itemName, array $tags)
+    {
+        $description = null;
+
+        if (isset($tags[static::CATEGORY])) {
+            list($description) = $this->filterParameterTag($tags[static::CATEGORY][0], 1);
+        }
+
+        return [
+            'category' => $description
+        ];
+    }
+
+    /**
+     * @param string $docblock
+     * @param string $itemName
+     * @param array  $tags
+     *
+     * @return array
+     */
+    protected function filterSubpackage($docblock, $itemName, array $tags)
+    {
+        $name = null;
+
+        if (isset($tags[static::SUBPACKAGE])) {
+            list($name) = $this->filterParameterTag($tags[static::SUBPACKAGE][0], 1);
+        }
+
+        return [
+            'subpackage' => $name
+        ];
+    }
+
+    /**
+     * @param string $docblock
+     * @param string $itemName
+     * @param array  $tags
+     *
+     * @return array
+     */
+    protected function filterLink($docblock, $itemName, array $tags)
+    {
+        $links = [];
+
+        if (isset($tags[static::LINK])) {
+            list($uri, $description) = $this->filterParameterTag($tags[static::LINK][0], 2);
+
+            $links[] = [
+                'uri'         => $uri,
+                'description' => $description
+            ];
+        }
+
+        return [
+            'link' => $links
+        ];
+    }
+
+    /**
+     * Filters out annotation information.
+     *
+     * @param string $docblock
+     * @param string $itemName
+     * @param array  $tags
+     *
+     * @return array
+     */
+    protected function filterAnnotation($docblock, $itemName, array $tags)
+    {
+        return [
+            'annotation' => isset($tags[static::ANNOTATION])
+        ];
+    }
+
+    /**
      * Filters out information about the description.
      *
      * @param string $docblock
@@ -489,7 +612,9 @@ class DocParser
         $isReadingSummary = true;
 
         foreach ($lines as $i => $line) {
-            if (preg_match(self::TAG_START_REGEX, $line) === 1) {
+            $matches = null;
+
+            if (preg_match(self::TAG_START_REGEX, $line, $matches) === 1 && !$this->getDocblockAnalyzer()->isFullInheritDocSyntax(trim($matches[1]))) {
                 break; // Found the start of a tag, the summary and description are finished.
             }
 
@@ -551,5 +676,19 @@ class DocParser
     protected function normalizeNewlines($string)
     {
         return $this->replaceNewlines($string, "\n");
+    }
+
+    /**
+     * Retrieves an instance of DocblockAnalyzer. The object will only be created once if needed.
+     *
+     * @return DocblockAnalyzer
+     */
+    protected function getDocblockAnalyzer()
+    {
+        if (!$this->docblockAnalyzer instanceof DocblockAnalyzer) {
+            $this->docblockAnalyzer = new DocblockAnalyzer();
+        }
+
+        return $this->docblockAnalyzer;
     }
 }

@@ -22,7 +22,7 @@ improvements as well as separation of the various components into separate packa
 ## What do I need to do to make it work?
 Currently the following is required in order to get the package up and running:
   * **PHP** - To run this package properly, you need at least PHP 5.4. The code you're actually writing can be anything ranging from PHP 5.2 up to (and including) PHP 7.0.
-    * **php-sqlite** and SQLite >= 3.7.0 - Required as back end for the indexing database.
+    * **php-sqlite** and SQLite >= 3.7.11 - Required as back end for the indexing database.
   * **PSR-compliant code** - Write code that follows the PSR standards, especially regarding namespacing.
   * **Documentation** and **type hinting** - Write proper docblocks that follow the draft PSR-5 standard (inspired by phpDocumentor's implementation) or use type hinting as much as possible:
     * Docblocks with a `@var` tag for properties.
@@ -42,5 +42,8 @@ As the service allows fetching information about the code base, other packages c
 * A package performing a semantic lint on an entire project, showing various problems with each file in a navigatable list.
 * An (UML?) class diagram builder that creates a visual representation of the relations between all classes in a code base (i.e. their implemented interfaces, base classes and traits).
 * Most of the existing packages could use new improvements, contributions are most welcome.
+
+## Can I use this for other editors?
+Well, yes and no: the packages themselves are dependent on Atom, of course, but the PHP side is not dependent on Atom at all. In theory it is possible to just extract out the PHP source and build a plugin or extension for another editor around it.
 
 ![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)

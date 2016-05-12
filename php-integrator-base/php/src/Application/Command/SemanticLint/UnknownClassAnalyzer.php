@@ -17,11 +17,6 @@ class UnknownClassAnalyzer implements AnalyzerInterface
     protected $classUsageFetchingVisitor;
 
     /**
-     * @var Visitor\UseStatementFetchingVisitor
-     */
-    protected $useStatementFetchingVisitor;
-
-    /**
      * @var Visitor\DocblockClassUsageFetchingVisitor
      */
     protected $docblockClassUsageFetchingVisitor;
@@ -48,7 +43,6 @@ class UnknownClassAnalyzer implements AnalyzerInterface
         $this->indexDatabase = $indexDatabase;
 
         $this->classUsageFetchingVisitor = new Visitor\ClassUsageFetchingVisitor();
-        $this->useStatementFetchingVisitor = new Visitor\UseStatementFetchingVisitor();
         $this->docblockClassUsageFetchingVisitor = new Visitor\DocblockClassUsageFetchingVisitor();
     }
 
@@ -59,7 +53,6 @@ class UnknownClassAnalyzer implements AnalyzerInterface
     {
         return [
             $this->classUsageFetchingVisitor,
-            $this->useStatementFetchingVisitor,
             $this->docblockClassUsageFetchingVisitor
         ];
     }
@@ -78,17 +71,16 @@ class UnknownClassAnalyzer implements AnalyzerInterface
 
         // Cross-reference the found class names against the class map.
         $unknownClasses = [];
-        $namespaces = $this->useStatementFetchingVisitor->getNamespaces();
 
         $resolveTypeCommand = new ResolveType();
         $resolveTypeCommand->setIndexDatabase($this->indexDatabase);
 
-        $classUsage = array_merge(
+        $classUsages = array_merge(
             $this->classUsageFetchingVisitor->getClassUsageList(),
             $this->docblockClassUsageFetchingVisitor->getClassUsageList()
         );
 
-        foreach ($classUsage as $classUsage) {
+        foreach ($classUsages as $classUsage) {
             if ($classUsage['isFullyQualified']) {
                 $fqsen = $classUsage['name'];
             } else {

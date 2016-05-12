@@ -1,7 +1,7 @@
 {
   "name": "seti-ui",
   "theme": "ui",
-  "version": "1.0.3",
+  "version": "1.1.2",
   "description": "A dark colored UI theme for Atom with custom file icons.",
   "main": "lib/main",
   "license": "MIT",
@@ -13,20 +13,9 @@
     "atom": ">1.7.0"
   },
   "configSchema": {
-    "fileIcons": {
-      "title": "Custom Icons",
-      "description": "Disable this if you are using file-icons or another atom file icon package (or simply don't want custom icons)",
-      "type": "boolean",
-      "default": true
-    },
-    "compactView": {
-      "title": "Compact Mode",
-      "description": "Enable this is you prefer less padding in your workspace.",
-      "type": "boolean",
-      "default": false
-    },
     "themeColor": {
       "title": "Theme Color",
+      "order": 1,
       "description": "Select a default theme color. If you don't notice a difference, you may have to reload Atom to see them.",
       "type": "string",
       "enum": [
@@ -41,17 +30,51 @@
       ],
       "default": "Blue"
     },
-    "hideTabs": {
-      "title": "Hide Tabs",
-      "description": "Enable this if you prefer to rely on the sidebar for nagivation and don't want to see tabs at all.",
+    "font": {
+      "title": "Font Family",
+      "order": 2,
+      "description": "Select default UI font.",
+      "type": "string",
+      "enum": [
+        "Roboto",
+        "SF UI Text"
+      ],
+      "default": "Roboto"
+    },
+    "compactView": {
+      "title": "Compact Mode",
+      "order": 3,
+      "description": "Enable this is you prefer less padding in your workspace.",
       "type": "boolean",
       "default": false
     },
+    "disableAnimations": {
+      "title": "Disable Animations",
+      "order": 4,
+      "description": "Uncheck this if you want to disable animations.",
+      "type": "boolean",
+      "default": false
+    },
+    "fileIcons": {
+      "title": "Custom Icons",
+      "order": 5,
+      "description": "Disable this if you are using file-icons or another atom file icon package (or simply don't want custom icons)",
+      "type": "boolean",
+      "default": true
+    },
     "displayIgnored": {
       "title": "Display Ignored Files",
+      "order": 6,
       "description": "Enable this if you would like to not see ignored files at all (as opposed to simple muting the style)",
       "type": "boolean",
       "default": true
+    },
+    "hideTabs": {
+      "title": "Hide Tabs",
+      "order": 7,
+      "description": "Enable this if you prefer to rely on the sidebar for nagivation and don't want to see tabs at all.",
+      "type": "boolean",
+      "default": false
     }
   },
   "devDependencies": {
@@ -65,10 +88,10 @@
     "url": "https://github.com/jesseweed/seti-ui/issues"
   },
   "homepage": "https://github.com/jesseweed/seti-ui#readme",
-  "_id": "seti-ui@1.0.3",
-  "_shasum": "ca78f4a9bb7291985c29925b4adfa03fd313642a",
-  "_resolved": "file:../d-11642-21472-hrjmyh/package.tgz",
-  "_from": "../d-11642-21472-hrjmyh/package.tgz",
+  "_id": "seti-ui@1.1.2",
+  "_shasum": "0635a5b189bf0026031cf0929751d7286ce8d83f",
+  "_resolved": "file:../d-116411-61950-1xoo01d/package.tgz",
+  "_from": "../d-116411-61950-1xoo01d/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [],

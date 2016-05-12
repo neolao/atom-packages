@@ -7,6 +7,8 @@ use UnexpectedValueException;
 
 use GetOptionKit\OptionCollection;
 
+use PhpIntegrator\IndexDatabase;
+
 use PhpIntegrator\Application\Command as BaseCommand;
 
 use PhpParser\Error;
@@ -27,6 +29,11 @@ class SemanticLint extends BaseCommand
     protected $parser;
 
     /**
+     * @var ClassInfo
+     */
+    protected $classInfoCommand;
+
+    /**
      * @inheritDoc
      */
     protected function attachOptions(OptionCollection $optionCollection)
@@ -34,6 +41,7 @@ class SemanticLint extends BaseCommand
         $optionCollection->add('file?', 'The file to lint.')->isa('string');
         $optionCollection->add('stdin?', 'If set, file contents will not be read from disk but the contents from STDIN will be used instead.');
         $optionCollection->add('no-unknown-classes?', 'If set, unknown class names will not be returned.');
+        $optionCollection->add('no-docblock-correctness?', 'If set, docblock correctness will not be analyzed.');
         $optionCollection->add('no-unused-use-statements?', 'If set, unused use statements will not be returned.');
     }
 
@@ -55,6 +63,7 @@ class SemanticLint extends BaseCommand
             $arguments['file']->value,
             $code,
             !(isset($arguments['no-unknown-classes']) && $arguments['no-unknown-classes']->value),
+            !(isset($arguments['no-docblock-correctness']) && $arguments['no-docblock-correctness']->value),
             !(isset($arguments['no-unused-use-statements']) && $arguments['no-unused-use-statements']->value)
         );
 
@@ -65,6 +74,7 @@ class SemanticLint extends BaseCommand
      * @param string $file
      * @param string $code
      * @param bool   $retrieveUnknownClasses
+     * @param bool   $analyzeDocblockCorrectness
      * @param bool   $retrieveUnusedUseStatements
      *
      * @return array
@@ -73,57 +83,128 @@ class SemanticLint extends BaseCommand
         $file,
         $code,
         $retrieveUnknownClasses = true,
+        $analyzeDocblockCorrectness = true,
         $retrieveUnusedUseStatements = true
     ) {
-        $fileId = $this->indexDatabase->getFileId($file);
-
-        if (!$fileId) {
-            throw new UnexpectedValueException('The specified file is not present in the index!');
-        }
-
         // Parse the file to fetch the information we need.
         $nodes = [];
         $parser = $this->getParser();
 
-        try {
-            $nodes = $parser->parse($code);
-        } catch (Error $e) {
-            throw new UnexpectedValueException('Parsing the file failed!');
-        }
+        $nodes = $parser->parse($code);
 
-        if ($nodes === null) {
-            throw new UnexpectedValueException('Parsing the file failed!');
-        }
-
-        $traverser = new NodeTraverser(false);
-
-        if ($retrieveUnknownClasses) {
-            $unknownClassAnalyzer = new SemanticLint\UnknownClassAnalyzer($file, $this->indexDatabase);
-
-            foreach ($unknownClassAnalyzer->getVisitors() as $visitor) {
-                $traverser->addVisitor($visitor);
-            }
-        }
-
-        if ($retrieveUnusedUseStatements) {
-            $unusedUseStatementAnalyzer = new SemanticLint\UnusedUseStatementAnalyzer();
-
-            foreach ($unusedUseStatementAnalyzer->getVisitors() as $visitor) {
-                $traverser->addVisitor($visitor);
-            }
-        }
-
-        $traverser->traverse($nodes);
-
-        return [
-            'errors' => [
-                'unknownClasses' => $unknownClassAnalyzer->getOutput()
+        $output = [
+            'errors'   => [
+                'syntaxErrors' => []
             ],
 
-            'warnings' => [
-                'unusedUseStatements' => $unusedUseStatementAnalyzer->getOutput()
-            ]
+            'warnings' => []
         ];
+
+        foreach ($parser->getErrors() as $e) {
+            $output['errors']['syntaxErrors'][] = [
+                'startLine'   => $e->getStartLine() >= 0 ? $e->getStartLine() : null,
+                'endLine'     => $e->getEndLine() >= 0 ? $e->getEndLine() : null,
+                'startColumn' => $e->hasColumnInfo() ? $e->getStartColumn($code) : null,
+                'endColumn'   => $e->hasColumnInfo() ? $e->getEndColumn($code) : null,
+                'message'     => $e->getMessage()
+            ];
+        }
+
+        if ($nodes !== null) {
+            $traverser = new NodeTraverser(false);
+
+            $unknownClassAnalyzer = null;
+
+            if ($retrieveUnknownClasses) {
+                $unknownClassAnalyzer = new SemanticLint\UnknownClassAnalyzer($file, $this->indexDatabase);
+
+                foreach ($unknownClassAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+            }
+
+            $unusedUseStatementAnalyzer = null;
+
+            if ($retrieveUnusedUseStatements) {
+                $unusedUseStatementAnalyzer = new SemanticLint\UnusedUseStatementAnalyzer();
+
+                foreach ($unusedUseStatementAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+            }
+
+            $traverser->traverse($nodes);
+
+            $docblockCorrectnessAnalyzer = null;
+
+            if ($analyzeDocblockCorrectness) {
+                $fileId = $this->indexDatabase->getFileId($file);
+
+                if (!$fileId) {
+                    throw new UnexpectedValueException('The specified file is not present in the index!');
+                }
+
+                // This analyzer needs to traverse the nodes separately as it modifies them.
+                $traverser = new NodeTraverser(false);
+
+                $docblockCorrectnessAnalyzer = new SemanticLint\DocblockCorrectnessAnalyzer(
+                    $file,
+                    $this->indexDatabase,
+                    $this->getClassInfoCommand()
+                );
+
+                foreach ($docblockCorrectnessAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+
+                try {
+                    $traverser->traverse($nodes);
+                } catch (Error $e) {
+                    // The NameResolver can throw exceptions on things such as duplicate use statements. Seeing as that is
+                    // a PHP error, just fetch any output at all.
+                    $docblockCorrectnessAnalyzer = null;
+                }
+            }
+
+            if ($unknownClassAnalyzer) {
+                $output['errors']['unknownClasses'] = $unknownClassAnalyzer->getOutput();
+            }
+
+            if ($docblockCorrectnessAnalyzer) {
+                $output['warnings']['docblockIssues'] = $docblockCorrectnessAnalyzer->getOutput();
+            }
+
+            if ($unusedUseStatementAnalyzer) {
+                $output['warnings']['unusedUseStatements'] = $unusedUseStatementAnalyzer->getOutput();
+            }
+        }
+
+        return $output;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setIndexDatabase(IndexDatabase $indexDatabase)
+    {
+        if ($this->classInfoCommand) {
+            $this->getClassInfoCommand()->setIndexDatabase($indexDatabase);
+        }
+
+        parent::setIndexDatabase($indexDatabase);
+    }
+
+    /**
+     * @return ClassInfo
+     */
+    protected function getClassInfoCommand()
+    {
+        if (!$this->classInfoCommand) {
+            $this->classInfoCommand = new ClassInfo();
+            $this->classInfoCommand->setIndexDatabase($this->indexDatabase);
+        }
+
+        return $this->classInfoCommand;
     }
 
     /**
@@ -134,11 +215,13 @@ class SemanticLint extends BaseCommand
         if (!$this->parser) {
             $lexer = new Lexer([
                 'usedAttributes' => [
-                    'comments', 'startLine', 'startFilePos', 'endFilePos'
+                    'comments', 'startLine', 'endLine', 'startFilePos', 'endFilePos'
                 ]
             ]);
 
-            $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer);
+            $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer, [
+                'throwOnError' => false
+            ]);
         }
 
         return $this->parser;

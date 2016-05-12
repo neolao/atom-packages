@@ -74,23 +74,37 @@ class ClassProvider extends AbstractProvider
     ###
     refreshCache: () ->
         successHandler = (classes) =>
-            @pendingPromise = null
-
-            return unless classes
-
-            @listCache = classes
-
-            return @listCache
+            return @handleSuccessfulCacheRefresh(classes)
 
         failureHandler = () =>
-            @pendingPromise = null
-
-            return []
+            return @handleFailedCacheRefresh()
 
         if not @pendingPromise?
-            @pendingPromise = @service.getClassList(true).then(successHandler, failureHandler)
+            @pendingPromise = @service.getClassList().then(successHandler, failureHandler)
 
         return @pendingPromise
+
+    ###*
+     * @param {Object} classes
+     *
+     * @return {Object}
+    ###
+    handleSuccessfulCacheRefresh: (classes) ->
+        @pendingPromise = null
+
+        return unless classes
+
+        @listCache = classes
+
+        return @listCache
+
+    ###*
+     * @return {Object}
+    ###
+    handleFailedCacheRefresh: () ->
+        @pendingPromise = null
+
+        return []
 
     ###*
      * Fetches a list of results that can be fed to the addSuggestions method.
@@ -189,7 +203,7 @@ class ClassProvider extends AbstractProvider
 
             suggestionData =
                 text               : nameToUse
-                type               : if element.isTrait then 'mixin' else 'class'
+                type               : if element.type == 'trait' then 'mixin' else 'class'
                 description        : if element.isBuiltin then 'Built-in PHP structural element.' else element.descriptions.short
                 leftLabel          : element.type
                 descriptionMoreURL : if element.isBuiltin then @config.get('php_documentation_base_urls').classes + element.name else null
@@ -222,22 +236,27 @@ class ClassProvider extends AbstractProvider
     ###
     onDidInsertSuggestion: ({editor, triggerPosition, suggestion}) ->
         return unless suggestion.data?.nameToImport
+        return unless @config.get('automaticallyAddUseStatements')
 
-        currentClassName = @service.determineCurrentClassName(editor, triggerPosition)
+        successHandler = (currentClassName) =>
+            if currentClassName
+                currentNamespaceParts = currentClassName.split('\\')
+                currentNamespaceParts.pop()
 
-        if currentClassName
-            currentNamespaceParts = currentClassName.split('\\')
-            currentNamespaceParts.pop()
+                currentNamespace = currentNamespaceParts.join('\\')
 
-            currentNamespace = currentNamespaceParts.join('\\')
+                if suggestion.data.nameToImport.indexOf(currentNamespace) == 0
+                     nameToImportRelativeToNamespace = suggestion.displayText.substr(currentNamespace.length + 1)
 
-            if suggestion.data.nameToImport.indexOf(currentNamespace) == 0
-                 nameToImportRelativeToNamespace = suggestion.displayText.substr(currentNamespace.length + 1)
+                     # If a user is in A\B and wants to import A\B\C\D, we don't need to add a use statement if he is typing
+                     # C\D, as it will be relative, but we will need to add one when he typed just D as it won't be
+                     # relative.
+                     return if nameToImportRelativeToNamespace.split('\\').length == suggestion.text.split('\\').length
 
-                 # If a user is in A\B and wants to import A\B\C\D, we don't need to add a use statement if he is typing
-                 # C\D, as it will be relative, but we will need to add one when he typed just D as it won't be
-                 # relative.
-                 return if nameToImportRelativeToNamespace.split('\\').length == suggestion.text.split('\\').length
+            editor.transact () =>
+                linesAdded = Utility.addUseClass(editor, suggestion.data.nameToImport, @config.get('insertNewlinesForUseStatements'))
 
-        editor.transact () =>
-            linesAdded = Utility.addUseClass(editor, suggestion.data.nameToImport, @config.get('insertNewlinesForUseStatements'))
+        failureHandler = () ->
+            # Do nothing.
+
+        @service.determineCurrentClassName(editor, triggerPosition).then(successHandler, failureHandler)

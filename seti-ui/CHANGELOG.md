@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.1.2
+- Fix Linter rule link badge
+
+## 1.1.1
+- Fix selected directory style in compact mode
+
+## 1.1.0
+- Adjust compact view
+  - Settings vies: remove padding & reduce font size
+  - Apply compact view to split panel
+  - Tree view "current file" highlight too tall in compact view #265
+  - Fix tab close button in compact mode
+  - Adjust placeholder height in compact mode
+- Add settings
+  - Choose system font
+  - Disable animations
+- Remove sticky project header until bugs can be sorted
+- Make tree highlight color more distinct
+- Remove button in .btn selector
+- TeX icon support improvement
+
+## 1.0.4
+- Change header positioning to support top-aligned tool-bar
+- Fix autocomplete-plus highlight style
+
 ## 1.0.3
 - Use css ison for .sss file
 - Add .icon-partial mixin for better partial name matching

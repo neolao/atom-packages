@@ -1,3 +1,16 @@
+## 1.4.8
+
+* Fixed version inconsistency
+
+## 1.4.7
+
+* Failed release
+
+## 1.4.6
+### Bugfix
+
+* Fixed a bug #21 (@nebularg)
+
 ## 1.4.5
 ### Bugfix
 

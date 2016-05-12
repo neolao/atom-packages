@@ -22,6 +22,14 @@ module.exports =
             default     : false
             order       : 2
 
+        automaticallyAddUseStatements:
+            title       : 'Automatically add use statements when necessary'
+            description : 'When enabled, a use statement will be added when autocompleting a class name (if it isn\'t
+                           already present).'
+            type        : 'boolean'
+            default     : true
+            order       : 3
+
     ###*
      * The name of the package.
     ###
@@ -65,7 +73,8 @@ module.exports =
         MagicConstantProvider           = require './MagicConstantProvider'
         FunctionProvider                = require './FunctionProvider'
         KeywordProvider                 = require './KeywordProvider'
-        DocBlockProvider                = require './DocBlockProvider'
+        DocblockAnnotationProvider      = require './DocblockAnnotationProvider'
+        DocblockTagProvider             = require './DocblockTagProvider'
 
         @configuration = new AtomConfig(@packageName)
 
@@ -81,7 +90,8 @@ module.exports =
         @providers.push(new GlobalVariableProvider(@configuration))
         @providers.push(new MagicConstantProvider(@configuration))
         @providers.push(new KeywordProvider(@configuration))
-        @providers.push(new DocBlockProvider(@configuration))
+        @providers.push(new DocblockAnnotationProvider(@configuration))
+        @providers.push(new DocblockTagProvider(@configuration))
 
     ###*
      * Deactivates the package.

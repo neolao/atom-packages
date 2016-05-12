@@ -3,6 +3,7 @@
 namespace PhpIntegrator;
 
 use DateTime;
+use Exception;
 use ReflectionClass;
 use FilesystemIterator;
 use UnexpectedValueException;
@@ -120,6 +121,7 @@ class Indexer
             $progress = 100;
         }
 
+        // Yes, we abuse the error channel...
         file_put_contents('php://stderr', $progress . PHP_EOL);
     }
 
@@ -127,8 +129,6 @@ class Indexer
      * Indexes the specified project.
      *
      * @param string $directory
-     *
-     * @return array A list of errors accumulated during indexing (indexing continues when these happen).
      */
     public function indexDirectory($directory)
     {
@@ -136,24 +136,7 @@ class Indexer
         $this->pruneRemovedFiles();
 
         $this->logMessage('Scanning for files that need (re)indexing...');
-        $fileClassMap = $this->scan($directory);
-
-        $this->logMessage('Sorting the result by dependencies...');
-        $files = $this->getFilesSortedByDependenciesFromScanResult($fileClassMap);
-
-        foreach ($files as $filename) {
-            $this->logMessage('  - ' . $filename);
-
-            $fqsens = $fileClassMap[$filename];
-
-            foreach ($fqsens as $fqsen => $dependencyFqsens) {
-                $this->logMessage('    - ' . $fqsen);
-
-                foreach ($dependencyFqsens as $dependencyFqsen) {
-                    $this->logMessage('      - ' . $dependencyFqsen);
-                }
-            }
-        }
+        $files = $this->scan($directory);
 
         $this->logMessage('Indexing outline...');
 
@@ -161,23 +144,17 @@ class Indexer
 
         $this->sendProgress(0, $totalItems);
 
-        $errors = [];
-
         foreach ($files as $i => $filePath) {
             echo $this->logMessage('  - Indexing ' . $filePath);
 
             try {
                 $this->indexFile($filePath);
             } catch (Indexer\IndexingFailedException $e) {
-                $errors = array_merge($errors, $e->getErrors());
-
                 $this->logMessage('    - ERROR: Indexing failed due to parsing errors!');
             }
 
             $this->sendProgress($i+1, $totalItems);
         }
-
-        return $errors;
     }
 
     /**
@@ -194,25 +171,34 @@ class Indexer
             throw new Indexer\IndexingFailedException();
         }
 
+        try {
+            $nodes = $this->getParser()->parse($code);
+
+            if ($nodes === null) {
+                throw new Error('Unknown syntax error encountered');
+            }
+
+            $outlineIndexingVisitor = new Indexer\OutlineIndexingVisitor();
+            $useStatementFetchingVisitor = new Indexer\UseStatementFetchingVisitor();
+
+            $traverser = new NodeTraverser(false);
+            $traverser->addVisitor($outlineIndexingVisitor);
+            $traverser->addVisitor($useStatementFetchingVisitor);
+            $traverser->traverse($nodes);
+        } catch (Error $e) {
+            throw new Indexer\IndexingFailedException();
+        }
+
         $this->storage->beginTransaction();
 
         try {
-            $this->indexFileOutline($filePath, $code);
+            $this->indexVisitorResults($filePath, $outlineIndexingVisitor, $useStatementFetchingVisitor);
 
             $this->storage->commitTransaction();
-        } catch (Error $e) {
+        } catch (Exception $e) {
             $this->storage->rollbackTransaction();
 
-            throw new Indexer\IndexingFailedException([
-                [
-                    'file'        => $filePath,
-                    'startLine'   => $e->getStartLine() >= 0 ? $e->getStartLine() : null,
-                    'endLine'     => $e->getEndLine() >= 0 ? $e->getEndLine() : null,
-                    'startColumn' => $e->hasColumnInfo() ? $e->getStartColumn($code) : null,
-                    'endColumn'   => $e->hasColumnInfo() ? $e->getEndColumn($code) : null,
-                    'message'     => $e->getMessage()
-                ]
-            ]);
+            throw $e;
         }
     }
 
@@ -221,30 +207,38 @@ class Indexer
      */
     public function indexBuiltinItems()
     {
-        $this->logMessage('Indexing built-in constants...');
-        $this->indexBuiltinConstants();
+        $this->storage->beginTransaction();
 
-        $this->logMessage('Indexing built-in functions...');
-        $this->indexBuiltinFunctions();
+        try {
+            $this->logMessage('Indexing built-in constants...');
+            $this->indexBuiltinConstants();
 
-        $this->logMessage('Indexing built-in classes...');
-        $this->indexBuiltinClasses();
+            $this->logMessage('Indexing built-in functions...');
+            $this->indexBuiltinFunctions();
+
+            $this->logMessage('Indexing built-in classes...');
+            $this->indexBuiltinClasses();
+
+            $this->storage->commitTransaction();
+        } catch (Exception $e) {
+            $this->storage->rollbackTransaction();
+
+            throw $e;
+        }
     }
 
     /**
-     * Scans the specified directory, returning a mapping of file names to a list of FQSEN's contained in the file, each
-     * of which are then mapped to a list of FQSEN's they depend on. Only files that have actually been updated since
+     * Scans the specified directory, returning a list of file names. Only files that have actually been updated since
      * the previous index will be retrieved by default.
      *
      * @param string $directory
      * @param bool   $isIncremental Whether to only return files modified since their last index (or otherwise: all
      *                              files).
      *
-     * @return array
+     * @return string[]
      */
     protected function scan($directory, $isIncremental = true)
     {
-        $fileClassMap = [];
         $fileModifiedMap = $this->storage->getFileModifiedMap();
 
         $dirIterator = new RecursiveDirectoryIterator(
@@ -258,6 +252,8 @@ class Indexer
             RecursiveIteratorIterator::CATCH_GET_CHILD
         );
 
+        $files = [];
+
         /** @var \DirectoryIterator $fileInfo */
         foreach ($iterator as $filename => $fileInfo) {
             if ($fileInfo->getExtension() !== 'php') {
@@ -268,102 +264,11 @@ class Indexer
              || !isset($fileModifiedMap[$filename])
              || $fileInfo->getMTime() > $fileModifiedMap[$filename]->getTimestamp()
             ) {
-                $dependencies = [];
-
-                try {
-                    $dependencies = $this->getFqsenDependenciesForFile($filename);
-                } catch (Error $e) {
-
-                }
-
-                $fileClassMap[$filename] = $dependencies;
+                $files[] = $filename;
             }
         }
 
-        return $fileClassMap;
-    }
-
-    /**
-     * Sorts the specified result set from the {@see scan} method to ensure that files containing structural elements
-     * that depend on other structural elements end up after their dependencies in the list.
-     *
-     * @param array $scanResult
-     *
-     * @return array A list of files, sorted in such a way that dependencies are listed before their dependents.
-     */
-    protected function getFilesSortedByDependenciesFromScanResult(array $scanResult)
-    {
-        $result = [];
-
-        // Build a list of all FQSEN's that we received.
-        $fullFqsenList = [];
-
-        foreach ($scanResult as $filename => $fqsens) {
-            foreach ($fqsens as $fqsen => $dependencyFqsens) {
-                $fullFqsenList[$fqsen] = true;
-            }
-        }
-
-        // See also https://github.com/marcj/topsort.php .
-        $topologicalSorter = new \MJS\TopSort\Implementations\GroupedStringSort();
-
-        foreach ($scanResult as $filename => $fqsens) {
-            if (empty($fqsens)) {
-                $result[] = $filename; // This file doesn't need sorting, index it first.
-                continue;
-            }
-
-            foreach ($fqsens as $fqsen => $dependencyFqsens) {
-                $dependencyList = [];
-
-                foreach ($dependencyFqsens as $dependencyFqsen) {
-                    // The topological sorter requires that, before sorting, all dependencies actually exist. For full
-                    // indexes, this will (should) be the case, but when doing an incremental index, we may only have a
-                    // couple of files that need to be indexed and things such as base classes might not need to be
-                    // reindexed.
-                    if (isset($fullFqsenList[$dependencyFqsen])) {
-                        $dependencyList[] = $dependencyFqsen;
-                    }
-                }
-
-                $topologicalSorter->add($fqsen, $filename, $dependencyList);
-            }
-        }
-
-        $sortedDependencies = $topologicalSorter->sort();
-
-        foreach ($topologicalSorter->getGroups() as $group) {
-            $result[] = $group->type;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Retrieves a list of FQSENs in the specified file along with their dependencies.
-     *
-     * @throws Error When the file could not be parsed.
-     *
-     * @return array
-     */
-    protected function getFqsenDependenciesForFile($filename)
-    {
-        $nodes = [];
-        $parser = $this->getParser();
-
-        $nodes = $parser->parse(@file_get_contents($filename));
-
-        if ($nodes === null) {
-            throw new Error('Unknown syntax error encountered');
-        }
-
-        $dependencyFetchingVisitor = new Indexer\DependencyFetchingVisitor();
-
-        $traverser = new NodeTraverser(false);
-        $traverser->addVisitor($dependencyFetchingVisitor);
-        $traverser->traverse($nodes);
-
-        return $dependencyFetchingVisitor->getFqsenDependencyMap();
+        return $files;
     }
 
     /**
@@ -373,15 +278,11 @@ class Indexer
     {
         $fileModifiedMap = $this->storage->getFileModifiedMap();
 
-        foreach ($this->storage->getFileModifiedMap() as $filename => $indexedTime) {
-            if (!file_exists($filename)) {
-                $this->logMessage('  - ' . $filename);
+        foreach ($this->storage->getFileModifiedMap() as $fileName => $indexedTime) {
+            if (!file_exists($fileName)) {
+                $this->logMessage('  - ' . $fileName);
 
-                $id = $this->storage->getFileId($filename);
-
-                if ($id) {
-                    $this->storage->deleteFile($id);
-                }
+                $this->storage->deleteFile($fileName);
             }
         }
     }
@@ -433,7 +334,7 @@ class Indexer
 
                 // Requires PHP >= 7.
                 if (method_exists($function, 'getReturnType')) {
-                    $returnTYpe = $function->getReturnType();
+                    $returnType = $function->getReturnType();
                 }
 
                 $functionId = $this->storage->insert(IndexStorageItemEnum::FUNCTIONS, [
@@ -595,7 +496,7 @@ class Indexer
                     $type = $param->getType();
                 }
 
-                $parameters[] = [
+                $parameterData = [
                     'name'        => $param->getName(),
                     'type'        => (string) $type,
                     'fullType'    => (string) $type,
@@ -603,6 +504,18 @@ class Indexer
                     'isVariadic'  => $isVariadic,
                     'isOptional'  => $param->isOptional()
                 ];
+
+                if (!isset($parameterData['name'])) {
+                    $this->logMessage(
+                        '  - WARNING: Ignoring malformed method parameters for ' . $method->getName()
+                    );
+
+                    // Some PHP classes somehow contain parameters that have no name. An example of this is P4, which
+                    // contains methods such as __get and __set that have parameters without a name. Ignore these.
+                    continue;
+                }
+
+                $parameters[] = $parameterData;
             }
 
             // Requires PHP >= 7.0.
@@ -653,94 +566,64 @@ class Indexer
     }
 
     /**
-     * Indexes the outline of the specified file.
+     * Indexes the results of the visitors (the outline of the specified file).
      *
      * The outline consists of functions, structural elements (classes, interfaces, traits, ...), ... contained within
      * the file. For structural elements, this also includes (direct) members, information about the parent class,
      * used traits, etc.
      *
-     * @param string $filename
-     * @param string $code
-     *
-     * @throws Error When the file could not be parsed.
+     * @param string                              $fileName
+     * @param Indexer\OutlineIndexingVisitor      $outlineIndexingVisitor
+     * @param Indexer\UseStatementFetchingVisitor $useStatementFetchingVisitor
      */
-    protected function indexFileOutline($filename, $code)
-    {
-        $nodes = $this->getParser()->parse($code);
+    protected function indexVisitorResults(
+        $fileName,
+        Indexer\OutlineIndexingVisitor $outlineIndexingVisitor,
+        Indexer\UseStatementFetchingVisitor $useStatementFetchingVisitor
+    ) {
+         $this->storage->deleteFile($fileName);
 
-        if ($nodes === null) {
-            throw new Error('Unknown syntax error encountered');
-        }
+         $fileId = $this->storage->insert(IndexStorageItemEnum::FILES, [
+             'path'         => $fileName,
+             'indexed_time' => (new DateTime())->format('Y-m-d H:i:s')
+         ]);
 
-        $outlineIndexingVisitor = new Indexer\OutlineIndexingVisitor();
-        $useStatementFetchingVisitor = new Indexer\UseStatementFetchingVisitor();
+         foreach ($outlineIndexingVisitor->getStructures() as $fqsen => $structure) {
+             $this->indexStructure(
+                 $structure,
+                 $fileId,
+                 $fqsen,
+                 false,
+                 $useStatementFetchingVisitor
+             );
+         }
 
-        $traverser = new NodeTraverser(false);
-        $traverser->addVisitor($outlineIndexingVisitor);
-        $traverser->addVisitor($useStatementFetchingVisitor);
-        $traverser->traverse($nodes);
+         foreach ($outlineIndexingVisitor->getGlobalFunctions() as $function) {
+             $this->indexFunction($function, $fileId, null, null, false, $useStatementFetchingVisitor);
+         }
 
-        $fileId = $this->storage->getFileId($filename);
+         foreach ($outlineIndexingVisitor->getGlobalConstants() as $constant) {
+             $this->indexConstant($constant, $fileId, null, $useStatementFetchingVisitor);
+         }
 
-        $time = (new DateTime())->format('Y-m-d H:i:s');
+         foreach ($useStatementFetchingVisitor->getNamespaces() as $namespace) {
+             $namespaceId = $this->storage->insert(IndexStorageItemEnum::FILES_NAMESPACES, [
+                 'start_line'  => $namespace['startLine'],
+                 'end_line'    => $namespace['endLine'],
+                 'namespace'   => $namespace['name'],
+                 'file_id'    => $fileId
+             ]);
 
-        if ($fileId) {
-            $this->storage->deletePropertiesByFileId($fileId);
-            $this->storage->deleteConstantsByFileId($fileId);
-            $this->storage->deleteFunctionsByFileId($fileId);
-            $this->storage->deleteNamespacesByFileId($fileId);
-
-            $this->storage->update(IndexStorageItemEnum::FILES, $fileId, [
-                'indexed_time' => $time
-            ]);
-        } else {
-            $fileId = $this->storage->insert(IndexStorageItemEnum::FILES, [
-                'path'         => $filename,
-                'indexed_time' => $time
-            ]);
-        }
-
-        $indexedSeIds = [];
-
-        foreach ($outlineIndexingVisitor->getStructures() as $fqsen => $structure) {
-            $indexedSeIds[] = $this->indexStructure(
-                $structure,
-                $fileId,
-                $fqsen,
-                false,
-                $useStatementFetchingVisitor
-            );
-        }
-
-        foreach ($outlineIndexingVisitor->getGlobalFunctions() as $function) {
-            $this->indexFunction($function, $fileId, null, null, false, $useStatementFetchingVisitor);
-        }
-
-        foreach ($outlineIndexingVisitor->getGlobalConstants() as $constant) {
-            $this->indexConstant($constant, $fileId, null, $useStatementFetchingVisitor);
-        }
-
-        foreach ($useStatementFetchingVisitor->getNamespaces() as $namespace) {
-            $namespaceId = $this->storage->insert(IndexStorageItemEnum::FILES_NAMESPACES, [
-                'start_line'  => $namespace['startLine'],
-                'end_line'    => $namespace['endLine'],
-                'namespace'   => $namespace['name'],
-                'file_id'    => $fileId
-            ]);
-
-            foreach ($namespace['useStatements'] as $useStatement) {
-                $this->storage->insert(IndexStorageItemEnum::FILES_NAMESPACES_IMPORTS, [
-                    'line'               => $useStatement['line'],
-                    'alias'              => $useStatement['alias'] ?: null,
-                    'fqsen'              => $useStatement['fqsen'],
-                    'files_namespace_id' => $namespaceId
-                ]);
-            }
-        }
-
-        // Remove structural elements that are no longer in this file.
-        $this->storage->deleteExcludedStructuresByFileId($fileId, $indexedSeIds);
-    }
+             foreach ($namespace['useStatements'] as $useStatement) {
+                 $this->storage->insert(IndexStorageItemEnum::FILES_NAMESPACES_IMPORTS, [
+                     'line'               => $useStatement['line'],
+                     'alias'              => $useStatement['alias'] ?: null,
+                     'fqsen'              => $useStatement['fqsen'],
+                     'files_namespace_id' => $namespaceId
+                 ]);
+             }
+         }
+     }
 
     /**
      * Indexes the specified structural element.
@@ -764,6 +647,7 @@ class Indexer
 
         $documentation = $this->getDocParser()->parse($rawData['docComment'], [
             DocParser::DEPRECATED,
+            DocParser::ANNOTATION,
             DocParser::DESCRIPTION,
             DocParser::METHOD,
             DocParser::PROPERTY,
@@ -772,89 +656,51 @@ class Indexer
         ], $rawData['name']);
 
         $seData = [
-            'name'                       => $rawData['name'],
-            'fqsen'                      => $fqsen,
-            'file_id'                    => $fileId,
-            'start_line'                 => $rawData['startLine'],
-            'end_line'                   => $rawData['endLine'],
+            'name'              => $rawData['name'],
+            'fqsen'             => $fqsen,
+            'file_id'           => $fileId,
+            'start_line'        => $rawData['startLine'],
+            'end_line'          => $rawData['endLine'],
             'structure_type_id' => $structureTypeMap[$rawData['type']],
-            'is_abstract'                => (isset($rawData['isAbstract']) && $rawData['isAbstract']) ? 1 : 0,
-            'is_deprecated'              => $documentation['deprecated'] ? 1 : 0,
-            'is_builtin'                 => $isBuiltin ? 1 : 0,
-            'has_docblock'               => empty($rawData['docComment']) ? 0 : 1,
-            'short_description'          => $documentation['descriptions']['short'],
-            'long_description'           => $documentation['descriptions']['long']
+            'is_abstract'       => (isset($rawData['isAbstract']) && $rawData['isAbstract']) ? 1 : 0,
+            'is_deprecated'     => $documentation['deprecated'] ? 1 : 0,
+            'is_annotation'     => $documentation['annotation'] ? 1 : 0,
+            'is_builtin'        => $isBuiltin ? 1 : 0,
+            'has_docblock'      => empty($rawData['docComment']) ? 0 : 1,
+            'short_description' => $documentation['descriptions']['short'],
+            'long_description'  => $documentation['descriptions']['long']
         ];
 
-        $seId = $this->storage->getStructureId($fqsen);
+        $this->storage->deleteStructure($this->getTypeAnalyzer()->getNormalizedFqcn($fqsen));
 
-        if ($seId) {
-            $this->storage->deletePropertiesFor($seId);
-            $this->storage->deleteMethodsFor($seId);
-            $this->storage->deleteConstantsFor($seId);
-
-            $this->storage->deleteParentLinksFor($seId);
-            $this->storage->deleteInterfaceLinksFor($seId);
-            $this->storage->deleteTraitLinksFor($seId);
-
-            $this->storage->update(IndexStorageItemEnum::STRUCTURES, $seId, $seData);
-        } else {
-            $seId = $this->storage->insert(IndexStorageItemEnum::STRUCTURES, $seData);
-        }
+        $seId = $this->storage->insert(IndexStorageItemEnum::STRUCTURES, $seData);
 
         $accessModifierMap = $this->getAccessModifierMap();
 
         if (isset($rawData['parents'])) {
             foreach ($rawData['parents'] as $parent) {
-                $parentSeId = $this->storage->getStructureId($parent);
-
-                if ($parentSeId) {
-                    $this->storage->insert(IndexStorageItemEnum::STRUCTURES_PARENTS_LINKED, [
-                        'structure_id'        => $seId,
-                        'linked_structure_id' => $parentSeId
-                    ]);
-                } else {
-                    $this->logMessage(
-                        '  - WARNING: Could not find a record for parent FQSEN ' .
-                        $parent . ' of FQSEN ' . $fqsen
-                    );
-                }
+                $this->storage->insert(IndexStorageItemEnum::STRUCTURES_PARENTS_LINKED, [
+                    'structure_id'           => $seId,
+                    'linked_structure_fqsen' => $this->getTypeAnalyzer()->getNormalizedFqcn($parent)
+                ]);
             }
         }
 
         if (isset($rawData['interfaces'])) {
             foreach ($rawData['interfaces'] as $interface) {
-                $interfaceSeId = $this->storage->getStructureId($interface);
-
-                if ($interfaceSeId) {
-                    $this->storage->insert(IndexStorageItemEnum::STRUCTURES_INTERFACES_LINKED, [
-                        'structure_id'        => $seId,
-                        'linked_structure_id' => $interfaceSeId
-                    ]);
-                } else {
-                    $this->logMessage(
-                        '  - WARNING: Could not find a record for the interface ' .
-                        $interface . ' of FQSEN ' . $fqsen
-                    );
-                }
+                $this->storage->insert(IndexStorageItemEnum::STRUCTURES_INTERFACES_LINKED, [
+                    'structure_id'           => $seId,
+                    'linked_structure_fqsen' => $this->getTypeAnalyzer()->getNormalizedFqcn($interface)
+                ]);
             }
         }
 
         if (isset($rawData['traits'])) {
             foreach ($rawData['traits'] as $trait) {
-                $traitSeId = $this->storage->getStructureId($trait);
-
-                if ($traitSeId) {
-                    $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_LINKED, [
-                        'structure_id'        => $seId,
-                        'linked_structure_id' => $traitSeId
-                    ]);
-                } else {
-                    $this->logMessage(
-                        '  - WARNING: Could not find a record for the trait ' .
-                        $trait . ' of FQSEN ' . $fqsen
-                    );
-                }
+                $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_LINKED, [
+                    'structure_id'           => $seId,
+                    'linked_structure_fqsen' => $this->getTypeAnalyzer()->getNormalizedFqcn($trait)
+                ]);
             }
         }
 
@@ -862,45 +708,23 @@ class Indexer
             foreach ($rawData['traitAliases'] as $traitAlias) {
                 $accessModifier = $this->parseAccessModifier($traitAlias, true);
 
-                $traitSeId = null;
-
-                if ($traitAlias['trait']) {
-                    $traitSeId = $this->storage->getStructureId($traitAlias['trait']);
-
-                    if (!$traitSeId) {
-                        $this->logMessage(
-                            '  - WARNING: Could not find a record for the trait ' .
-                            $traitAlias['trait'] . ' of FQSEN ' . $fqsen
-                        );
-                    }
-                }
-
                 $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_ALIASES, [
-                    'structure_id'       => $seId,
-                    'trait_structure_id' => $traitSeId,
-                    'access_modifier_id'          => $accessModifier ? $accessModifierMap[$accessModifier] : null,
-                    'name'                        => $traitAlias['name'],
-                    'alias'                       => $traitAlias['alias']
+                    'structure_id'          => $seId,
+                    'trait_structure_fqsen' => $this->getTypeAnalyzer()->getNormalizedFqcn($traitAlias['trait']),
+                    'access_modifier_id'    => $accessModifier ? $accessModifierMap[$accessModifier] : null,
+                    'name'                  => $traitAlias['name'],
+                    'alias'                 => $traitAlias['alias']
                 ]);
             }
         }
 
         if (isset($rawData['traitPrecedences'])) {
             foreach ($rawData['traitPrecedences'] as $traitPrecedence) {
-                $traitSeId = $this->storage->getStructureId($traitPrecedence['trait']);
-
-                if ($traitSeId) {
-                    $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_PRECEDENCES, [
-                        'structure_id'       => $seId,
-                        'trait_structure_id' => $traitSeId,
-                        'name'                        => $traitPrecedence['name']
-                    ]);
-                } else {
-                    $this->logMessage(
-                        '  - WARNING: Could not find a record for the trait ' .
-                        $traitPrecedence['trait'] . ' of FQSEN ' . $fqsen
-                    );
-                }
+                $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_PRECEDENCES, [
+                    'structure_id'          => $seId,
+                    'trait_structure_fqsen' => $this->getTypeAnalyzer()->getNormalizedFqcn($traitPrecedence['trait']),
+                    'name'                  => $traitPrecedence['name']
+                ]);
             }
         }
 
@@ -1092,6 +916,7 @@ class Indexer
 
         $this->storage->insert(IndexStorageItemEnum::CONSTANTS, [
             'name'                  => $rawData['name'],
+            'fqsen'                 => isset($rawData['fqsen']) ? $rawData['fqsen'] : null,
             'file_id'               => $fileId,
             'start_line'            => $rawData['startLine'],
             'end_line'              => $rawData['endLine'],
@@ -1143,10 +968,13 @@ class Indexer
             }
         }
 
-        $returnType = isset($rawData['returnType']) ? $rawData['returnType'] : null;
-        $returnType = $returnType ?: ($documentation ? $documentation['var']['type'] : null);
-
-        $fullReturnType = isset($rawData['fullReturnType']) ? $rawData['fullReturnType'] : null;
+        if ($documentation && $documentation['var']['type']) {
+            $returnType = $documentation['var']['type'];
+            $fullReturnType = null;
+        } else {
+            $returnType = isset($rawData['returnType']) ? $rawData['returnType'] : null;
+            $fullReturnType = isset($rawData['fullReturnType']) ? $rawData['fullReturnType'] : null;
+        }
 
         if (!$fullReturnType) {
             $fullReturnType = $this->getFullTypeForDocblockType(
@@ -1201,8 +1029,13 @@ class Indexer
             DocParser::RETURN_VALUE
         ], $rawData['name']);
 
-        $returnType = $rawData['returnType'] ?: ($documentation ? $documentation['return']['type'] : null);
-        $fullReturnType = $rawData['fullReturnType'];
+        if ($documentation && $documentation['return']['type']) {
+            $returnType = $documentation['return']['type'];
+            $fullReturnType = null;
+        } else {
+            $returnType = $rawData['returnType'];
+            $fullReturnType = $rawData['fullReturnType'];
+        }
 
         if (!$fullReturnType) {
             $fullReturnType = $this->getFullTypeForDocblockType(
@@ -1220,6 +1053,7 @@ class Indexer
 
         $functionId = $this->storage->insert(IndexStorageItemEnum::FUNCTIONS, [
             'name'                  => $rawData['name'],
+            'fqsen'                 => isset($rawData['fqsen']) ? $rawData['fqsen'] : null,
             'file_id'               => $fileId,
             'start_line'            => $rawData['startLine'],
             'end_line'              => $rawData['endLine'],
@@ -1245,8 +1079,13 @@ class Indexer
             $parameterDoc = isset($documentation['params'][$parameterKey]) ?
                 $documentation['params'][$parameterKey] : null;
 
-            $type = $parameter['type'] ?: ($parameterDoc ? $parameterDoc['type'] : null);
-            $fullType = $parameter['fullType'];
+            if ($parameterDoc) {
+                $type = $parameterDoc['type'];
+                $fullType = null;
+            } else {
+                $type = $parameter['type'];
+                $fullType = $parameter['fullType'];
+            }
 
             if (!$fullType) {
                 $fullType = $this->getFullTypeForDocblockType(
@@ -1424,7 +1263,6 @@ class Indexer
         return $this->structureTypeMap;
     }
 
-
     /**
      * @return Parser
      */
@@ -1437,7 +1275,9 @@ class Indexer
                 ]
             ]);
 
-            $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer);
+            $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer, [
+                'throwOnError' => false
+            ]);
         }
 
         return $this->parser;

@@ -42,79 +42,84 @@ class Service
     ###*
      * Retrieves a list of available classes.
      *
-     * @param {boolean} async
-     *
-     * @return {Promise|Object} If the operation is asynchronous, a Promise, otherwise the result as object.
+     * @return {Promise}
     ###
-    getClassList: (async = false) ->
-        return @proxy.getClassList(async)
+    getClassList: () ->
+        return @proxy.getClassList()
 
     ###*
      * Retrieves a list of available classes in the specified file.
      *
-     * @param {string}  file
-     * @param {boolean} async
+     * @param {string} file
      *
-     * @return {Promise|Object} If the operation is asynchronous, a Promise, otherwise the result as object.
+     * @return {Promise}
     ###
-    getClassListForFile: (file, async = false) ->
-        return @proxy.getClassListForFile(file, async)
+    getClassListForFile: (file) ->
+        return @proxy.getClassListForFile(file)
 
     ###*
      * Retrieves a list of available global constants.
      *
-     * @param {boolean} async
-     *
-     * @return {Promise|Object} If the operation is asynchronous, a Promise, otherwise the result as object.
+     * @return {Promise}
     ###
-    getGlobalConstants: (async = false) ->
-        return @proxy.getGlobalConstants(async)
+    getGlobalConstants: () ->
+        return @proxy.getGlobalConstants()
 
     ###*
      * Retrieves a list of available global functions.
      *
-     * @param {boolean} async
-     *
-     * @return {Promise|Object} If the operation is asynchronous, a Promise, otherwise the result as object.
+     * @return {Promise}
     ###
-    getGlobalFunctions: (async = false) ->
-        return @proxy.getGlobalFunctions(async)
+    getGlobalFunctions: () ->
+        return @proxy.getGlobalFunctions()
 
     ###*
      * Retrieves a list of available members of the class (or interface, trait, ...) with the specified name.
      *
-     * @param {string}  className
-     * @param {boolean} async
+     * @param {string} className
      *
-     * @return {Promise|Object} If the operation is asynchronous, a Promise, otherwise the result as object.
+     * @return {Promise}
     ###
-    getClassInfo: (className, async = false) ->
-        return @proxy.getClassInfo(className, async)
+    getClassInfo: (className) ->
+        return @proxy.getClassInfo(className)
 
     ###*
      * Resolves a local type in the specified file, based on use statements and the namespace.
      *
      * @param {string}  file
-     * @param {number}  line  The line the type is located at. The first line is 1, not 0.
+     * @param {number}  line The line the type is located at. The first line is 1, not 0.
      * @param {string}  type
-     * @param {boolean} async
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    resolveType: (file, line, type, async = false) ->
-        return @proxy.resolveType(file, line, type, async)
+    resolveType: (file, line, type) ->
+        return @proxy.resolveType(file, line, type)
+
+    ###*
+     * Localizes a type to the specified file, making it relative to local use statements, if possible. If not possible,
+     * null is returned.
+     *
+     * @param {string}  file
+     * @param {number}  line The line the type is located at. The first line is 1, not 0.
+     * @param {string}  type
+     *
+     * @return {Promise}
+    ###
+    localizeType: (file, line, type) ->
+        return @proxy.localizeType(file, line, type)
 
     ###*
      * Performs a semantic lint of the specified file.
      *
      * @param {string}      file
      * @param {string|null} source The source code of the file to index. May be null if a directory is passed instead.
-     * @param {boolean}     async
+     * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses,
+     *                              noDocblockCorrectness and noUnusedUseStatements are supported.
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    semanticLint: (file, source, async = false) ->
-        return @proxy.semanticLint(file, source, async)
+    semanticLint: (file, source, options = {}) ->
+        return @proxy.semanticLint(file, source, options)
 
     ###*
      * Fetches all available variables at a specific location.
@@ -122,12 +127,11 @@ class Service
      * @param {string|null} file   The path to the file to examine. May be null if the source parameter is passed.
      * @param {string|null} source The source code to search. May be null if a file is passed instead.
      * @param {number}      offset The character offset into the file to examine.
-     * @param {boolean}     async
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    getAvailableVariablesByOffset: (file, source, offset, async = false) ->
-        return @proxy.getAvailableVariables(file, source, offset, async)
+    getAvailableVariablesByOffset: (file, source, offset) ->
+        return @proxy.getAvailableVariables(file, source, offset)
 
     ###*
      * Fetches the type of the specified variable at the specified location.
@@ -136,12 +140,11 @@ class Service
      * @param {string}      file   The path to the file to examine.
      * @param {string|null} source The source code to search. May be null if a file is passed instead.
      * @param {number}      offset The character offset into the file to examine.
-     * @param {boolean}     async
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    getVariableTypeByOffset: (name, file, source, offset, async = false) ->
-        return @proxy.getVariableType(name, file, source, offset, async)
+    getVariableTypeByOffset: (name, file, source, offset) ->
+        return @proxy.getVariableType(name, file, source, offset)
 
     ###*
      * Deduces the resulting type of an expression based on its parts.
@@ -150,12 +153,11 @@ class Service
      * @param {string}      file   The path to the file to examine.
      * @param {string|null} source The source code to search. May be null if a file is passed instead.
      * @param {number}      offset The character offset into the file to examine.
-     * @param {boolean}     async
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    deduceType: (parts, file, source, offset, async = false) ->
-        return @proxy.deduceType(parts, file, source, offset, async)
+    deduceType: (parts, file, source, offset) ->
+        return @proxy.deduceType(parts, file, source, offset)
 
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
@@ -212,22 +214,10 @@ class Service
      *
      * @param {TextEditor} editor         The editor that contains the class (needed to resolve relative class names).
      * @param {Point}      bufferPosition
-     * @param {boolean}    async
      *
-     * @return {Promise|string|null}
+     * @return {Promise}
     ###
-    determineCurrentClassName: (editor, bufferPosition, async = false) ->
-        path = editor.getPath()
-
-        if not async
-            classesInFile = @proxy.getClassListForFile(editor.getPath())
-
-            for name,classInfo of classesInFile
-                if bufferPosition.row >= classInfo.startLine and bufferPosition.row <= classInfo.endLine
-                    return name
-
-            return null
-
+    determineCurrentClassName: (editor, bufferPosition) ->
         return new Promise (resolve, reject) =>
             path = editor.getPath()
 
@@ -235,7 +225,7 @@ class Service
                 reject()
                 return
 
-            return @proxy.getClassListForFile(path, true).then (classesInFile) =>
+            return @getClassListForFile(path).then (classesInFile) =>
                 for name,classInfo of classesInFile
                     if bufferPosition.row >= classInfo.startLine and bufferPosition.row <= classInfo.endLine
                         resolve(name)
@@ -249,28 +239,26 @@ class Service
      * @param {TextEditor} editor         The editor.
      * @param {Point}      bufferPosition The location of the type.
      * @param {string}     type           The (local) type to resolve.
-     * @param {boolean}    async
      *
-     * @return {Promise|string|null}
+     * @return {Promise}
      *
      * @example In a file with namespace A\B, determining C could lead to A\B\C.
     ###
-    resolveTypeAt: (editor, bufferPosition, type, async = false) ->
-        return @resolveType(editor.getPath(), bufferPosition.row + 1, type, async)
+    resolveTypeAt: (editor, bufferPosition, type) ->
+        return @resolveType(editor.getPath(), bufferPosition.row + 1, type)
 
     ###*
      * Retrieves all variables that are available at the specified buffer position.
      *
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition
-     * @param {bool}       async
      *
-     * @return {Promise|Object}
+     * @return {Promise}
     ###
-    getAvailableVariables: (editor, bufferPosition, async = false) ->
+    getAvailableVariables: (editor, bufferPosition) ->
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
-        return @getAvailableVariablesByOffset(editor.getPath(), editor.getBuffer().getText(), offset, async)
+        return @getAvailableVariablesByOffset(editor.getPath(), editor.getBuffer().getText(), offset)
 
     ###*
      * Retrieves the type of a variable, relative to the context at the specified buffer location. Class names will
@@ -279,19 +267,15 @@ class Service
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition
      * @param {string}     name
-     * @param {boolean}    async
      *
-     * @return {Promise|string|null}
+     * @return {Promise}
     ###
-    getVariableType: (editor, bufferPosition, name, async = false) ->
+    getVariableType: (editor, bufferPosition, name) ->
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
-        bufferText = null
+        bufferText = editor.getBuffer().getText()
 
-        if async
-            bufferText = editor.getBuffer().getText()
-
-        result = @getVariableType(name, editor.getPath(), bufferText, offset, async)
+        result = @getVariableTypeByOffset(name, editor.getPath(), bufferText, offset)
 
         return null if not result
         return result
@@ -310,32 +294,32 @@ class Service
      *                                       is still writing code, e.g. "$this->foo()->b" would normally return the
      *                                       type (class) of 'b', as it is the last element, but as the user is still
      *                                       writing code, you may instead be interested in the type of 'foo()' instead.
-     * @param {boolean}    async
      *
      * @throws an error if one of the elements in the call stack does not exist, which can happen if the user is writing
      *         invalid code.
      *
-     * @return {Promise|string|null}
+     * @return {Promise}
      *
      * @example Invoking it on MyMethod::foo()->bar() will ask what class 'bar' is invoked on, which will whatever type
      *          foo returns.
     ###
-    getResultingTypeAt: (editor, bufferPosition, ignoreLastElement, async = false) ->
+    getResultingTypeAt: (editor, bufferPosition, ignoreLastElement) ->
         callStack = @parser.retrieveSanitizedCallStackAt(editor, bufferPosition)
 
         if ignoreLastElement
-            callStack.pop();
-
-        return null if not callStack or callStack.length == 0
+            callStack.pop()
 
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
-        bufferText = null
+        bufferText = editor.getBuffer().getText()
 
-        if async
-            bufferText = editor.getBuffer().getText()
+        if not callStack or callStack.length == 0
+            promise = new Promise (resolve, reject) ->
+                resolve(null)
 
-        return @deduceType(callStack, editor.getPath(), bufferText, offset, async)
+            return promise
+
+        return @deduceType(callStack, editor.getPath(), bufferText, offset)
 
     ###*
      * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
@@ -343,22 +327,17 @@ class Service
      *
      * @param {TextEditor} editor
      * @param {Point}      bufferPosition
-     * @param {boolean}    async
+     *
+     * @return {Promise} With elements 'callStack' (array) as well as 'argumentIndex' which denotes the argument in the
+     *                   parameter list the position is located at. Returns 'null' if not in a method or function call.
      *
      * @example "$this->test(1, function () {},| 2);" (where the vertical bar denotes the cursor position) will yield
      *          ['$this', 'test'].
-     *
-     * @return {Promise"Object|null} With elements 'callStack' (array) as well as 'argumentIndex' which denotes the
-     *                               argument in the parameter list the position is located at. Returns 'null' if not
-     *                               in a method or function call.
     ###
-    getInvocationInfoAt: (editor, bufferPosition, async = false) ->
-        result = @parser.getInvocationInfoAt(editor, bufferPosition)
-
-        if not async
-            return result
-
+    getInvocationInfoAt: (editor, bufferPosition) ->
         return new Promise (resolve, reject) =>
+            result = @parser.getInvocationInfoAt(editor, bufferPosition)
+
             resolve(result)
 
     ###*

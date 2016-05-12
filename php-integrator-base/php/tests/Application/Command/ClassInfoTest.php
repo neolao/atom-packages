@@ -57,6 +57,9 @@ class ClassInfoTest extends IndexedTest
             'isAbstract'         => false,
             'isBuiltin'          => false,
             'isDeprecated'       => false,
+            'isAnnotation'       => false,
+            'hasDocblock'        => true,
+            'hasDocumentation'   => true,
 
             'descriptions'       => [
                 'short' => 'This is the summary.',
@@ -76,6 +79,15 @@ class ClassInfoTest extends IndexedTest
             'properties'         => [],
             'methods'            => []
         ]);
+    }
+
+    public function testAnnotationClassIsCorrectlyPickedUp()
+    {
+        $fileName = 'AnnotationClass.php';
+
+        $output = $this->getClassInfo($fileName, 'A\AnnotationClass');
+
+        $this->assertTrue($output['isAnnotation']);
     }
 
     public function testDataIsCorrectForClassProperties()
@@ -138,6 +150,7 @@ class ClassInfoTest extends IndexedTest
 
         $this->assertEquals($output['methods']['testMethod'], [
             'name'               => 'testMethod',
+            'fqsen'              => null,
             'isBuiltin'          => false,
             'startLine'          => 19,
             'endLine'            => 22,
@@ -146,8 +159,8 @@ class ClassInfoTest extends IndexedTest
             'parameters'         => [
                 [
                     'name'        => 'firstParameter',
-                    'type'        => 'DateTime',
-                    'fullType'    => 'DateTime',
+                    'type'        => '\DateTime',
+                    'fullType'    => '\DateTime',
                     'description' => 'First parameter description.',
                     'isReference' => false,
                     'isVariadic'  => false,
@@ -232,6 +245,7 @@ class ClassInfoTest extends IndexedTest
 
         $this->assertEquals($output['constants']['TEST_CONSTANT'], [
             'name'               => 'TEST_CONSTANT',
+            'fqsen'              => null,
             'isBuiltin'          => false,
             'startLine'          => 14,
             'endLine'            => 14,
@@ -283,14 +297,14 @@ class ClassInfoTest extends IndexedTest
         $parentClassOutput = $this->getClassInfo($fileName, 'A\ParentClass');
         $anotherChildClassOutput = $this->getClassInfo($fileName, 'A\AnotherChildClass');
 
-        $this->assertEquals($childClassOutput['descriptions'], [
+        $this->assertEquals([
             'short' => 'This is the summary.',
             'long'  => 'This is a long description.'
-        ]);
+        ], $childClassOutput['descriptions']);
 
         $this->assertEquals(
-            $anotherChildClassOutput['descriptions']['long'],
-            'Pre. ' . $parentClassOutput['descriptions']['long'] . ' Post.'
+            'Pre. ' . $parentClassOutput['descriptions']['long'] . ' Post.',
+            $anotherChildClassOutput['descriptions']['long']
         );
     }
 
@@ -988,5 +1002,43 @@ class ClassInfoTest extends IndexedTest
             'resolvedType' => 'A\ParentClass',
             'description'  => null
         ]);
+    }
+
+    public function testMethodDocblockParameterTypesGetPrecedenceOverTypeHints()
+    {
+        $fileName = 'ClassMethodPrecedence.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['type']);
+        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['fullType']);
+        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['type']);
+        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['fullType']);
+    }
+
+    public function testMethodWithoutDocblockHasNullReturnType()
+    {
+        $fileName = 'ClassMethodNoDocblock.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertNull($output['methods']['testMethod']['parameters'][0]['type']);
+        $this->assertNull($output['methods']['testMethod']['parameters'][0]['fullType']);
+        $this->assertNull($output['methods']['testMethod']['return']['type']);
+        $this->assertNull($output['methods']['testMethod']['return']['resolvedType']);
+        $this->assertNull($output['properties']['testProperty']['return']['type']);
+        $this->assertNull($output['properties']['testProperty']['return']['resolvedType']);
+        $this->assertNull($output['constants']['TEST_CONSTANT']['return']['type']);
+        $this->assertNull($output['constants']['TEST_CONSTANT']['return']['resolvedType']);
+    }
+
+    /**
+     * @expectedException \PhpIntegrator\IndexDataAdapter\CircularDependencyException
+     */
+    public function testThrowsExceptionOnCircularDependency()
+    {
+        $fileName = 'CircularDependency.php';
+
+        $output = $this->getClassInfo($fileName, 'A\C');
     }
 }

@@ -79,22 +79,25 @@ class OutlineIndexingVisitor extends NameResolver
         $interfaces = [];
 
         foreach ($node->implements as $implementedName) {
-            $interfaces[] = $implementedName->toString();
+            $interfaces[] = $this->fetchClassName($implementedName);
         }
 
         $this->structures[$node->namespacedName->toString()] = [
-            'name'       => $node->name,
-            'type'       => 'class',
-            'startLine'  => $node->getLine(),
-            'endLine'    => $node->getAttribute('endLine'),
-            'isAbstract' => $node->isAbstract(),
-            'docComment' => $node->getDocComment() ? $node->getDocComment()->getText() : null,
-            'parents'    => $node->extends ? [$node->extends->toString()] : [],
-            'interfaces' => $interfaces,
-            'traits'     => [],
-            'methods'    => [],
-            'properties' => [],
-            'constants'  => []
+            'name'           => $node->name,
+            'fqcn'           => $node->namespacedName->toString(),
+            'type'           => 'class',
+            'startLine'      => $node->getLine(),
+            'endLine'        => $node->getAttribute('endLine'),
+            'startPosName'   => $node->getAttribute('startFilePos') ? $node->getAttribute('startFilePos') : null,
+            'endPosName'     => $node->getAttribute('startFilePos') ? ($node->getAttribute('startFilePos') + 1) : null,
+            'isAbstract'     => $node->isAbstract(),
+            'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null,
+            'parents'        => $node->extends ? [$this->fetchClassName($node->extends)] : [],
+            'interfaces'     => $interfaces,
+            'traits'         => [],
+            'methods'        => [],
+            'properties'     => [],
+            'constants'      => []
         ];
     }
 
@@ -114,20 +117,23 @@ class OutlineIndexingVisitor extends NameResolver
         $extendedInterfaces = [];
 
         foreach ($node->extends as $extends) {
-            $extendedInterfaces[] = $extends->toString();
+            $extendedInterfaces[] = $this->fetchClassName($extends);
         }
 
         $this->structures[$node->namespacedName->toString()] = [
-            'name'       => $node->name,
-            'type'       => 'interface',
-            'startLine'  => $node->getLine(),
-            'endLine'    => $node->getAttribute('endLine'),
-            'parents'    => $extendedInterfaces,
-            'docComment' => $node->getDocComment() ? $node->getDocComment()->getText() : null,
-            'traits'     => [],
-            'methods'    => [],
-            'properties' => [],
-            'constants'  => []
+            'name'           => $node->name,
+            'fqcn'           => $node->namespacedName->toString(),
+            'type'           => 'interface',
+            'startLine'      => $node->getLine(),
+            'endLine'        => $node->getAttribute('endLine'),
+            'startPosName'   => $node->getAttribute('startFilePos') ? $node->getAttribute('startFilePos') : null,
+            'endPosName'     => $node->getAttribute('startFilePos') ? ($node->getAttribute('startFilePos') + 1) : null,
+            'parents'        => $extendedInterfaces,
+            'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null,
+            'traits'         => [],
+            'methods'        => [],
+            'properties'     => [],
+            'constants'      => []
         ];
     }
 
@@ -145,14 +151,17 @@ class OutlineIndexingVisitor extends NameResolver
         $this->currentStructure = $node;
 
         $this->structures[$node->namespacedName->toString()] = [
-            'name'       => $node->name,
-            'type'       => 'trait',
-            'startLine'  => $node->getLine(),
-            'endLine'    => $node->getAttribute('endLine'),
-            'docComment' => $node->getDocComment() ? $node->getDocComment()->getText() : null,
-            'methods'    => [],
-            'properties' => [],
-            'constants'  => []
+            'name'           => $node->name,
+            'fqcn'           => $node->namespacedName->toString(),
+            'type'           => 'trait',
+            'startLine'      => $node->getLine(),
+            'endLine'        => $node->getAttribute('endLine'),
+            'startPosName'   => $node->getAttribute('startFilePos') ? $node->getAttribute('startFilePos') : null,
+            'endPosName'     => $node->getAttribute('startFilePos') ? ($node->getAttribute('startFilePos') + 1) : null,
+            'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null,
+            'methods'        => [],
+            'properties'     => [],
+            'constants'      => []
         ];
     }
 
@@ -165,7 +174,7 @@ class OutlineIndexingVisitor extends NameResolver
 
         foreach ($node->traits as $traitName) {
             $this->structures[$this->currentStructure->namespacedName->toString()]['traits'][] =
-                $traitName->toString();
+                $this->fetchClassName($traitName);
         }
 
         foreach ($node->adaptations as $adaptation) {
@@ -173,7 +182,7 @@ class OutlineIndexingVisitor extends NameResolver
                 $this->structures[$this->currentStructure->namespacedName->toString()]['traitAliases'][] = [
                     'name'                       => $adaptation->method,
                     'alias'                      => $adaptation->newName,
-                    'trait'                      => $adaptation->trait ? $adaptation->trait->toString() : null,
+                    'trait'                      => $adaptation->trait ? $this->fetchClassName($adaptation->trait) : null,
                     'isPublic'                   => ($adaptation->newModifier === 1),
                     'isPrivate'                  => ($adaptation->newModifier === 4),
                     'isProtected'                => ($adaptation->newModifier === 2),
@@ -182,7 +191,7 @@ class OutlineIndexingVisitor extends NameResolver
             } elseif ($adaptation instanceof Node\Stmt\TraitUseAdaptation\Precedence) {
                 $this->structures[$this->currentStructure->namespacedName->toString()]['traitPrecedences'][] = [
                     'name'  => $adaptation->method,
-                    'trait' => $adaptation->trait->toString()
+                    'trait' => $this->fetchClassName($adaptation->trait)
                 ];
             }
         }
@@ -194,15 +203,17 @@ class OutlineIndexingVisitor extends NameResolver
     protected function parseClassPropertyNode(Node\Stmt\Property $node)
     {
         foreach ($node->props as $property) {
-            $this->structures[$this->currentStructure->namespacedName->toString()]['properties'][] = [
-                'name'        => $property->name,
-                'startLine'   => $node->getLine(),
-                'endLine'     => $node->getAttribute('endLine'),
-                'isPublic'    => $node->isPublic(),
-                'isPrivate'   => $node->isPrivate(),
-                'isStatic'    => $node->isStatic(),
-                'isProtected' => $node->isProtected(),
-                'docComment'  => $node->getDocComment() ? $node->getDocComment()->getText() : null
+            $this->structures[$this->currentStructure->namespacedName->toString()]['properties'][$property->name] = [
+                'name'            => $property->name,
+                'startLine'       => $property->getLine(),
+                'endLine'         => $property->getAttribute('endLine'),
+                'startPosName'    => $property->getAttribute('startFilePos') ? $property->getAttribute('startFilePos') : null,
+                'endPosName'      => $property->getAttribute('startFilePos') ? ($property->getAttribute('startFilePos') + mb_strlen($property->name) + 1) : null,
+                'isPublic'        => $node->isPublic(),
+                'isPrivate'       => $node->isPrivate(),
+                'isStatic'        => $node->isStatic(),
+                'isProtected'     => $node->isProtected(),
+                'docComment'      => $node->getDocComment() ? $node->getDocComment()->getText() : null
             ];
         }
     }
@@ -212,35 +223,10 @@ class OutlineIndexingVisitor extends NameResolver
      */
     protected function parseFunctionNode(Node\Stmt\Function_ $node)
     {
-        $parameters = [];
-
-        foreach ($node->params as $param) {
-            $localType = (string) $param->type;
-
-            parent::enterNode($node);
-
-            $parameters[] = [
-                'name'        => $param->name,
-                'type'        => $localType,
-                'fullType'    => (string) $param->type,
-                'isReference' => $param->byRef,
-                'isVariadic'  => $param->variadic,
-                'isOptional'  => $param->default ? true : false
-            ];
-        }
-
-        $localReturnType = (string) $node->getReturnType();
-
         parent::enterNode($node);
 
-        $this->globalFunctions[] = [
-            'name'           => $node->name,
-            'startLine'      => $node->getLine(),
-            'endLine'        => $node->getAttribute('endLine'),
-            'returnType'     => $localReturnType,
-            'fullReturnType' => (string) $node->getReturnType(),
-            'parameters'     => $parameters,
-            'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null
+        $this->globalFunctions[$node->name] = $this->extractFunctionLikeNodeData($node) + [
+            'fqsen' => isset($node->namespacedName) ? $node->namespacedName->toString() : $node->name
         ];
     }
 
@@ -249,38 +235,79 @@ class OutlineIndexingVisitor extends NameResolver
      */
     protected function parseClassMethodNode(Node\Stmt\ClassMethod $node)
     {
+        $this->structures[$this->currentStructure->namespacedName->toString()]['methods'][$node->name] = $this->extractFunctionLikeNodeData($node) + [
+            'isPublic'       => $node->isPublic(),
+            'isPrivate'      => $node->isPrivate(),
+            'isProtected'    => $node->isProtected(),
+            'isAbstract'     => $node->isAbstract(),
+            'isStatic'       => $node->isStatic()
+        ];
+    }
+
+    /**
+     * @param Node\FunctionLike $node
+     */
+    protected function extractFunctionLikeNodeData(Node\FunctionLike $node)
+    {
         $parameters = [];
 
-        foreach ($node->params as $param) {
-            $localType = (string) $param->type;
+        foreach ($node->getParams() as $param) {
+            $localType = null;
 
-            parent::enterNode($node);
+            if ($param->type instanceof Node\Name) {
+                $localType = $this->fetchClassName($param->type);
+            } elseif ($param->type) {
+                $localType = (string) $param->type;
+            }
+
+            parent::enterNode($param);
+
+            $resolvedType = null;
+
+            if ($param->type instanceof Node\Name) {
+                $resolvedType = $this->fetchClassName($param->type);
+            } elseif ($param->type) {
+                $resolvedType = (string) $param->type;
+            }
 
             $parameters[] = [
                 'name'        => $param->name,
                 'type'        => $localType,
-                'fullType'    => (string) $param->type,
+                'fullType'    => $resolvedType,
                 'isReference' => $param->byRef,
                 'isVariadic'  => $param->variadic,
                 'isOptional'  => $param->default ? true : false
             ];
         }
 
-        $localReturnType = (string) $node->getReturnType();
+        $localType = null;
+        $nodeType = $node->getReturnType();
+
+        if ($nodeType instanceof Node\Name) {
+            $localType = $this->fetchClassName($nodeType);
+        } elseif ($nodeType) {
+            $localType = (string) $nodeType;
+        }
 
         parent::enterNode($node);
 
-        $this->structures[$this->currentStructure->namespacedName->toString()]['methods'][] = [
+        $resolvedType = null;
+        $nodeType = $node->getReturnType();
+
+        if ($nodeType instanceof Node\Name) {
+            $resolvedType = $this->fetchClassName($nodeType);
+        } elseif ($nodeType) {
+            $resolvedType = (string) $nodeType;
+        }
+
+        return [
             'name'           => $node->name,
             'startLine'      => $node->getLine(),
             'endLine'        => $node->getAttribute('endLine'),
-            'isPublic'       => $node->isPublic(),
-            'isPrivate'      => $node->isPrivate(),
-            'isProtected'    => $node->isProtected(),
-            'isAbstract'     => $node->isAbstract(),
-            'isStatic'       => $node->isStatic(),
-            'returnType'     => $localReturnType,
-            'fullReturnType' => (string) $node->getReturnType(),
+            'startPosName'   => $node->getAttribute('startFilePos') ? $node->getAttribute('startFilePos') : null,
+            'endPosName'     => $node->getAttribute('startFilePos') ? ($node->getAttribute('startFilePos') + 1) : null,
+            'returnType'     => $localType,
+            'fullReturnType' => $resolvedType,
             'parameters'     => $parameters,
             'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null
         ];
@@ -292,11 +319,13 @@ class OutlineIndexingVisitor extends NameResolver
     protected function parseClassConstantNode(Node\Stmt\ClassConst $node)
     {
         foreach ($node->consts as $const) {
-            $this->structures[$this->currentStructure->namespacedName->toString()]['constants'][] = [
-                'name'       => $const->name,
-                'startLine'  => $node->getLine(),
-                'endLine'    => $node->getAttribute('endLine'),
-                'docComment' => $node->getDocComment() ? $node->getDocComment()->getText() : null
+            $this->structures[$this->currentStructure->namespacedName->toString()]['constants'][$const->name] = [
+                'name'           => $const->name,
+                'startLine'      => $const->getLine(),
+                'endLine'        => $const->getAttribute('endLine'),
+                'startPosName'   => $const->getAttribute('startFilePos') ? $const->getAttribute('startFilePos') : null,
+                'endPosName'     => $const->getAttribute('startFilePos') ? ($const->getAttribute('startFilePos') + mb_strlen($const->name)) : null,
+                'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null
             ];
         }
     }
@@ -306,12 +335,17 @@ class OutlineIndexingVisitor extends NameResolver
      */
     protected function parseConstantNode(Node\Stmt\Const_ $node)
     {
+        parent::enterNode($node);
+
         foreach ($node->consts as $const) {
-            $this->globalConstants[] = [
-                'name'       => $const->name,
-                'startLine'  => $node->getLine(),
-                'endLine'    => $node->getAttribute('endLine'),
-                'docComment' => $node->getDocComment() ? $node->getDocComment()->getText() : null
+            $this->globalConstants[$const->name] = [
+                'name'           => $const->name,
+                'fqsen'          => isset($const->namespacedName) ? $const->namespacedName->toString() : $const->name,
+                'startLine'      => $const->getLine(),
+                'endLine'        => $const->getAttribute('endLine'),
+                'startPosName'   => $const->getAttribute('startFilePos') ? $const->getAttribute('startFilePos') : null,
+                'endPosName'     => $const->getAttribute('endFilePos') ? $const->getAttribute('endFilePos') : null,
+                'docComment'     => $node->getDocComment() ? $node->getDocComment()->getText() : null
             ];
         }
     }
@@ -324,6 +358,24 @@ class OutlineIndexingVisitor extends NameResolver
         if ($this->currentStructure === $node) {
             $this->currentStructure = null;
         }
+    }
+
+    /**
+     * Takes a class name and turns it into a string.
+     *
+     * @param Node\Name $name
+     *
+     * @return string
+     */
+    protected function fetchClassName(Node\Name $name)
+    {
+        $newName = (string) $name;
+
+        if ($name->isFullyQualified() && $newName[0] !== '\\') {
+            $newName = '\\' . $newName;
+        }
+
+        return $newName;
     }
 
     /**

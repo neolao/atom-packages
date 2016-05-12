@@ -77,11 +77,12 @@ CREATE TABLE structures(
     start_line                 integer unsigned,
     end_line                   integer unsigned,
 
-    structure_type_id integer NOT NULL,
+    structure_type_id          integer NOT NULL,
     short_description          text,
     long_description           text,
     is_builtin                 tinyint(1) NOT NULL DEFAULT 0,
     is_abstract                tinyint(1) NOT NULL DEFAULT 0,
+    is_annotation              tinyint(1) NOT NULL DEFAULT 0,
     is_deprecated              tinyint(1) NOT NULL DEFAULT 0,
     has_docblock               tinyint(1) NOT NULL DEFAULT 0,
 
@@ -98,48 +99,36 @@ CREATE INDEX `structures_fqsen` ON `structures` (`fqsen`);
 
 -- Contains references to parent structural elements for structural elements.
 CREATE TABLE structures_parents_linked(
-    structure_id        integer unsigned NOT NULL,
-    linked_structure_id integer unsigned NOT NULL,
+    structure_id           integer unsigned NOT NULL,
+    linked_structure_fqsen varchar(255) NOT NULL,
 
-    PRIMARY KEY(structure_id, linked_structure_id),
+    PRIMARY KEY(structure_id, linked_structure_fqsen),
 
     FOREIGN KEY(structure_id) REFERENCES structures(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    FOREIGN KEY(linked_structure_id) REFERENCES structures(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 -- Contains interfaces implemented by structural elements.
 CREATE TABLE structures_interfaces_linked(
-    structure_id        integer unsigned NOT NULL,
-    linked_structure_id integer unsigned NOT NULL,
+    structure_id           integer unsigned NOT NULL,
+    linked_structure_fqsen varchar(255) NOT NULL,
 
-    PRIMARY KEY(structure_id, linked_structure_id),
+    PRIMARY KEY(structure_id, linked_structure_fqsen),
 
     FOREIGN KEY(structure_id) REFERENCES structures(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    FOREIGN KEY(linked_structure_id) REFERENCES structures(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 -- Contains traits used by structural elements.
 CREATE TABLE structures_traits_linked(
-    structure_id        integer unsigned NOT NULL,
-    linked_structure_id integer unsigned NOT NULL,
+    structure_id           integer unsigned NOT NULL,
+    linked_structure_fqsen varchar(255) NOT NULL,
 
-    PRIMARY KEY(structure_id, linked_structure_id),
+    PRIMARY KEY(structure_id, linked_structure_fqsen),
 
     FOREIGN KEY(structure_id) REFERENCES structures(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    FOREIGN KEY(linked_structure_id) REFERENCES structures(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -148,20 +137,16 @@ CREATE TABLE structures_traits_linked(
 CREATE TABLE structures_traits_aliases(
     id                         integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 
-    structure_id       integer unsigned NOT NULL,
-    trait_structure_id integer unsigned,
-    access_modifier_id          integer unsigned,
+    structure_id               integer unsigned NOT NULL,
+    trait_structure_fqsen      varchar(255),
+    access_modifier_id         integer unsigned,
 
-    name                        varchar(255) NOT NULL,
-    alias                       varchar(255),
+    name                       varchar(255) NOT NULL,
+    alias                      varchar(255),
 
     FOREIGN KEY(structure_id) REFERENCES structures(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-
-    FOREIGN KEY(trait_structure_id) REFERENCES structures(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
 
     FOREIGN KEY(access_modifier_id) REFERENCES access_modifiers(id)
         ON DELETE RESTRICT
@@ -172,16 +157,12 @@ CREATE TABLE structures_traits_aliases(
 CREATE TABLE structures_traits_precedences(
     id                         integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 
-    structure_id       integer unsigned NOT NULL,
-    trait_structure_id integer unsigned NOT NULL,
+    structure_id               integer unsigned NOT NULL,
+    trait_structure_fqsen      varchar(255) NOT NULL,
 
-    name                        varchar(255) NOT NULL,
+    name                       varchar(255) NOT NULL,
 
     FOREIGN KEY(structure_id) REFERENCES structures(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    FOREIGN KEY(trait_structure_id) REFERENCES structures(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -191,6 +172,7 @@ CREATE TABLE functions(
     id                    integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 
     name                  varchar(255) NOT NULL,
+    fqsen                 varchar(255),
     file_id               integer,
     start_line            integer unsigned,
     end_line              integer unsigned,
@@ -207,7 +189,7 @@ CREATE TABLE functions(
     return_description    text,
 
     -- Specific to members.
-    structure_id integer unsigned,
+    structure_id          integer unsigned,
     access_modifier_id    integer unsigned,
 
     is_magic              tinyint(1),
@@ -288,7 +270,7 @@ CREATE TABLE properties(
     full_return_type      varchar(255),
     return_description    text,
 
-    structure_id integer unsigned NOT NULL,
+    structure_id          integer unsigned NOT NULL,
     access_modifier_id    integer unsigned NOT NULL,
 
     is_magic              tinyint(1) NOT NULL DEFAULT 0,
@@ -313,6 +295,7 @@ CREATE TABLE constants(
     id                    integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 
     name                  varchar(255) NOT NULL,
+    fqsen                 varchar(255),
     file_id               integer,
     start_line            integer unsigned,
     end_line              integer unsigned,

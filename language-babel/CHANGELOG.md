@@ -1,3 +1,49 @@
+### 2.20.8
+  - Fix handling of let/var/const creation of arrow functions. [Fixes #181](https://github.com/gandm/language-babel/issues/181)
+  - Fix function labels not allowing all possible characters. [Fixes #184](https://github.com/gandm/language-babel/issues/184)
+
+### 2.20.7
+  - Fix bad destructuring scopes in grammar.
+
+### 2.20.6
+  - Object literal prop:func-call mistakenly treated as prop:method-call.
+
+### 2.20.5
+  - Change JSX tag autocomplete snippet to only have a single anchor. [Fixes #180](https://github.com/gandm/language-babel/issues/180)
+
+### 2.20.4
+  - Fix Flow $JSXIntrinsics properties object being ignored in grammar.
+
+### 2.20.3
+  - Fix incorrect handling of case statement used as a return flow type [Fixes #179](https://github.com/gandm/language-babel/issues/179)
+
+### 2.20.2
+  - Refactored grammar regex reverted in 2.20.1
+
+### 2.20.1
+  - Revert small commit
+
+### 2.20.0
+  - Improve Flow and ASI support.
+
+### 2.19.4
+  - Regression JSX ignoring '-' chars as being valid in custom element names.
+
+### 2.19.3
+  - Added more cases as per 2.19.2 for function/arrow labels.
+
+### 2.19.2
+  - Parsing some ternaries as key/value arrow constants,
+
+### 2.19.1
+  - Incorrect JSX Start regex
+
+### 2.19.0
+  - Modified grammar scopes to highlight JSX components as classes. [Enhancement Request #173](https://github.com/gandm/language-babel/issues/173)
+
+### 2.18.7
+  - Add close brace and close array as let, var and const terminators.
+
 ### 2.18.6
   - Fix keys & values named type & declare being highlighted as js keywords. [Fixes #172 ](https://github.com/gandm/language-babel/issues/172)
   - Scope flow variant polymorph operators <+T,-V>

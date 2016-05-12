@@ -1,5 +1,64 @@
+## 0.9.3
+### Bugs fixed
+* Fixed variables nclosure use statements not having their type resolved properly in some corner cases.
+
+## 0.9.2
+### Bugs fixed
+* (Attempt to) fix indexing for built-in classes returning malformed method parameters.
+
+## 0.9.1
+### Bugs fixed
+* Fixed variables used in closure use statements not having their type resolved from the parent scope, for example:
+
+```php
+$a = new B();
+
+$closure = new function () use ($a) {
+    $a-> // Now correctly resolves to 'B' instead of not working at all.
+};
+```
+
+## 0.9.0
+### Features and enhancements
+* An error will now be shown if your SQLite version is out of date.
+* Unknown classes in docblocks will now actually be underlined instead of the structural element they were part of.
+* Indexing performance has been improved, especially the scanning phase (before the progress bar actually started filling) has been improved.
+* Indexing is now more fault-tolerant: in some cases, indexing will still be able to complete even if there are syntax errors in the file.
+* Docblock types now take precedence over type hints. The reason for this is that docblock types are optional and they can be more specific. Take for example, the fluent interface for setters, PHP does not allow specifying `static` or `$this` as a return type using scalar type hinting, but you may still want to automatically resolve to child classes when the setter is inherited:
+
+```php
+/**
+ * @return static
+ */
+public function setFoo(string $foo): self
+{
+
+}
+```
+
+### Bugs fixed
+* The return type of PHP 7 methods was not properly used as fallback.
+* If you (incorrectly) declare or define the same member twice in a class, one of them will now no longer be picked up as an override.
+* The `@inheritDoc` syntax without curly braces wasn't always correctly being handled, resulting in docblocks containing only them still being treated as actual docblocks that weren't inherited.
+
+### Changes for developers
+* Changes to the service
+  * Semantic linting can now lint docblock correctness.
+  * Semantic linting will now also return syntax errors.
+  * Support for calling most methods synchronously has been removed.
+  * Classes didn't return information about whether they have a docblock or documentation.
+  * When fetching class information, types were sometimes returned without their leading slash.
+  * Because of semantic linting now supporting syntax errors, the reindex command will no longer return them.
+  * Global constants and functions will now also return an FQSEN so you can deduce in what namespace they are located.
+  * When returning types such as `string[]`, the `fullType` was still trying to resolve the type as if it were a class type.
+  * The reindex command did not return false when indexing failed and the promise was, by consequence, not rejected.
+  * Added a new command `localizeType` to localize FQCN's based on use statements, turning them back into relative class names.
+  * The `semanticLint` method now takes an `options` object that allows you to disable certain parts of the linting process.
+  * Classes will now return information about whether they are usable as annotation or not (determined by an `@Annotation` tag in their docblock). This is non-standard, but is becoming more and more commonly used in the PHP world (e.g. Symfony and Doctrine).
+
 ## 0.8.2
 ### Bugs fixed
+* Circular dependencies should no longer freeze but show an error notification instead.
 * Fixed the argument index (used by the call tips package) not being correct for function calls containing SQL strings.
 
 ## 0.8.1
