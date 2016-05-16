@@ -1,7 +1,7 @@
 {
   "main": "./index.coffee",
   "name": "pretty-json",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Format JSON",
   "keywords": [
     "JSON",
@@ -31,10 +31,10 @@
     "url": "https://github.com/federomero/pretty-json/issues"
   },
   "homepage": "https://github.com/federomero/pretty-json#readme",
-  "_id": "pretty-json@1.0.3",
-  "_shasum": "7675216b299130d3cb4b7fbccbcf4b09c308ae36",
-  "_resolved": "file:../d-11638-75604-d5hdoi/package.tgz",
-  "_from": "../d-11638-75604-d5hdoi/package.tgz",
+  "_id": "pretty-json@1.1.0",
+  "_shasum": "74426221bc1c683eae4f9114a5852a6ad6950b4a",
+  "_resolved": "file:../d-116416-6941-1hdblx5/package.tgz",
+  "_from": "../d-116416-6941-1hdblx5/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -65,6 +65,20 @@
       }
     ],
     "extensions": {
+      ".json": [
+        "coffeelint.json",
+        "node_modules/json-bigint/node_modules/bignumber.js/package.json",
+        "node_modules/json-bigint/package.json",
+        "node_modules/json-stable-stringify/node_modules/jsonify/package.json",
+        "node_modules/json-stable-stringify/package.json",
+        "node_modules/jsonminify/.jsdoc3.json",
+        "node_modules/jsonminify/package.json",
+        "node_modules/jsonminify/report/files/minify_json_js/report.history.json",
+        "node_modules/jsonminify/report/files/minify_json_js/report.json",
+        "node_modules/jsonminify/report/report.history.json",
+        "node_modules/jsonminify/report/report.json",
+        "package.json"
+      ],
       ".coffee": [
         "index.coffee"
       ],
@@ -132,19 +146,6 @@
         "node_modules/jsonminify/report/files/minify_json_js/report.js",
         "node_modules/jsonminify/report/report.history.js",
         "node_modules/jsonminify/report/report.js"
-      ],
-      ".json": [
-        "node_modules/json-bigint/node_modules/bignumber.js/package.json",
-        "node_modules/json-bigint/package.json",
-        "node_modules/json-stable-stringify/node_modules/jsonify/package.json",
-        "node_modules/json-stable-stringify/package.json",
-        "node_modules/jsonminify/.jsdoc3.json",
-        "node_modules/jsonminify/package.json",
-        "node_modules/jsonminify/report/files/minify_json_js/report.history.json",
-        "node_modules/jsonminify/report/files/minify_json_js/report.json",
-        "node_modules/jsonminify/report/report.history.json",
-        "node_modules/jsonminify/report/report.json",
-        "package.json"
       ]
     },
     "folders": [

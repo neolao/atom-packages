@@ -1,7 +1,7 @@
 {
   "name": "language-babel",
   "main": "./lib/main",
-  "version": "2.20.8",
+  "version": "2.20.10",
   "description": "Babel JavaScript ES201x, React JSX & Flow Grammar & Transpiler",
   "keywords": [
     "es6",
@@ -51,10 +51,10 @@
     "url": "https://github.com/gandm/language-babel/issues"
   },
   "homepage": "https://github.com/gandm/language-babel#readme",
-  "_id": "language-babel@2.20.8",
-  "_shasum": "94ac458ccd1738a94bc9b6ce92d4003252568cf8",
-  "_resolved": "file:../d-116411-61940-ev4ue3/package.tgz",
-  "_from": "../d-116411-61940-ev4ue3/package.tgz",
+  "_id": "language-babel@2.20.10",
+  "_shasum": "f52e3c4712e3c34c101c0118fa7c2606900c3a73",
+  "_resolved": "file:../d-116416-6920-8snegm/package.tgz",
+  "_from": "../d-116416-6920-8snegm/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -260,7 +260,7 @@
       },
       {
         "name": "loose-envify",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "path": "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/node_modules/loose-envify/index.js"
       },
       {
@@ -420,7 +420,7 @@
       },
       {
         "name": "js-yaml",
-        "version": "3.6.0",
+        "version": "3.6.1",
         "path": "node_modules/js-yaml/index.js"
       },
       {
@@ -3583,6 +3583,7 @@
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/globals/index.js",
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/browser.js",
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/invariant.js",
+        "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/node_modules/loose-envify/cli.js",
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/node_modules/loose-envify/custom.js",
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/node_modules/loose-envify/index.js",
         "node_modules/babel-core/node_modules/babel-traverse/node_modules/invariant/node_modules/loose-envify/loose-envify.js",
