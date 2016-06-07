@@ -1,7 +1,66 @@
+### 2.26.3
+  - Fix for stack trace on missing argument on TextEditor close.
+  
+### 2.26.2
+  - Fix transpile on save ignored .babelrc sourceMaps option.
+
+### 2.26.1
+  - Fix specs for 2.26.0
+
+### 2.26.0
+  - Add option to allow recursive directories to be transpiled.
+
+### 2.25.1
+  - Fix Automatic insertion between JSX tags when auto-indent is turned off
+
+### 2.25.0
+  - Automatic insertion of additional newline between JSX open/close tags.
+  - Grammar support for TC39 proposal for  - export indentifier from "module"
+  - JSX Auto-indent uses eslint "indent" rule, if found, to set defaults for "react/jsx-indent" and "react/jsx-indent-props"
+  - Instantiates auto-indent for all language-babel text editor instances even if Auto Ident JSX is turned off in package settings. This allows the commands to turn on auto indent for individual files as required.
+
+### 2.24.4
+  - Remove white space from blank lines when moving out of JSX.
+  - Supress auto-indent on a open tag's > to allow auto complete end tag to pop up.
+
+### 2.24.3
+  - Fix no suggestions for html JSX attributes when on separate lines. Again!
+  - Remove possibility of repeated firing of onDidStopChanging.
+
+### 2.24.2
+  - Fix no suggestions for html JSX attributes when on separate lines.
+
+### 2.24.1
+  - Make JSX indent cursor move changes non-transactional.
+
+### 2.24.0
+  - Remove 're' filetype from Regex Grammar.
+
+### 2.23.2
+  - Fixes AutoIndentJSX which left blank lines with white space in JSX as an indentation. [Fixes #193](https://github.com/gandm/language-babel/issues/193)
+
+### 2.23.0
+  - Improve grammar for ES import & export.
+  - Small readme changes.
+
+### 2.22.0
+  - Flow declare support for:
+    - class extends and mixins keywords
+    - module.exports: type keywords
+    - declare type and declare interface
+    - module names that may be quoted.
+
+### 2.21.1
+  - Allow flowtyped arrow function returns to have intersection (&) and array ([]) notation.
+
+### 2.21.0
+  - Allow $ chars to be treated as a word character by Atoms work skip keyboard shortcuts
+  - Simplify Regex for trivial arrow functions with no argument parens.
+
 ### 2.20.10
   - Fix flow declare class methods named static being parsed as storage modifiers.
   - Fix flow declare class methods with no name being parsed incorrectly.
-  
+
 ### 2.20.9
   - Fix class properties with flow keyword names - type, declare & interface being ignored.
   - Fix class property issues when used with ASI and flow.

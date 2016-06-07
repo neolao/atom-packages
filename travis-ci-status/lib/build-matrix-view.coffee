@@ -68,10 +68,12 @@ class BuildMatrixView extends View
     return console.log "Error:", err if err?
 
     number = data['build']['number']
+    finished_at = new Date(data['build']['finished_at']).toLocaleString()
+
     if data['build']['duration']
       duration = data['build']['duration'].toString()
 
-      @title.text("Build #{number} took #{duration.formattedDuration()}")
+      @title.text("Build #{number} finished at #{finished_at} took #{duration.formattedDuration()}")
       @builds.empty()
       @addBuild(build) for build in data['jobs']
 

@@ -8,6 +8,7 @@
  */
 
 const Configuration = require('remark/lib/cli/configuration.js');
+const loadPlugin = require('load-plugin');
 
 /* Lazy loading these */
 let remark = null;
@@ -93,14 +94,12 @@ function linter() {
     }
 
     return new Promise((resolve, reject) => {
-      let config;
-
       if (!remark) {
         remark = require('remark');
         lint = require('remark-lint');
       }
 
-      config = new Configuration({ detectRC: true });
+      const config = new Configuration({ detectRC: true });
 
       config.getConfiguration(filePath, (err, conf) => {
         let plugins;
@@ -115,11 +114,19 @@ function linter() {
         }
 
         plugins = conf.plugins || {};
-        plugins = plugins['remark-lint'] || plugins.lint;
+        plugins = plugins['remark-lint'] || plugins.lint || {};
+
+        plugins.external = (plugins.external || []).map(name =>
+          loadPlugin(name, {
+            prefix: 'remark-lint',
+            cwd: filePath,
+            global: true
+          })
+        );
 
         /* Load processor for current path */
 
-        remark()
+        return remark()
           .use(lint, plugins)
           .process(editor.getText(), conf.settings, (err2, file) => {
             if (err2) {

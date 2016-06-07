@@ -4,6 +4,10 @@ Add Travis CI status of the project to the Atom status bar.
 
 ![Atom Status Bar Screenshot](https://raw.githubusercontent.com/tombell/travis-ci-status/master/travis_ci_status.png)
 
+**I am looking for a maintainer to take over the travis-ci-status project,
+please contact me on Twitter [@thetombell](https://twitter.com/thetombell) if
+you're interested.**
+
 ## Installing
 
 Use the Atom package manager, which can be found in the Settings view or run
@@ -41,7 +45,3 @@ The following commands are available for users to keymap.
 * `travis-ci-status:toggle` - Toggle the status bar entry
 * `travis-ci-status:toggle-build-matrix` - Toggle the build matrix panel
 * `travis-ci-status:open-on-travis` - Open the project on the Travis CI site
-
-## Coming Soon
-
-Feel free to open an issue to discuss potential features to add or improve.

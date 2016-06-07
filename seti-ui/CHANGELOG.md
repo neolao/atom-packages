@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.3.1
+- Tone down styles for tree-view-git-branch
+- Update terminal-plus styles
+
+## 1.3.0
+- Add styles for [tree-view-git-branch](https://atom.io/packages/tree-view-git-branch)
+- Set background colors for terminal plus
+- Update selected file state
+- Fix key binding colors #297
+- Adjust scrollbars #271
+- Add missing base-color variable
+- Add .editorconfig file
+- Add info icon for About tab
+- Fix conflict with git-control #301
+
+## 1.2.3
+- Adjust project find result for compact #289
+- Add icons for mp3 and ogg audio files
+- Add ionic icon
+- Update Objective C files #294
+- Add Gradle icon
+- Add Terraform icon
+
+## 1.2.2
+- Remove hover cursor in tree view
+
+## 1.2.1
+- Fix auto-complete overlay for spell check #242
+- Fix selected state in tree view for compact and no icon modes. #283
+- Fix wording on setting to disable animations
+
+
+## 1.2
+- Change input color to black
+- Compact mode adjustments:
+  - Smaller status bar
+  - Less space around icons
+- Add Twig icon #282
+- Add Elm icon #281
+- Add sticky project root headers #273
+- Change font setting to say "Default Atom Font" instead of "SF UI Text" to make it more clear it is using the default.
+
 ## 1.1.2
 - Fix Linter rule link badge
 

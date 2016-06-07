@@ -51,6 +51,7 @@
 @yellow-text: #13181b;
 
 // BASE COLORS
+@base-color: @seti-primary;
 @base-background-color: @black;
 @base-border-color: #060708;
 @app-background-color: @black;
@@ -58,7 +59,7 @@
 // SIDEBAR
 @tree-view-background-color: lighten(@black, 3%);
 @tree-view-border-color: @base-border-color;
-@tree-view-highlight: lighten(@black, 15%);
+@tree-view-highlight: lighten(@black, 10%);
 @tree-view-header-color: #090b0d;
 @tree-view-header-text-color: @white;
 @tree-view-text-color: @white;
@@ -72,6 +73,7 @@
 @tab-text-color: #d4d7d6;
 @tab-background-color-active: #111213;
 @tab-border-color: @base-border-color;
+@tab-height: @top-bar;
 
 // PANELS
 @panel-background-color: @tab-bar-background-color;
@@ -122,9 +124,13 @@
 // COMPONENT COLORS
 @component-border-radius:0;
 @component-padding: 10px;
+@component-icon-padding: 5px;
+@component-icon-size: 16px;
+@component-line-height: 25px;
 
 // INPUT
-@input-background-color: @white;
+@input-background-color: @black-dark;
+@input-text-color: @white;
 @input-border-color: @base-border-color;
 
 // PANE
@@ -144,15 +150,16 @@
 @overlay-border-color: @base-border-color;
 
 // BUTTONS
-@button-background-color: @base-background-color;
-@button-background-color-hover: @base-background-color;
-@button-background-color-selected: @base-background-color;
+@button-background-color: @grey;
+@button-background-color-hover: @grey-dark;
+@button-background-color-selected: @seti-primary;
 @button-border-color: @base-border-color;
 
 
 // MISC
 @seti-font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
 @font-size: 12px;
+@disclosure-arrow-size: 12px;
 
 // SCROLLBARS
 @scrollbar-background-color: rgba(42, 42, 42, 0.5);

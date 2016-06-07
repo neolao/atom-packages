@@ -10,18 +10,9 @@ atom-panel-container.left, atom-panel-container.right {
     .directory.entry.list-nested-item {
       &.selected {
         &::before {
-          background: @tree-view-highlight;
           margin-top: -5px;
           height: 35px;
         }
-      }
-    }
-
-     .file.entry.list-item {
-      cursor: pointer;
-
-      &:hover::after {
-        background: @tree-view-highlight;
       }
     }
 
@@ -37,6 +28,7 @@ atom-panel-container.left, atom-panel-container.right {
       &.selected {
         &::before {
           background: @tree-view-highlight;
+          border-left: solid 3px @seti-primary;
           height: 35px;
         }
       }
@@ -76,8 +68,8 @@ atom-workspace.seti-compact {
 
     .entries.list-tree .file.entry.list-item {
       &.selected::before {
-        height: 25px;
-        margin-top: 6px;
+        height: 20px;
+        margin-top: 4px;
       }
     }
 
@@ -89,13 +81,30 @@ atom-workspace.seti-compact {
         }
       }
     }
+  }
+}
 
-    // .directory.entry.list-nested-item, .file.entry.list-item {
-    //   color: @tree-view-text-color;
-    //   font-weight: 300;
-    //   letter-spacing: 0.1em;
-    //   padding-top: 3px;
-    //   padding-bottom: 3px;
-    // }
+
+atom-workspace:not(.seti-icons) {
+  atom-panel-container {
+    .entries.list-tree .directory.entry.list-nested-item, .entries.list-tree .file.entry.list-item {
+      padding-bottom: 0;
+      padding-top: 0;
+      letter-spacing: 0.05em;
+    }
+    .entries.list-tree .file.entry.list-item {
+      &.selected::before {
+        height: 22px;
+        margin-top: 2px;
+      }
+    }
+    .entries.list-tree .directory.entry.list-nested-item {
+      &.selected {
+        &::before {
+          height: 22px;
+          margin-top: 2px;
+        }
+      }
+    }
   }
 }

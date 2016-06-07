@@ -1,6 +1,6 @@
 fs = require 'fs'
 path = require 'path'
-shell = require 'shell'
+{shell} = require 'electron'
 {Disposable} = require 'atom'
 
 TravisCi = null
@@ -31,6 +31,12 @@ module.exports =
   #
   # Returns nothing.
   activate: ->
+    @projectChangeSubscription = atom.project.onDidChangePaths =>
+      @checkTravisRepos().then => @init(@statusBar)
+
+    @checkTravisRepos()
+
+  checkTravisRepos: ->
     @activationPromise = Promise.all(
       atom.project.getDirectories().map(
         atom.project.repositoryForDirectory.bind(atom.project)
@@ -51,6 +57,7 @@ module.exports =
     atom.travis = null
     @statusBarSubscription?.dispose()
     @buildMatrixView?.destroy()
+    @projectChangeSubscription?.dispose()
 
   # Internal: Serialize each view state so it can be restored when activated.
   #
@@ -129,6 +136,7 @@ module.exports =
     shell.openExternal("https://#{domain}/#{nwo}")
 
   consumeStatusBar: (statusBar) ->
+    @statusBar = statusBar
     @activationPromise.then( => @init(statusBar))
     @statusBarSubscription = new Disposable =>
       @buildStatusView?.destroy()

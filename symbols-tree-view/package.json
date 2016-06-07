@@ -1,7 +1,7 @@
 {
   "name": "symbols-tree-view",
   "main": "./lib/main",
-  "version": "0.12.0",
+  "version": "0.13.2",
   "description": "A symbols view like taglist",
   "repository": {
     "type": "git",
@@ -34,10 +34,10 @@
     "url": "https://github.com/xndcn/symbols-tree-view/issues"
   },
   "homepage": "https://github.com/xndcn/symbols-tree-view#readme",
-  "_id": "symbols-tree-view@0.12.0",
-  "_shasum": "5236674514adf9902c1a42f294000f95dcc026fb",
-  "_resolved": "file:../d-11635-35001-ggaufs/package.tgz",
-  "_from": "../d-11635-35001-ggaufs/package.tgz",
+  "_id": "symbols-tree-view@0.13.2",
+  "_shasum": "8cf1a7380f6f9be8993420a87c4825b7ab3d2794",
+  "_resolved": "file:../d-11651-6687-d02eoy/package.tgz",
+  "_from": "../d-11651-6687-d02eoy/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [

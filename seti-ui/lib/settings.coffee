@@ -1,5 +1,6 @@
 Dom = require('./dom')
 Utility = require('./utility')
+Headers = require('./headers')
 
 module.exports =
   init: (state) ->
@@ -42,8 +43,6 @@ module.exports =
   font: (val, reload) ->
     self = this
     el = Dom.query('atom-workspace')
-
-    console.log 'change font'
 
     if val == 'Roboto'
       el.classList.add 'seti-roboto'

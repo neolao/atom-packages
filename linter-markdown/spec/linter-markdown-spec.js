@@ -2,9 +2,9 @@
 
 import * as path from 'path';
 
-describe('The remark-lint provider for Linter', () => {
-  const lint = require(path.join('..', 'lib', 'index.js')).provideLinter().lint;
+const lint = require(path.join('..', 'lib', 'index.js')).provideLinter().lint;
 
+describe('The remark-lint provider for Linter', () => {
   beforeEach(() => {
     atom.workspace.destroyActivePaneItem();
     waitsForPromise(() => {
@@ -20,7 +20,7 @@ describe('The remark-lint provider for Linter', () => {
     const dciPath = path.join(__dirname, 'fixtures', 'definition-case-invalid.md');
     beforeEach(() => {
       waitsForPromise(() =>
-        atom.workspace.open(dciPath).then(openEditor => editor = openEditor)
+        atom.workspace.open(dciPath).then(openEditor => { editor = openEditor; })
       );
     });
 
