@@ -1,7 +1,7 @@
 {
   "name": "tree-view-git-status",
   "main": "./lib/main",
-  "version": "0.2.3",
+  "version": "1.0.0",
   "description": "Show the Git repository status in the Atom tree-view",
   "repository": {
     "type": "git",
@@ -9,10 +9,10 @@
   },
   "license": "MIT",
   "engines": {
-    "atom": ">=0.184.0"
+    "atom": ">=1.7.0"
   },
   "dependencies": {
-    "fs-plus": "^2.8.1",
+    "fs-plus": "^2.9.1",
     "temp": "^0.8.3"
   },
   "devDependencies": {},
@@ -20,24 +20,25 @@
     "tree-view",
     "git",
     "vcs",
+    "scm",
     "productivity"
   ],
-  "readme": "# Tree View Git Status package\n\n[![Version](https://img.shields.io/apm/v/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Downloads](https://img.shields.io/apm/dm/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Status Linux & OSX](https://img.shields.io/travis/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Linux%20%26%20OSX)](https://travis-ci.org/subesokun/atom-tree-view-git-status)\n[![Status Windows](https://img.shields.io/appveyor/ci/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Windows)](https://ci.appveyor.com/project/subesokun/atom-tree-view-git-status)\n[![Dependency Status](https://img.shields.io/david/subesokun/atom-tree-view-git-status.svg?style=flat-square)](https://david-dm.org/subesokun/atom-tree-view-git-status)\n\nShow the Git repository status in the Atom tree-view.\n\n### Screenshots\n\n![Screenshot](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot.png?raw=true)\n\n![Screenshot Tooltip](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-tooltip.png?raw=true)\n\n![Screenshot Settings](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-settings.png?raw=true)\n\n### Installation\n\n```\napm install tree-view-git-status\n```\n\n### Features\n\n* Show the Git branch name and commits ahead/behind labels for each project folder.\n* Plays nice together with the Atom [project-view](https://github.com/subesokun/atom-project-view) package.\n\n### License\n\nMIT\n",
+  "readme": "# Tree View Git Status package\n\n[![Version](https://img.shields.io/apm/v/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Downloads](https://img.shields.io/apm/dm/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Status Linux & OSX](https://img.shields.io/travis/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Linux%20%26%20OSX)](https://travis-ci.org/subesokun/atom-tree-view-git-status)\n[![Status Windows](https://img.shields.io/appveyor/ci/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Windows)](https://ci.appveyor.com/project/subesokun/atom-tree-view-git-status)\n[![Dependency Status](https://img.shields.io/david/subesokun/atom-tree-view-git-status.svg?style=flat-square)](https://david-dm.org/subesokun/atom-tree-view-git-status)\n\nShow the Git repository status in the Atom tree-view.\n\n**CAVEAT: This package is only compatible with Atom 1.7 and above** \n\n### Screenshots\n\n![Screenshot](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot.png?raw=true)\n\n![Screenshot Settings](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-settings.png?raw=true)\n\n### Installation\n\n```\napm install tree-view-git-status\n```\n\n### Features\n\n* Show the Git branch name and commits ahead/behind labels for each project folder.\n* Plays nice together with the Atom [project-view](https://github.com/subesokun/atom-project-view) package.\n\n### License\n\nMIT\n",
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/subesokun/atom-tree-view-git-status/issues"
   },
   "homepage": "https://github.com/subesokun/atom-tree-view-git-status#readme",
-  "_id": "tree-view-git-status@0.2.3",
-  "_shasum": "f16e8cb9d3d1258845d186f7f3b2cf4b11790158",
-  "_resolved": "file:../d-116223-23937-f9h8qq/package.tgz",
-  "_from": "../d-116223-23937-f9h8qq/package.tgz",
+  "_id": "tree-view-git-status@1.0.0",
+  "_shasum": "6c42a32908c6da260a63478579946159c4210651",
+  "_resolved": "file:../d-116514-6650-1g95hwk/package.tgz",
+  "_from": "../d-116514-6650-1g95hwk/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
       {
         "name": "fs-plus",
-        "version": "2.8.1",
+        "version": "2.9.1",
         "path": "node_modules/fs-plus/lib/fs-plus.js"
       },
       {
@@ -84,7 +85,9 @@
     "extensions": {
       ".coffee": [
         "lib/main.coffee",
-        "lib/tooltip.coffee"
+        "lib/repositories.coffee",
+        "lib/treeviewui.coffee",
+        "lib/utils.coffee"
       ],
       ".js": [
         "node_modules/fs-plus/lib/fs-plus.js",
@@ -128,7 +131,7 @@
           "spec"
         ],
         "dependencies": {
-          "fs-plus": "^2.8.1",
+          "fs-plus": "^2.9.1",
           "temp": "^0.8.3"
         }
       },

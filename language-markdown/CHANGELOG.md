@@ -1,3 +1,6 @@
+### v0.14.1
+- #117: Disallow parenthesis in link-destination (thanks @tsaiid)
+
 ## v0.14.0
 - #114: Remove necessity for a whitespace character following the language-name in fenced-code-blocks (thanks @eloquently)
 - #112: Re-add R to generic fenced-code-blocks (thanks @heavywatal)

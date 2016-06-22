@@ -8,11 +8,11 @@
 
 Show the Git repository status in the Atom tree-view.
 
+**CAVEAT: This package is only compatible with Atom 1.7 and above** 
+
 ### Screenshots
 
 ![Screenshot](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot.png?raw=true)
-
-![Screenshot Tooltip](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-tooltip.png?raw=true)
 
 ![Screenshot Settings](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-settings.png?raw=true)
 

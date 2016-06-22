@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-base",
   "main": "./lib/Main",
-  "version": "0.9.3",
+  "version": "0.9.5",
   "description": "Base package for php-integrator that exposes services for querying PHP sources.",
   "repository": {
     "type": "git",
@@ -43,10 +43,10 @@
     "url": "https://github.com/Gert-dev/php-integrator-base/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-base#readme",
-  "_id": "php-integrator-base@0.9.3",
-  "_shasum": "67d7a019bde203f865a9aaeaf93bf30d55a1566e",
-  "_resolved": "file:../d-11649-34228-172dgje/package.tgz",
-  "_from": "../d-11649-34228-172dgje/package.tgz",
+  "_id": "php-integrator-base@0.9.5",
+  "_shasum": "11868c3af79bccddce627daa394e2af90b8ec207",
+  "_resolved": "file:../d-116521-33440-858muu/package.tgz",
+  "_from": "../d-116521-33440-858muu/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
