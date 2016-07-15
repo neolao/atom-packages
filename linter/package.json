@@ -4,7 +4,7 @@
   "author": {
     "name": "atom-community"
   },
-  "version": "1.11.11",
+  "version": "1.11.14",
   "description": "A Base Linter with Cow Powers",
   "repository": {
     "type": "git",
@@ -51,10 +51,10 @@
     "url": "https://github.com/atom-community/linter/issues"
   },
   "homepage": "https://github.com/atom-community/linter#readme",
-  "_id": "linter@1.11.11",
-  "_shasum": "199203e8ab66fb6a4a0a2e22348fe8869f4b47ed",
-  "_resolved": "file:../d-116517-24356-12esttr/package.tgz",
-  "_from": "../d-116517-24356-12esttr/package.tgz",
+  "_id": "linter@1.11.14",
+  "_shasum": "dcfaefff3c32869dfcf38be8ec64adae64bba672",
+  "_resolved": "file:../d-116524-69724-s51awx/package.tgz",
+  "_from": "../d-116524-69724-s51awx/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -65,7 +65,7 @@
       },
       {
         "name": "minimatch",
-        "version": "3.0.0",
+        "version": "3.0.2",
         "path": "node_modules/minimatch/minimatch.js"
       },
       {

@@ -7,9 +7,12 @@ use UnexpectedValueException;
 
 use GetOptionKit\OptionCollection;
 
-use PhpIntegrator\IndexDatabase;
+use PhpIntegrator\DocParser;
+use PhpIntegrator\TypeAnalyzer;
 
 use PhpIntegrator\Application\Command as BaseCommand;
+
+use PhpIntegrator\Indexing\IndexDatabase;
 
 use PhpParser\Error;
 use PhpParser\Lexer;
@@ -32,6 +35,21 @@ class SemanticLint extends BaseCommand
      * @var ClassInfo
      */
     protected $classInfoCommand;
+
+    /**
+     * @var ResolveType
+     */
+    protected $resolveTypeCommand;
+
+    /**
+     * @var TypeAnalyzer
+     */
+    protected $typeAnalyzer;
+
+    /**
+     * @var DocParser
+     */
+    protected $docParser;
 
     /**
      * @inheritDoc
@@ -116,7 +134,13 @@ class SemanticLint extends BaseCommand
             $unknownClassAnalyzer = null;
 
             if ($retrieveUnknownClasses) {
-                $unknownClassAnalyzer = new SemanticLint\UnknownClassAnalyzer($file, $this->indexDatabase);
+                $unknownClassAnalyzer = new SemanticLint\UnknownClassAnalyzer(
+                    $file,
+                    $this->indexDatabase,
+                    $this->getResolveTypeCommand(),
+                    $this->getTypeAnalyzer(),
+                    $this->getDocParser()
+                );
 
                 foreach ($unknownClassAnalyzer->getVisitors() as $visitor) {
                     $traverser->addVisitor($visitor);
@@ -126,7 +150,10 @@ class SemanticLint extends BaseCommand
             $unusedUseStatementAnalyzer = null;
 
             if ($retrieveUnusedUseStatements) {
-                $unusedUseStatementAnalyzer = new SemanticLint\UnusedUseStatementAnalyzer();
+                $unusedUseStatementAnalyzer = new SemanticLint\UnusedUseStatementAnalyzer(
+                    $this->getTypeAnalyzer(),
+                    $this->getDocParser()
+                );
 
                 foreach ($unusedUseStatementAnalyzer->getVisitors() as $visitor) {
                     $traverser->addVisitor($visitor);
@@ -148,7 +175,7 @@ class SemanticLint extends BaseCommand
                 $traverser = new NodeTraverser(false);
 
                 $docblockCorrectnessAnalyzer = new SemanticLint\DocblockCorrectnessAnalyzer(
-                    $file,
+                    $code,
                     $this->indexDatabase,
                     $this->getClassInfoCommand()
                 );
@@ -200,11 +227,48 @@ class SemanticLint extends BaseCommand
     protected function getClassInfoCommand()
     {
         if (!$this->classInfoCommand) {
-            $this->classInfoCommand = new ClassInfo();
+            $this->classInfoCommand = new ClassInfo($this->cache);
             $this->classInfoCommand->setIndexDatabase($this->indexDatabase);
         }
 
         return $this->classInfoCommand;
+    }
+
+    /**
+     * @return ResolveType
+     */
+    protected function getResolveTypeCommand()
+    {
+        if (!$this->resolveTypeCommand) {
+            $this->resolveTypeCommand = new ResolveType($this->cache);
+            $this->resolveTypeCommand->setIndexDatabase($this->indexDatabase);
+        }
+
+        return $this->resolveTypeCommand;
+    }
+
+    /**
+     * @return TypeAnalyzer
+     */
+    protected function getTypeAnalyzer()
+    {
+        if (!$this->typeAnalyzer) {
+            $this->typeAnalyzer = new TypeAnalyzer();
+        }
+
+        return $this->typeAnalyzer;
+    }
+
+    /**
+     * @return DocParser
+     */
+    protected function getDocParser()
+    {
+        if (!$this->docParser) {
+            $this->docParser = new DocParser();
+        }
+
+        return $this->docParser;
     }
 
     /**

@@ -8,86 +8,86 @@ namespace PhpIntegrator\IndexDataAdapter;
 interface ProviderInterface
 {
     /**
-     * @param int $id
+     * @param string $fqcn
      *
-     * @return \Traversable
+     * @return array
      */
-    public function getStructureRawInfo($id);
+    public function getStructureRawInfo($fqcn);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawParents($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawChildren($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawInterfaces($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawImplementors($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawTraits($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawTraitUsers($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawConstants($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawProperties($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureRawMethods($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureTraitAliasesAssoc($id);
 
     /**
      * @param int $id
      *
-     * @return \Traversable
+     * @return array
      */
     public function getStructureTraitPrecedencesAssoc($id);
 }

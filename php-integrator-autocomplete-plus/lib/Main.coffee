@@ -66,12 +66,12 @@ module.exports =
         MemberProvider                  = require './MemberProvider'
         SnippetProvider                 = require './SnippetProvider'
         ClassProvider                   = require './ClassProvider'
-        ConstantProvider                = require './ConstantProvider'
+        GlobalConstantProvider          = require './GlobalConstantProvider'
         VariableProvider                = require './VariableProvider'
         GlobalVariableProvider          = require './GlobalVariableProvider'
         TypeHintNewVariableNameProvider = require './TypeHintNewVariableNameProvider'
         MagicConstantProvider           = require './MagicConstantProvider'
-        FunctionProvider                = require './FunctionProvider'
+        GlobalFunctionProvider          = require './GlobalFunctionProvider'
         KeywordProvider                 = require './KeywordProvider'
         DocblockAnnotationProvider      = require './DocblockAnnotationProvider'
         DocblockTagProvider             = require './DocblockTagProvider'
@@ -84,8 +84,8 @@ module.exports =
         @providers.push(new MemberProvider(@configuration))
         @providers.push(new TypeHintNewVariableNameProvider(@configuration))
         @providers.push(new VariableProvider(@configuration))
-        @providers.push(new FunctionProvider(@configuration))
-        @providers.push(new ConstantProvider(@configuration))
+        @providers.push(new GlobalFunctionProvider(@configuration))
+        @providers.push(new GlobalConstantProvider(@configuration))
         @providers.push(new ClassProvider(@configuration))
         @providers.push(new GlobalVariableProvider(@configuration))
         @providers.push(new MagicConstantProvider(@configuration))

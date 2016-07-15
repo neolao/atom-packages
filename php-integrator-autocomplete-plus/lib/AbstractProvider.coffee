@@ -93,9 +93,10 @@ class AbstractProvider
             description = ''
             description += '['   if param.isOptional and not isInOptionalList
             description += ', '  if index != 0
+            description += '...' if param.isVariadic
             description += '&'   if param.isReference
             description += '$' + param.name
-            description += '...' if param.isVariadic
+            description += ' = ' + param.defaultValue if param.defaultValue
             description += ']'   if param.isOptional and index == (info.parameters.length - 1)
 
             isInOptionalList = param.isOptional
@@ -171,19 +172,45 @@ class AbstractProvider
         return parts.pop()
 
     ###*
+     * @param {Array} typeArray
+     *
+     * @return {String}
+    ###
+    getTypeSpecificationFromTypeArray: (typeArray) ->
+        typeNames = typeArray.map (type) =>
+            return @getClassShortName(type.type)
+
+        return typeNames.join('|')
+
+    ###*
+     * Retrieves the prefix matches using the specified buffer position and the specified regular expression.
+     *
+     * @param {TextEditor} editor
+     * @param {Point}      bufferPosition
+     * @param {String}     regex
+     *
+     * @return {Array|null}
+    ###
+    getPrefixMatchesByRegex: (editor, bufferPosition, regex) ->
+        # Unfortunately the regex $ doesn't seem to match the end when using backwardsScanInRange, so we match the regex
+        # manually.
+        line = editor.getBuffer().getTextInRange([[bufferPosition.row, 0], bufferPosition])
+
+        matches = regex.exec(line)
+
+        return matches if matches
+        return null
+
+    ###*
      * Retrieves the prefix using the specified buffer position and the current class' configured regular expression.
      *
      * @param {TextEditor} editor
      * @param {Point}      bufferPosition
      *
-     * @return {string|null}
+     * @return {String|null}
     ###
     getPrefix: (editor, bufferPosition) ->
-        # Unfortunately the regex $ doesn't seem to match the end when using backwardsScanInRange, so we match the regex
-        # manually.
-        line = editor.getBuffer().getTextInRange([[bufferPosition.row, 0], bufferPosition])
-
-        matches = @regex.exec(line)
+        matches = @getPrefixMatchesByRegex(editor, bufferPosition, @regex)
 
         if matches
             # We always want the last match, as that's closest to the cursor itself.

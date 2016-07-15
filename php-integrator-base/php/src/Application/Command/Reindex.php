@@ -7,17 +7,74 @@ use UnexpectedValueException;
 
 use GetOptionKit\OptionCollection;
 
-use PhpIntegrator\Indexer;
-use PhpIntegrator\IndexDataAdapter;
-use PhpIntegrator\IndexStorageItemEnum;
+use PhpIntegrator\Indexing;
+use PhpIntegrator\DocParser;
+use PhpIntegrator\TypeAnalyzer;
 
 use PhpIntegrator\Application\Command as BaseCommand;
+
+use PhpIntegrator\IndexDataAdapter\ProviderCachingProxy;
+
+use PhpIntegrator\Indexing\Scanner;
+use PhpIntegrator\Indexing\FileIndexer;
+use PhpIntegrator\Indexing\BuiltinIndexer;
+use PhpIntegrator\Indexing\ProjectIndexer;
+use PhpIntegrator\Indexing\StorageInterface;
+use PhpIntegrator\Indexing\CallbackStorageProxy;
+use PhpIntegrator\Indexing\IndexStorageItemEnum;
+
+use PhpParser\ParserFactory;
 
 /**
  * Command that reindexes a file or folder.
  */
 class Reindex extends BaseCommand
 {
+    /**
+     * @var ProjectIndexer
+     */
+    protected $projectIndexer;
+
+    /**
+     * @var FileIndexer
+     */
+    protected $fileIndexer;
+
+    /**
+     * @var BuiltinIndexer
+     */
+    protected $builtinIndexer;
+
+    /**
+     * @var Scanner
+     */
+    protected $scanner;
+
+    /**
+     * @var array
+     */
+    protected $fileModifiedMap;
+
+    /**
+     * @var DocParser
+     */
+    protected $docParser;
+
+    /**
+     * @var TypeAnalyzer
+     */
+    protected $typeAnalyzer;
+
+    /**
+     * @var ParserFactory
+     */
+    protected $parserFactory;
+
+    /**
+     * @var StorageInterface
+     */
+    protected $storageForIndexers;
+
     /**
      * @inheritDoc
      */
@@ -54,33 +111,19 @@ class Reindex extends BaseCommand
      */
     public function reindex($path, $useStdin, $showOutput, $doStreamProgress)
     {
-        $indexer = new Indexer($this->indexDatabase, $showOutput, $doStreamProgress);
-
-        $hasIndexedBuiltin = $this->indexDatabase->getConnection()->createQueryBuilder()
-            ->select('id', 'value')
-            ->from(IndexStorageItemEnum::SETTINGS)
-            ->where('name = ?')
-            ->setParameter(0, 'has_indexed_builtin')
-            ->execute()
-            ->fetch();
-
-        if (!$hasIndexedBuiltin || !$hasIndexedBuiltin['value']) {
-            $indexer->indexBuiltinItems();
-
-            if ($hasIndexedBuiltin) {
-                $this->indexDatabase->update(IndexStorageItemEnum::SETTINGS, $hasIndexedBuiltin['id'], [
-                    'value' => 1
-                ]);
-            } else {
-                $this->indexDatabase->insert(IndexStorageItemEnum::SETTINGS, [
-                    'name'  => 'has_indexed_builtin',
-                    'value' => 1
-                ]);
-            }
-        }
-
         if (is_dir($path)) {
-            $indexer->indexDirectory($path);
+            // Yes, we abuse the error channel...
+            $loggingStream = $showOutput ? fopen('php://stdout', 'w') : null;
+            $progressStream = $doStreamProgress ? fopen('php://stderr', 'w') : null;
+
+            $this->getProjectIndexer()
+                ->setProgressStream($progressStream)
+                ->setLoggingStream($loggingStream)
+                ->index($path);
+
+            if ($progressStream) {
+                fclose($progressStream);
+            }
 
             return $this->outputJson(true, []);
         } elseif (is_file($path) || $useStdin) {
@@ -92,7 +135,7 @@ class Reindex extends BaseCommand
             }
 
             $databaseFileHandle = null;
-            
+
             if ($this->indexDatabase->getDatabasePath() !== ':memory:') {
                 // All other commands don't abide by these locks, so they can just happily continue using the database (as
                 // they are only reading, that poses no problem). However, writing in a transaction will cause the database
@@ -104,8 +147,8 @@ class Reindex extends BaseCommand
             }
 
             try {
-                $indexer->indexFile($path, $code ?: null);
-            } catch (Indexer\IndexingFailedException $e) {
+                $this->getFileIndexer()->index($path, $code ?: null);
+            } catch (Indexing\IndexingFailedException $e) {
                 return $this->outputJson(false, []);
             }
 
@@ -118,5 +161,129 @@ class Reindex extends BaseCommand
         }
 
         throw new UnexpectedValueException('The specified file or directory "' . $path . '" does not exist!');
+    }
+
+    /**
+     * @return ProjectIndexer
+     */
+    protected function getProjectIndexer()
+    {
+        if (!$this->projectIndexer) {
+            $this->projectIndexer = new ProjectIndexer(
+                $this->getStorageForIndexers(),
+                $this->getBuiltinIndexer(),
+                $this->getFileIndexer(),
+                $this->getScanner()
+            );
+        }
+
+        return $this->projectIndexer;
+    }
+
+    /**
+     * @return FileIndexer
+     */
+    protected function getFileIndexer()
+    {
+        if (!$this->fileIndexer) {
+            $this->fileIndexer = new FileIndexer(
+                $this->getStorageForIndexers(),
+                $this->getTypeAnalyzer(),
+                $this->getDocParser(),
+                $this->getParserFactory()
+            );
+        }
+
+        return $this->fileIndexer;
+    }
+
+    /**
+     * @return BuiltinIndexer
+     */
+    protected function getBuiltinIndexer()
+    {
+        if (!$this->builtinIndexer) {
+            $this->builtinIndexer = new BuiltinIndexer($this->getStorageForIndexers());
+        }
+
+        return $this->builtinIndexer;
+    }
+
+    /**
+     * @return StorageInterface
+     */
+    protected function getStorageForIndexers()
+    {
+        if (!$this->storageForIndexers) {
+            $this->storageForIndexers = new CallbackStorageProxy($this->indexDatabase, function ($fqcn) {
+                $provider = $this->getIndexDataAdapterProvider();
+
+                if ($provider instanceof ProviderCachingProxy) {
+                    $provider->clearCacheFor($fqcn);
+                }
+            });
+        }
+
+        return $this->storageForIndexers;
+    }
+
+    /**
+     * @return Scanner
+     */
+    protected function getScanner()
+    {
+        if (!$this->scanner) {
+            $this->scanner = new Scanner($this->getFileModifiedMap());
+        }
+
+        return $this->scanner;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getFileModifiedMap()
+    {
+        if (!$this->fileModifiedMap) {
+            $this->fileModifiedMap = $this->indexDatabase->getFileModifiedMap();
+        }
+
+        return $this->fileModifiedMap;
+    }
+
+    /**
+     * @return TypeAnalyzer
+     */
+    protected function getTypeAnalyzer()
+    {
+        if (!$this->typeAnalyzer) {
+            $this->typeAnalyzer = new TypeAnalyzer();
+        }
+
+        return $this->typeAnalyzer;
+    }
+
+    /**
+     * @return DocParser
+     */
+    protected function getDocParser()
+    {
+        if (!$this->docParser) {
+            $this->docParser = new DocParser();
+        }
+
+        return $this->docParser;
+    }
+
+    /**
+     * @return DocParser
+     */
+    protected function getParserFactory()
+    {
+        if (!$this->parserFactory) {
+            $this->parserFactory = new ParserFactory();
+        }
+
+        return $this->parserFactory;
     }
 }

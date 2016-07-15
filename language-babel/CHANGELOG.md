@@ -1,3 +1,26 @@
+### 2.32.0
+  - Add reason to incompatible package notifications.
+
+### 2.31.0
+  - Allow JSX to be indented when a whole file is indented using the Atom Edit->Lines->Auto Indent command.
+  - Modify arrow function grammar regex to allow for the Flow Comments style of typed notation.
+
+### 2.30.1
+  - Fix 2.23.0 not parsing flow keywords in flow comments.
+
+### 2.30.0
+  - Add support for highlighting flow typing inside comments starting `/*:`, `/*::` and `/*flow-include`. Read the [Flow blog](https://flowtype.org/blog/2015/02/20/Flow-Comments.html) for further information.
+
+### 2.29.2
+  - Fix type property detected as flow type alias. Fixes #211
+
+### 2.29.1
+  - Rephrase incompatible notification message.
+
+### 2.29.0
+  - Warn when potential incompatible packages are activated.
+  - Additional check on textEditor is alive before positioning cursor on transpile failure.
+
 ### 2.28.0
   - Improve JSX commenting to allow nested objects that require // commenting. e.g. Attributes.
 

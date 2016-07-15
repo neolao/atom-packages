@@ -6,12 +6,13 @@ use UnexpectedValueException;
 
 use PhpIntegrator\DocParser;
 use PhpIntegrator\TypeAnalyzer;
-use PhpIntegrator\IndexDatabase;
 use PhpIntegrator\DocblockAnalyzer;
 
 use PhpIntegrator\Application\Command\ClassInfo;
 
-use PhpIntegrator\Indexer\OutlineIndexingVisitor;
+use PhpIntegrator\Indexing\IndexDatabase;
+
+use PhpIntegrator\Indexing\Visitor\OutlineIndexingVisitor;
 
 /**
  * Analyzes the correctness of docblocks.
@@ -22,11 +23,6 @@ class DocblockCorrectnessAnalyzer implements AnalyzerInterface
      * @var OutlineIndexingVisitor
      */
     protected $outlineIndexingVisitor;
-
-    /**
-     * @var string
-     */
-    protected $file;
 
     /**
      * @var IndexDatabase
@@ -61,17 +57,16 @@ class DocblockCorrectnessAnalyzer implements AnalyzerInterface
     /**
      * Constructor.
      *
-     * @param string        $file
+     * @param string        $code
      * @param IndexDatabase $indexDatabase
      * @param ClassInfo     $classInfoCommand
      */
-    public function __construct($file, IndexDatabase $indexDatabase, ClassInfo $classInfoCommand)
+    public function __construct($code, IndexDatabase $indexDatabase, ClassInfo $classInfoCommand)
     {
-        $this->file = $file;
         $this->indexDatabase = $indexDatabase;
         $this->classInfoCommand = $classInfoCommand;
 
-        $this->outlineIndexingVisitor = new OutlineIndexingVisitor();
+        $this->outlineIndexingVisitor = new OutlineIndexingVisitor($code);
     }
 
     /**

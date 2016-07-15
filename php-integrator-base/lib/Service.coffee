@@ -50,7 +50,7 @@ class Service
     ###*
      * Retrieves a list of available classes in the specified file.
      *
-     * @param {string} file
+     * @param {String} file
      *
      * @return {Promise}
     ###
@@ -76,7 +76,7 @@ class Service
     ###*
      * Retrieves a list of available members of the class (or interface, trait, ...) with the specified name.
      *
-     * @param {string} className
+     * @param {String} className
      *
      * @return {Promise}
     ###
@@ -86,9 +86,9 @@ class Service
     ###*
      * Resolves a local type in the specified file, based on use statements and the namespace.
      *
-     * @param {string}  file
-     * @param {number}  line The line the type is located at. The first line is 1, not 0.
-     * @param {string}  type
+     * @param {String}  file
+     * @param {Number}  line The line the type is located at. The first line is 1, not 0.
+     * @param {String}  type
      *
      * @return {Promise}
     ###
@@ -99,9 +99,9 @@ class Service
      * Localizes a type to the specified file, making it relative to local use statements, if possible. If not possible,
      * null is returned.
      *
-     * @param {string}  file
-     * @param {number}  line The line the type is located at. The first line is 1, not 0.
-     * @param {string}  type
+     * @param {String}  file
+     * @param {Number}  line The line the type is located at. The first line is 1, not 0.
+     * @param {String}  type
      *
      * @return {Promise}
     ###
@@ -111,8 +111,8 @@ class Service
     ###*
      * Performs a semantic lint of the specified file.
      *
-     * @param {string}      file
-     * @param {string|null} source The source code of the file to index. May be null if a directory is passed instead.
+     * @param {String}      file
+     * @param {String|null} source The source code of the file to index. May be null if a directory is passed instead.
      * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses,
      *                              noDocblockCorrectness and noUnusedUseStatements are supported.
      *
@@ -124,9 +124,9 @@ class Service
     ###*
      * Fetches all available variables at a specific location.
      *
-     * @param {string|null} file   The path to the file to examine. May be null if the source parameter is passed.
-     * @param {string|null} source The source code to search. May be null if a file is passed instead.
-     * @param {number}      offset The character offset into the file to examine.
+     * @param {String|null} file   The path to the file to examine. May be null if the source parameter is passed.
+     * @param {String|null} source The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset The character offset into the file to examine.
      *
      * @return {Promise}
     ###
@@ -134,36 +134,36 @@ class Service
         return @proxy.getAvailableVariables(file, source, offset)
 
     ###*
-     * Fetches the type of the specified variable at the specified location.
+     * Fetches the types of the specified variable at the specified location.
      *
-     * @param {string}      name   The variable to fetch, including its leading dollar sign.
-     * @param {string}      file   The path to the file to examine.
-     * @param {string|null} source The source code to search. May be null if a file is passed instead.
-     * @param {number}      offset The character offset into the file to examine.
+     * @param {String}      name   The variable to fetch, including its leading dollar sign.
+     * @param {String}      file   The path to the file to examine.
+     * @param {String|null} source The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset The character offset into the file to examine.
      *
      * @return {Promise}
     ###
-    getVariableTypeByOffset: (name, file, source, offset) ->
-        return @proxy.getVariableType(name, file, source, offset)
+    getVariableTypesByOffset: (name, file, source, offset) ->
+        return @proxy.getVariableTypes(name, file, source, offset)
 
     ###*
-     * Deduces the resulting type of an expression based on its parts.
+     * Deduces the resulting types of an expression based on its parts.
      *
-     * @param {array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
-     * @param {string}      file   The path to the file to examine.
-     * @param {string|null} source The source code to search. May be null if a file is passed instead.
-     * @param {number}      offset The character offset into the file to examine.
+     * @param {Array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
+     * @param {String}      file   The path to the file to examine.
+     * @param {String|null} source The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset The character offset into the file to examine.
      *
      * @return {Promise}
     ###
-    deduceType: (parts, file, source, offset) ->
-        return @proxy.deduceType(parts, file, source, offset)
+    deduceTypes: (parts, file, source, offset) ->
+        return @proxy.deduceTypes(parts, file, source, offset)
 
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
-     * @param {string}      path                   The full path to the file  or folder to refresh.
-     * @param {string|null} source                 The source code of the file to index. May be null if a directory is
+     * @param {String}      path                   The full path to the file  or folder to refresh.
+     * @param {String|null} source                 The source code of the file to index. May be null if a directory is
      *                                             passed instead.
      * @param {Callback}    progressStreamCallback A method to invoke each time progress streaming data is received.
      *
@@ -238,7 +238,7 @@ class Service
      *
      * @param {TextEditor} editor         The editor.
      * @param {Point}      bufferPosition The location of the type.
-     * @param {string}     type           The (local) type to resolve.
+     * @param {String}     type           The (local) type to resolve.
      *
      * @return {Promise}
      *
@@ -261,28 +261,25 @@ class Service
         return @getAvailableVariablesByOffset(editor.getPath(), editor.getBuffer().getText(), offset)
 
     ###*
-     * Retrieves the type of a variable, relative to the context at the specified buffer location. Class names will
-     * be returned in their full form (full class name, but not necessarily with a leading slash).
+     * Retrieves the types of a variable, relative to the context at the specified buffer location. Class names will
+     * be returned in their full form (full class name, with a leading slash).
      *
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition
-     * @param {string}     name
+     * @param {String}     name
      *
      * @return {Promise}
     ###
-    getVariableType: (editor, bufferPosition, name) ->
+    getVariableTypes: (editor, bufferPosition, name) ->
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
         bufferText = editor.getBuffer().getText()
 
-        result = @getVariableTypeByOffset(name, editor.getPath(), bufferText, offset)
-
-        return null if not result
-        return result
+        return @getVariableTypesByOffset(name, editor.getPath(), bufferText, offset)
 
     ###*
-     * Retrieves the class that is being used (called) at the specified location in the buffer. Note that this does not
-     * guarantee that the returned class actually exists. You can use {@see getClassInfo} on the returned class name
+     * Retrieves the types that are being used (called) at the specified location in the buffer. Note that this does not
+     * guarantee that the returned types actually exist. You can use {@see getClassInfo} on the returned class name
      * to check for this instead.
      *
      * @param {TextEditor} editor            The text editor to use.
@@ -295,31 +292,28 @@ class Service
      *                                       type (class) of 'b', as it is the last element, but as the user is still
      *                                       writing code, you may instead be interested in the type of 'foo()' instead.
      *
-     * @throws an error if one of the elements in the call stack does not exist, which can happen if the user is writing
-     *         invalid code.
-     *
      * @return {Promise}
      *
-     * @example Invoking it on MyMethod::foo()->bar() will ask what class 'bar' is invoked on, which will whatever type
+     * @example Invoking it on MyMethod::foo()->bar() will ask what class 'bar' is invoked on, which will whatever types
      *          foo returns.
     ###
-    getResultingTypeAt: (editor, bufferPosition, ignoreLastElement) ->
+    getResultingTypesAt: (editor, bufferPosition, ignoreLastElement) ->
         callStack = @parser.retrieveSanitizedCallStackAt(editor, bufferPosition)
 
         if ignoreLastElement
             callStack.pop()
 
-        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
-
         bufferText = editor.getBuffer().getText()
 
         if not callStack or callStack.length == 0
             promise = new Promise (resolve, reject) ->
-                resolve(null)
+                resolve([])
 
             return promise
 
-        return @deduceType(callStack, editor.getPath(), bufferText, offset)
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
+
+        return @deduceTypes(callStack, editor.getPath(), bufferText, offset)
 
     ###*
      * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
@@ -355,9 +349,24 @@ class Service
     ###*
      * Indicates if the specified type is a basic type (e.g. int, array, object, etc.).
      *
-     * @param {string} type
+     * @param {String} type
      *
      * @return {boolean}
     ###
     isBasicType: (type) ->
         return /^(string|int|bool|float|object|mixed|array|resource|void|null|callable|false|true|self|static|parent|\$this)$/i.test(type)
+
+    ###*
+     * Utility function to convert byte offsets returned by the service into character offsets.
+     *
+     * @param {Number} byteOffset
+     * @param {String} string
+     *
+     * @return {Number}
+    ###
+    getCharacterOffsetFromByteOffset: (byteOffset, string) ->
+        {Buffer} = require 'buffer'
+
+        buffer = new Buffer(string)
+
+        return buffer.slice(0, byteOffset).toString().length

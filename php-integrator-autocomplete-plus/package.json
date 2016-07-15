@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-autocomplete-plus",
   "main": "./lib/Main",
-  "version": "0.8.1",
+  "version": "1.0.1",
   "description": "Provides autocompletion for your PHP source code.",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   },
   "license": "GPL-3.0",
   "engines": {
-    "atom": ">=1.0.0 <2.0.0"
+    "atom": ">=1.8.0 <2.0.0"
   },
   "providedServices": {
     "autocomplete.provider": {
@@ -21,7 +21,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~0.9.0": "setService"
+        "~1.0": "setService"
       }
     }
   },
@@ -40,10 +40,10 @@
     "url": "https://github.com/Gert-dev/php-integrator-autocomplete-plus/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-autocomplete-plus#readme",
-  "_id": "php-integrator-autocomplete-plus@0.8.1",
-  "_shasum": "37e60e8e8a2c65251cf46c145d9ddcddce5ee6d9",
-  "_resolved": "file:../d-11649-34221-idu2r2/package.tgz",
-  "_from": "../d-11649-34221-idu2r2/package.tgz",
+  "_id": "php-integrator-autocomplete-plus@1.0.1",
+  "_shasum": "9d6f514f97aafca354feb11848014e9a35059356",
+  "_resolved": "file:../d-116611-32037-1kdwos2/package.tgz",
+  "_from": "../d-116611-32037-1kdwos2/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [],
@@ -53,10 +53,10 @@
         "lib/AtomConfig.coffee",
         "lib/ClassProvider.coffee",
         "lib/Config.coffee",
-        "lib/ConstantProvider.coffee",
         "lib/DocblockAnnotationProvider.coffee",
         "lib/DocblockTagProvider.coffee",
-        "lib/FunctionProvider.coffee",
+        "lib/GlobalConstantProvider.coffee",
+        "lib/GlobalFunctionProvider.coffee",
         "lib/GlobalVariableProvider.coffee",
         "lib/KeywordProvider.coffee",
         "lib/MagicConstantProvider.coffee",

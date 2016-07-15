@@ -48,19 +48,48 @@ class TypeAnalyzer
     }
 
     /**
-     * Normalizes an FQCN, removing its leading slash, if any.
+     * @param string $type
+     *
+     * @return bool
+     */
+    public function isClassType($type)
+    {
+        return !$this->isSpecialType($type);
+    }
+
+    /**
+     * Normalizes an FQCN, consistently removing or adding a leading slash.
      *
      * @param string $fqcn
+     * @param bool   $withLeadingSlash
      *
      * @return string
      */
-    public function getNormalizedFqcn($fqcn)
+    public function getNormalizedFqcn($fqcn, $withLeadingSlash = false)
     {
-        if ($fqcn && $fqcn[0] === '\\') {
-            return mb_substr($fqcn, 1);
+        if ($fqcn) {
+            if (!$withLeadingSlash && $fqcn[0] === '\\') {
+                return mb_substr($fqcn, 1);
+            } elseif ($withLeadingSlash && $fqcn[0] !== '\\') {
+                return '\\' . $fqcn;
+            }
         }
 
         return $fqcn;
+    }
+
+    /**
+     * Splits a docblock type specification up into different (docblock) types.
+     *
+     * @param string $typeSpecification
+     *
+     * @example "int|string" becomes ["int", "string"].
+     *
+     * @return string[]
+     */
+    public function getTypesForTypeSpecification($typeSpecification)
+    {
+        return explode(self::TYPE_SPLITTER, $typeSpecification);
     }
 
     /**
@@ -68,13 +97,13 @@ class TypeAnalyzer
      * docblock type identifier.
      *
      * @param string $type
-     * @param string $docblockType
+     * @param string $typeSpecification
      *
      * @return bool
      */
-    public function isTypeConformantWithDocblockType($type, $docblockType)
+    public function isTypeConformantWithDocblockType($type, $typeSpecification)
     {
-        $docblockTypes = explode(self::TYPE_SPLITTER, $docblockType);
+        $docblockTypes = $this->getTypesForTypeSpecification($typeSpecification);
 
         return $this->isTypeConformantWithDocblockTypes($type, $docblockTypes);
     }

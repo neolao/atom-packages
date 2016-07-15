@@ -3,7 +3,8 @@
 namespace PhpIntegrator\Application\Command;
 
 use PhpIntegrator\IndexedTest;
-use PhpIntegrator\IndexDatabase;
+
+use PhpIntegrator\Indexing\IndexDatabase;
 
 class SemanticLintTest extends IndexedTest
 {
@@ -34,8 +35,8 @@ class SemanticLintTest extends IndexedTest
             [
                 'name'      => 'A\B',
                 'namespace' => null,
-                'start'     => 16,
-                'end'       => 19
+                'start'     => 32,
+                'end'       => 35
             ]
         ], $output['errors']['unknownClasses']);
     }
@@ -89,15 +90,36 @@ class SemanticLintTest extends IndexedTest
             [
                 'name'      => 'A\B',
                 'namespace' => 'A',
-                'start'     => 36,
-                'end'       => 56
+                'start'     => 75,
+                'end'       => 95
             ],
 
             [
                 'name'      => 'A\C',
                 'namespace' => 'A',
-                'start'     => 36,
-                'end'       => 56
+                'start'     => 75,
+                'end'       => 95
+            ],
+
+            [
+                'name'      => 'MissingAnnotationClass',
+                'namespace' => 'A',
+                'start'     => 175,
+                'end'       => 197
+            ],
+
+            [
+                'name'      => 'A\MissingAnnotationClass',
+                'namespace' => 'A',
+                'start'     => 202,
+                'end'       => 226
+            ],
+
+            [
+                'name'      => 'B\MissingAnnotationClass',
+                'namespace' => 'A',
+                'start'     => 231,
+                'end'       => 256
             ]
         ], $output['errors']['unknownClasses']);
     }
@@ -145,15 +167,15 @@ class SemanticLintTest extends IndexedTest
             [
                 'name'  => 'SplMinHeap',
                 'alias' => 'SplMinHeap',
-                'start' => 39,
-                'end'   => 49
+                'start' => 53,
+                'end'   => 63
             ],
 
             [
                 'name'  => 'SplFileInfo',
                 'alias' => 'SplFileInfo',
-                'start' => 72,
-                'end'   => 83
+                'start' => 69,
+                'end'   => 80
             ]
         ], $output['warnings']['unusedUseStatements']);
     }
@@ -249,9 +271,9 @@ class SemanticLintTest extends IndexedTest
         $this->assertEquals([
             [
                 'name'      => 'some_function_parameter_incorrect_type',
-                'line'      => 18,
-                'start'     => 247,
-                'end'       => 248,
+                'line'      => 20,
+                'start'     => 287,
+                'end'       => 288,
                 'parameter' => '$param1'
             ],
         ], $output['warnings']['docblockIssues']['parameterTypeMismatch']);

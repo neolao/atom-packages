@@ -5,7 +5,7 @@ namespace PhpIntegrator\Application\Command\VariableType;
 use PhpIntegrator\DocParser;
 use PhpIntegrator\TypeAnalyzer;
 
-use PhpIntegrator\Application\Command\DeduceType;
+use PhpIntegrator\Application\Command\DeduceTypes;
 use PhpIntegrator\Application\Command\ResolveType;
 
 use PhpParser\Node;
@@ -48,14 +48,19 @@ class QueryingVisitor extends NodeVisitorAbstract
     protected $resolveTypeCommand;
 
     /**
-     * @var DeduceType
+     * @var DeduceTypes
      */
-    protected $deduceTypeCommand;
+    protected $deduceTypesCommand;
 
     /**
      * @var TypeAnalyzer
      */
     protected $typeAnalyzer;
+
+    /**
+     * @var DocParser
+     */
+    protected $docParser;
 
     /**
      * @var Node\FunctionLike|null
@@ -92,7 +97,7 @@ class QueryingVisitor extends NodeVisitorAbstract
      * @param string       $name
      * @param TypeAnalyzer $typeAnalyzer
      * @param ResolveType  $resolveTypeCommand
-     * @param DeduceType   $deduceTypeCommand
+     * @param DeduceTypes   $deduceTypesCommand
      */
     public function __construct(
         $file,
@@ -102,7 +107,7 @@ class QueryingVisitor extends NodeVisitorAbstract
         $name,
         TypeAnalyzer $typeAnalyzer,
         ResolveType $resolveTypeCommand,
-        DeduceType $deduceTypeCommand
+        DeduceTypes $deduceTypesCommand
     ) {
         $this->name = $name;
         $this->line = $line;
@@ -110,7 +115,7 @@ class QueryingVisitor extends NodeVisitorAbstract
         $this->code = $code;
         $this->position = $position;
         $this->typeAnalyzer = $typeAnalyzer;
-        $this->deduceTypeCommand = $deduceTypeCommand;
+        $this->deduceTypesCommand = $deduceTypesCommand;
         $this->resolveTypeCommand = $resolveTypeCommand;
     }
 
@@ -120,6 +125,7 @@ class QueryingVisitor extends NodeVisitorAbstract
     public function enterNode(Node $node)
     {
         $startFilePos = $node->getAttribute('startFilePos');
+        $endFilePos = $node->getAttribute('endFilePos');
 
         if ($startFilePos >= $this->position) {
             if ($startFilePos == $this->position) {
@@ -139,13 +145,26 @@ class QueryingVisitor extends NodeVisitorAbstract
             if ($node->var === $this->name) {
                 $this->bestMatch = $this->fetchClassName($node->type);
             }
-        } elseif ($node instanceof Node\Stmt\If_ || $node instanceof Node\Stmt\ElseIf_) {
-            if ($node->cond instanceof Node\Expr\Instanceof_) {
-                if ($node->cond->expr instanceof Node\Expr\Variable && $node->cond->expr->name === $this->name) {
-                    if ($node->cond->class instanceof Node\Name) {
-                        $this->bestMatch = $this->fetchClassName($node->cond->class);
-                    } else {
-                        // TODO: This is an expression, parse it to retrieve its return value.
+        } elseif (
+            $node instanceof Node\Stmt\If_ ||
+            $node instanceof Node\Stmt\ElseIf_ ||
+            $node instanceof Node\Expr\Ternary
+        ) {
+            // There can be conditional expressions inside the current scope (think variables assigned to a ternary
+            // expression). In that case we don't want to actually look at the condition for type deduction unless
+            // we're inside the scope of that conditional.
+            if (
+                $this->position >= $node->getAttribute('startFilePos') &&
+                $this->position <= $node->getAttribute('endFilePos')
+            ) {
+                if ($node->cond instanceof Node\Expr\Instanceof_) {
+                    if ($node->cond->expr instanceof Node\Expr\Variable && $node->cond->expr->name === $this->name) {
+                        if ($node->cond->class instanceof Node\Name) {
+                            $this->bestMatch = $this->fetchClassName($node->cond->class);
+                        } else {
+                            // This is an expression, we could fetch its return type, but that still won't tell us what
+                            // the actual class is, so it's useless at the moment.
+                        }
                     }
                 }
             }
@@ -164,14 +183,12 @@ class QueryingVisitor extends NodeVisitorAbstract
                 }
             }
         } elseif ($node instanceof Node\Stmt\Foreach_) {
-            if ($node->valueVar->name === $this->name) {
+            if (!$node->valueVar instanceof Node\Expr\List_ && $node->valueVar->name === $this->name) {
                 $this->bestMatch = $node;
             }
         }
 
-        if ($node->getAttribute('startFilePos') <= $this->position &&
-            $node->getAttribute('endFilePos') >= $this->position
-        ) {
+        if ($startFilePos <= $this->position && $endFilePos >= $this->position) {
             if ($node instanceof Node\Stmt\ClassLike) {
                 $this->currentClassName = (string) $node->name;
 
@@ -185,6 +202,7 @@ class QueryingVisitor extends NodeVisitorAbstract
                     foreach ($node->uses as $closureUse) {
                         if ($closureUse->var === $this->name) {
                             $variableIsOutsideCurrentScope = true;
+                            break;
                         }
                     }
                 }
@@ -204,18 +222,28 @@ class QueryingVisitor extends NodeVisitorAbstract
     {
         $docblock = $node->getDocComment();
 
+        if (!$docblock) {
+            return;
+        }
+
+        // Check for a reverse type annotation /** @var $someVar FooType */. These aren't correct in the sense that
+        // they aren't consistent with the standard syntax "@var <type> <name>", but they are still used by some IDE's.
+        // For this reason we support them, but only their most elementary form.
         $classRegexPart = "?:\\\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\\\[a-zA-Z_][a-zA-Z0-9_]*)*";
+        $reverseRegexTypeAnnotation = "/\/\*\*\s*@var\s+\\\${$this->name}\s+(({$classRegexPart}(?:\[\])?))\s*(\s.*)?\*\//";
 
-        // Check for a type annotation in the style of /** @var FooType $someVar */ or /** @var $someVar FooType */.
-        $regexTypeAnnotation = "/\/\*\*\s*@var\s+(({$classRegexPart}(?:\[\])?))\s+\\\${$this->name}\s*(\s.*)?\*\//";
-        $reversRegexTypeAnnotation = "/\/\*\*\s*@var\s+\\\${$this->name}\s+(({$classRegexPart}(?:\[\])?))\s*(\s.*)?\*\//";
-
-        if (preg_match($regexTypeAnnotation, $docblock, $matches) === 1) {
+        if (preg_match($reverseRegexTypeAnnotation, $docblock, $matches) === 1) {
             $this->bestTypeOverrideMatch = $matches[1];
             $this->bestTypeOverrideMatchLine = $node->getLine();
-        } elseif (preg_match($reversRegexTypeAnnotation, $docblock, $matches) === 1) {
-            $this->bestTypeOverrideMatch = $matches[1];
-            $this->bestTypeOverrideMatchLine = $node->getLine();
+        } else {
+            $docblockData = $this->getDocParser()->parse((string) $docblock, [
+                DocParser::VAR_TYPE
+            ], $this->name);
+
+            if ($docblockData['var']['name'] === $this->name && $docblockData['var']['type']) {
+                $this->bestTypeOverrideMatch = $docblockData['var']['type'];
+                $this->bestTypeOverrideMatchLine = $node->getLine();
+            }
         }
     }
 
@@ -248,71 +276,95 @@ class QueryingVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * @var string|null
+     * @var string[]
      */
-    protected function getType()
+    protected function getTypes()
     {
         if ($this->bestTypeOverrideMatch) {
-            return $this->bestTypeOverrideMatch;
+            return $this->typeAnalyzer->getTypesForTypeSpecification($this->bestTypeOverrideMatch);
         } elseif ($this->name === 'this') {
-            return $this->currentClassName;
+            return $this->currentClassName ? [$this->currentClassName] : [];
         } elseif ($this->bestMatch) {
             if ($this->bestMatch instanceof Node\Expr\Assign) {
-                return $this->deduceTypeCommand->deduceTypeFromNode(
-                    $this->file,
-                    $this->code,
-                    $this->bestMatch->expr,
-                    $this->bestMatch->getAttribute('startFilePos')
-                );
+                if ($this->bestMatch->expr instanceof Node\Expr\Ternary) {
+                    $firstOperandType = $this->deduceTypesCommand->deduceTypesFromNode(
+                        $this->file,
+                        $this->code,
+                        $this->bestMatch->expr->if ?: $this->bestMatch->expr->cond,
+                        $this->bestMatch->getAttribute('startFilePos')
+                    );
+
+                    $secondOperandType = $this->deduceTypesCommand->deduceTypesFromNode(
+                        $this->file,
+                        $this->code,
+                        $this->bestMatch->expr->else,
+                        $this->bestMatch->getAttribute('startFilePos')
+                    );
+
+                    if ($firstOperandType === $secondOperandType) {
+                        return $firstOperandType;
+                    }
+                } else {
+                    return $this->deduceTypesCommand->deduceTypesFromNode(
+                        $this->file,
+                        $this->code,
+                        $this->bestMatch->expr,
+                        $this->bestMatch->getAttribute('startFilePos')
+                    );
+                }
             } elseif ($this->bestMatch instanceof Node\Stmt\Foreach_) {
-                $listType = $this->deduceTypeCommand->deduceTypeFromNode(
+                $types = $this->deduceTypesCommand->deduceTypesFromNode(
                     $this->file,
                     $this->code,
                     $this->bestMatch->expr,
                     $this->bestMatch->getAttribute('startFilePos')
                 );
 
-                if ($listType && mb_strpos($listType, '[]') !== false) {
-                    return mb_substr($listType, 0, -2);
+                foreach ($types as $type) {
+                    if ($type && mb_strpos($type, '[]') !== false) {
+                        $type = mb_substr($type, 0, -2);
+
+                        return $type ? [$type] : [];
+                    }
                 }
             } else {
-                return $this->bestMatch;
+                return $this->bestMatch ? [$this->bestMatch] : [];
             }
         } elseif ($this->lastFunctionLikeNode) {
             foreach ($this->lastFunctionLikeNode->getParams() as $param) {
                 if ($param->name === $this->name) {
+                    $docBlock = $this->lastFunctionLikeNode->getDocComment();
+
+                    if ($docBlock) {
+                        // Analyze the docblock's @param tags.
+                        $name = null;
+
+                        if ($this->lastFunctionLikeNode instanceof Node\Stmt\Function_ ||
+                            $this->lastFunctionLikeNode instanceof Node\Stmt\ClassMethod
+                        ) {
+                            $name = $this->lastFunctionLikeNode->name;
+                        }
+
+                        $result = $this->getDocParser()->parse((string) $docBlock, [
+                            DocParser::PARAM_TYPE
+                        ], $name, true);
+
+                        if (isset($result['params']['$' . $this->name])) {
+                            return $this->typeAnalyzer->getTypesForTypeSpecification(
+                                $result['params']['$' . $this->name]['type']
+                            );
+                        }
+                    }
+
                     if ($param->type) {
                         // Found a type hint.
                         if ($param->type instanceof Node\Name) {
-                            return $this->fetchClassName($param->type);
+                            $type = $this->fetchClassName($param->type);
+
+                            return $type ? [$type] : [];
                         }
 
-                        return $param->type;
-                    }
-
-                    $docBlock = $this->lastFunctionLikeNode->getDocComment();
-
-                    if (!$docBlock) {
-                        break;
-                    }
-
-                    // Analyze the docblock's @param tags.
-                    $docParser = new DocParser();
-
-                    $name = null;
-
-                    if ($this->lastFunctionLikeNode instanceof Node\Stmt\Function_ ||
-                        $this->lastFunctionLikeNode instanceof Node\Stmt\ClassMethod
-                    ) {
-                        $name = $this->lastFunctionLikeNode->name;
-                    }
-
-                    $result = $docParser->parse((string) $docBlock, [
-                        DocParser::PARAM_TYPE
-                    ], $name, true);
-
-                    if (isset($result['params']['$' . $this->name])) {
-                        return $result['params']['$' . $this->name]['type'];
+                        return $param->type ? [$param->type] : [];
                     }
 
                     break;
@@ -320,32 +372,50 @@ class QueryingVisitor extends NodeVisitorAbstract
             }
         }
 
-        return null;
+        return [];
     }
 
     /**
      * @param string $file
      *
-     * @return string|null
+     * @return string[]
      */
-    public function getResolvedType($file)
+    public function getResolvedTypes($file)
     {
-        $type = $this->getType();
+        $resolvedTypes = [];
 
-        if (!$type || $this->typeAnalyzer->isSpecialType($type)) {
-            return $type;
+        $types = $this->getTypes();
+
+        foreach ($types as $type) {
+            if (in_array($type, ['self', 'static', '$this'], true) && $this->currentClassName) {
+                $type = $this->currentClassName;
+            }
+
+            if ($this->typeAnalyzer->isClassType($type) && $type[0] !== "\\") {
+                $type = $this->resolveTypeCommand->resolveType(
+                    $type,
+                    $file,
+                    $this->bestTypeOverrideMatchLine ?: $this->line
+                );
+            }
+
+            $resolvedTypes[] = $type;
         }
 
-        if ($type[0] !== "\\") {
-            $type = $this->resolveTypeCommand->resolveType(
-                $type,
-                $file,
-                $this->bestTypeOverrideMatchLine ?: $this->line
-            );
+        return $resolvedTypes;
+    }
 
-            return "\\" . $type;
+    /**
+     * Retrieves an instance of DocParser. The object will only be created once if needed.
+     *
+     * @return DocParser
+     */
+    protected function getDocParser()
+    {
+        if (!$this->docParser instanceof DocParser) {
+            $this->docParser = new DocParser();
         }
 
-        return $type;
+        return $this->docParser;
     }
 }

@@ -23,6 +23,25 @@ class CSVEditor
 
     Tablr ?= require './tablr'
     @options ?= {}
+
+    @options.delimiter ?= atom.config.get('tablr.csvEditor.columnDelimiter')
+    @options.rowDelimiter ?= atom.config.get('tablr.csvEditor.rowDelimiter')
+    @options.escape ?= atom.config.get('tablr.csvEditor.escape')
+    @options.comment ?= atom.config.get('tablr.csvEditor.comment')
+    @options.quote ?= atom.config.get('tablr.csvEditor.quote')
+    @options.fileEncoding ?= atom.config.get('tablr.csvEditor.encodings')
+    @options.header ?= atom.config.get('tablr.csvEditor.header')
+    @options.eof ?= atom.config.get('tablr.csvEditor.eof')
+    @options.quoted ?= atom.config.get('tablr.csvEditor.quoted')
+    @options.skip_empty_lines ?= atom.config.get('tablr.csvEditor.skipEmptyLines')
+
+    delete @options.rowDelimiter if @options.rowDelimiter is 'auto'
+
+    if not @options.ltrim? and not @options.rtrim? and not @options.trim?
+      @options.ltrim = true if atom.config.get('tablr.csvEditor.trim') is 'left'
+      @options.rtrim = true if atom.config.get('tablr.csvEditor.trim') is 'right'
+      @options.trim = true if atom.config.get('tablr.csvEditor.trim') is 'both'
+
     @emitter = new Emitter
     @setPath(filePath)
 
@@ -300,7 +319,11 @@ class CSVEditor
 
       end = =>
         table = new Table
-        return resolve(new TableEditor({table})) if output.length is 0
+        if output.length is 0
+          tableEditor = new TableEditor({table})
+          tableEditor.setSaveHandler(@save)
+          tableEditor.initializeAfterSetup()
+          return resolve(tableEditor)
 
         table.lockModifiedStatus()
 

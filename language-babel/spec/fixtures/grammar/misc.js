@@ -1,5 +1,97 @@
 // SYNTAX TEST "source.js.jsx"
 
+// Support flow typing in comments
+
+function foo(bar /*:: ?*/) {}
+// <- meta.function.js storage.type.function.js
+ // <- meta.function.js storage.type.function.js
+//^^^^^^ ^^^^^^^ ^^^^ ^^^^     meta.function.js
+//^^^^^^                       storage.type.function.js
+//       ^^^                   entity.name.function.js
+//          ^                  punctuation.definition.parameters.begin.js
+//           ^^^               variable.other.readwrite.js
+//               ^^    ^^      punctuation.definition.comment.js
+//                 ^^          punctuation.type.flowtype
+//                    ^        keyword.operator.optional.parameter.flowtype
+//                       ^     punctuation.definition.parameters.end.js
+//                         ^^  meta.brace.curly.js
+function foo2(bar /*:: ?: string*/) {}
+// <- meta.function.js storage.type.function.js
+ // <- meta.function.js storage.type.function.js
+//^^^^^^ ^^^^^^^^ ^^^^ ^^ ^^^^^^^^^     meta.function.js
+//^^^^^^                                storage.type.function.js
+//       ^^^^                           entity.name.function.js
+//           ^                          punctuation.definition.parameters.begin.js
+//            ^^^                       variable.other.readwrite.js
+//                ^^            ^^      punctuation.definition.comment.js
+//                  ^^  ^               punctuation.type.flowtype
+//                     ^                keyword.operator.optional.parameter.flowtype
+//                        ^^^^^^        support.type.builtin.primitive.flowtype
+//                                ^     punctuation.definition.parameters.end.js
+//                                  ^^  meta.brace.curly.js
+function foo(x /*: number*/) /*: string*/ {}
+// <- meta.function.js storage.type.function.js
+ // <- meta.function.js storage.type.function.js
+//^^^^^^ ^^^^^ ^^^ ^^^^^^^^^ ^^^ ^^^^^^^^     meta.function.js
+//^^^^^^                                      storage.type.function.js
+//       ^^^                                  entity.name.function.js
+//          ^                                 punctuation.definition.parameters.begin.js
+//           ^                                variable.other.readwrite.js
+//             ^^        ^^  ^^        ^^     punctuation.definition.comment.js
+//               ^             ^              punctuation.type.flowtype
+//                 ^^^^^^        ^^^^^^       support.type.builtin.primitive.flowtype
+//                         ^                  punctuation.definition.parameters.end.js
+//                                        ^^  meta.brace.curly.js
+/*:: type B = {
+// <- punctuation.definition.comment.js
+ // <- punctuation.definition.comment.js
+//^^             punctuation.type.flowtype
+//   ^^^^        keyword.other.typedef.flowtype
+//        ^      support.type.class.flowtype
+//            ^  meta.brace.curly.js
+  name: string;
+//^^^^           variable.other.readwrite.js
+//    ^          punctuation.type.flowtype
+//      ^^^^^^   support.type.builtin.primitive.flowtype
+};*/
+// <- meta.brace.curly.js
+ // <- punctuation.object.end.flowtype
+//^^  punctuation.definition.comment.js
+/*:: export type GraphQLFormattedError = number;*/
+// <- punctuation.definition.comment.js
+ // <- punctuation.definition.comment.js
+//                                              ^^  punctuation.definition.comment.js
+//^^                                                punctuation.type.flowtype
+//   ^^^^^^                                         keyword.control.module.js
+//          ^^^^                                    keyword.other.typedef.flowtype
+//               ^^^^^^^^^^^^^^^^^^^^^              support.type.class.flowtype
+//                                       ^^^^^^     support.type.builtin.primitive.flowtype
+//                                             ^    punctuation.object.end.flowtype
+/*:: import type A, { B, C } from './types';*/
+// <- punctuation.definition.comment.js
+ // <- punctuation.definition.comment.js
+//                                          ^^  punctuation.definition.comment.js
+//^^                                            punctuation.type.flowtype
+//   ^^^^^^                  ^^^^               keyword.control.module.js
+//          ^^^^                                keyword.other.typedef.flowtype
+//               ^    ^  ^                      variable.other.constant.js
+//                ^    ^                        meta.delimiter.comma.js
+//                  ^      ^                    meta.brace.curly.js
+//                                ^       ^     punctuation.definition.string.begin.js
+//                                 ^^^^^^^      string.quoted.module.js
+/*:: import typeof D, { E, F } from './types';*/
+// <- punctuation.definition.comment.js
+ // <- punctuation.definition.comment.js
+//                                            ^^  punctuation.definition.comment.js
+//^^                                              punctuation.type.flowtype
+//   ^^^^^^                    ^^^^               keyword.control.module.js
+//          ^^^^^^                                keyword.other.typedef.flowtype
+//                 ^    ^  ^                      variable.other.constant.js
+//                  ^    ^                        meta.delimiter.comma.js
+//                    ^      ^                    meta.brace.curly.js
+//                                  ^       ^     punctuation.definition.string.begin.js
+//                                   ^^^^^^^      string.quoted.module.js
+
 // Calls language-mustache & language-html from a object template: backtick
 
 a.component('randomComponent', {

@@ -7,6 +7,7 @@ use UnexpectedValueException;
 
 use GetOptionKit\OptionCollection;
 
+use PhpIntegrator\TypeAnalyzer;
 use PhpIntegrator\IndexDataAdapter;
 
 use PhpIntegrator\Application\Command as BaseCommand;
@@ -16,6 +17,11 @@ use PhpIntegrator\Application\Command as BaseCommand;
  */
 class ClassInfo extends BaseCommand
 {
+    /**
+     * @var TypeAnalyzer
+     */
+    protected $typeAnalyzer;
+
     /**
      * @inheritDoc
      */
@@ -41,22 +47,28 @@ class ClassInfo extends BaseCommand
     }
 
     /**
-     * @param string $fqsen
+     * @param string $fqcn
      *
      * @return array
      */
-    public function getClassInfo($fqsen)
+    public function getClassInfo($fqcn)
     {
-        if ($fqsen[0] === '\\') {
-            $fqsen = mb_substr($fqsen, 1);
+        $fqcn = $this->getTypeAnalyzer()->getNormalizedFqcn($fqcn);
+
+        return $this->getIndexDataAdapter()->getStructureInfo($fqcn);
+    }
+
+    /**
+     * Retrieves an instance of TypeAnalyzer. The object will only be created once if needed.
+     *
+     * @return TypeAnalyzer
+     */
+    protected function getTypeAnalyzer()
+    {
+        if (!$this->typeAnalyzer instanceof TypeAnalyzer) {
+            $this->typeAnalyzer = new TypeAnalyzer();
         }
 
-        $id = $this->indexDatabase->getStructureId($fqsen);
-
-        if (!$id) {
-            throw new UnexpectedValueException('The structural element "' . $fqsen . '" was not found!');
-        }
-
-        return $this->getIndexDataAdapter()->getStructureInfo($id);
+        return $this->typeAnalyzer;
     }
 }

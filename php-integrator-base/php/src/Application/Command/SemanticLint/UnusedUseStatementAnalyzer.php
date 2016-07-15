@@ -2,6 +2,9 @@
 
 namespace PhpIntegrator\Application\Command\SemanticLint;
 
+use PhpIntegrator\DocParser;
+use PhpIntegrator\TypeAnalyzer;
+
 /**
  * Looks for unused use statements.
  */
@@ -24,12 +27,15 @@ class UnusedUseStatementAnalyzer implements AnalyzerInterface
 
     /**
      * Constructor.
+     *
+     * @param TypeAnalyzer $typeAnalyzer
+     * @param DocParser    $docParser
      */
-    public function __construct()
+    public function __construct(TypeAnalyzer $typeAnalyzer, DocParser $docParser)
     {
         $this->classUsageFetchingVisitor = new Visitor\ClassUsageFetchingVisitor();
         $this->useStatementFetchingVisitor = new Visitor\UseStatementFetchingVisitor();
-        $this->docblockClassUsageFetchingVisitor = new Visitor\DocblockClassUsageFetchingVisitor();
+        $this->docblockClassUsageFetchingVisitor = new Visitor\DocblockClassUsageFetchingVisitor($typeAnalyzer, $docParser);
     }
 
     /**

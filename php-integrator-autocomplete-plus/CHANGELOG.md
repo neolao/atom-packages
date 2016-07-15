@@ -1,3 +1,32 @@
+## 1.0.1
+### Bugs fixed
+* Add a sanity check for providers on package deactivation.
+
+## 1.0.0 (base 1.0.0)
+### Features and improvements
+* Only interfaces will now be listed after the `implements` keyword.
+* Only appropriate classes or interfaces will now be listed after the `extends` keyword.
+* The default value for function and method parameters that have one will now be shown during autocompletion.
+* "Branched" member autocompletion is now supported. This means that if a structural element returns multiple types, all of their members will be listed, for example:
+
+```php
+/**
+ * @return \IteratorAggregate|\Countable
+ */
+public function foo()
+{
+    $this->foo()-> // Will list members for both Countable and IteratorAggregate.
+}
+```
+
+### Bugs fixed
+* Global constants will now also show their type in the left column.
+* Global constants will now properly show their short description instead of just "Global PHP constant".
+* Fix the FQCN not properly being completed in some cases when starting with a leading slash (only the last part was completed).
+* The ellipsis for variadic parameters is now shown at the front instead of the back of the parameter, consistent with PHP's syntax.
+* Global constants will no longer show after a backslash. It would always result in a syntax error and puts the class list up front, which is more likely to be what you're looking for.
+* Class suggestions will now be shown without having to type the first letter. An exception is the class list that is shown without any keyword (such as `new`, `extends`, ...), because it constantly pops up when writing regular code, accidentally triggering the completion whenever you want to move to the next line.
+
 ## 0.8.1
 ### Bugs fixed
 * Fixed the `class` suggestion being shown for classlikes that didn't exist.

@@ -2,9 +2,12 @@
 
 namespace PhpIntegrator\Application\Command\SemanticLint;
 
-use PhpIntegrator\IndexDatabase;
+use PhpIntegrator\DocParser;
+use PhpIntegrator\TypeAnalyzer;
 
 use PhpIntegrator\Application\Command\ResolveType;
+
+use PhpIntegrator\Indexing\IndexDatabase;
 
 /**
  * Looks for unknown class names.
@@ -32,18 +35,38 @@ class UnknownClassAnalyzer implements AnalyzerInterface
     protected $indexDatabase;
 
     /**
+     * @var TypeAnalyzer
+     */
+    protected $typeAnalyzer;
+
+    /**
+     * @var ResolveType
+     */
+    protected $resolveType;
+
+    /**
      * Constructor.
      *
      * @param string        $file
      * @param IndexDatabase $indexDatabase
+     * @param ResolveType   $resolveType
+     * @param TypeAnalyzer  $typeAnalyzer
+     * @param DocParser     $docParser
      */
-    public function __construct($file, IndexDatabase $indexDatabase)
-    {
+    public function __construct(
+        $file,
+        IndexDatabase $indexDatabase,
+        ResolveType $resolveType,
+        TypeAnalyzer $typeAnalyzer,
+        DocParser $docParser
+    ) {
         $this->file = $file;
+        $this->typeAnalyzer = $typeAnalyzer;
+        $this->resolveType = $resolveType;
         $this->indexDatabase = $indexDatabase;
 
         $this->classUsageFetchingVisitor = new Visitor\ClassUsageFetchingVisitor();
-        $this->docblockClassUsageFetchingVisitor = new Visitor\DocblockClassUsageFetchingVisitor();
+        $this->docblockClassUsageFetchingVisitor = new Visitor\DocblockClassUsageFetchingVisitor($typeAnalyzer, $docParser);
     }
 
     /**
@@ -66,14 +89,11 @@ class UnknownClassAnalyzer implements AnalyzerInterface
         $classMap = [];
 
         foreach ($this->indexDatabase->getAllStructuresRawInfo(null) as $element) {
-            $classMap[$element['fqsen']] = true;
+            $classMap[$element['fqcn']] = true;
         }
 
         // Cross-reference the found class names against the class map.
         $unknownClasses = [];
-
-        $resolveTypeCommand = new ResolveType();
-        $resolveTypeCommand->setIndexDatabase($this->indexDatabase);
 
         $classUsages = array_merge(
             $this->classUsageFetchingVisitor->getClassUsageList(),
@@ -82,16 +102,18 @@ class UnknownClassAnalyzer implements AnalyzerInterface
 
         foreach ($classUsages as $classUsage) {
             if ($classUsage['isFullyQualified']) {
-                $fqsen = $classUsage['name'];
+                $fqcn = $classUsage['name'];
             } else {
-                $fqsen = $resolveTypeCommand->resolveType(
+                $fqcn = $this->resolveType->resolveType(
                     $classUsage['name'],
                     $this->file,
                     $classUsage['line']
                 );
             }
 
-            if (!isset($classMap[$fqsen])) {
+            $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn);
+
+            if (!isset($classMap[$fqcn])) {
                 unset($classUsage['line'], $classUsage['firstPart'], $classUsage['isFullyQualified']);
 
                 $unknownClasses[] = $classUsage;

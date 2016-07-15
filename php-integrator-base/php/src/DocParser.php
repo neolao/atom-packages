@@ -69,23 +69,56 @@ class DocParser
         $docblock = is_string($docblock) ? $docblock : null;
 
         if ($docblock) {
-            preg_match_all('/\*\s+(@[a-zA-Z-][a-z-]*)([^@]*)(?:\n|\*\/)/', $docblock, $matches, PREG_SET_ORDER);
+            preg_match_all('/\*\s+(@[a-zA-Z-][a-z-]*)(?:\s+([.\n]*))/', $docblock, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
 
+            $segments = [];
+            $previousStart = 0;
+            $previousTag = null;
+
+            // Build a list of 'segments', which are just a collection of ranges indicating where each detected tag
+            // starts and stops.
             foreach ($matches as $match) {
-                if (!isset($tags[$match[1]])) {
-                    $tags[$match[1]] = [];
+                $tag = $match[1][0];
+                $tagOffset = $match[0][1];
+
+                $tagContentOffset = null;
+
+                if (isset($match[2][1])) {
+                    $tagContentOffset = $match[2][1];
+                } else {
+                    $tagContentOffset = $previousStart;
                 }
 
-                $tagValue = $match[2];
+                $segments[] = [$previousTag, $previousStart, $tagOffset];
+
+                $previousStart = $tagContentOffset;
+                $previousTag = $tag;
+            }
+
+            $segments[] = [$previousTag, $previousStart, mb_strlen($docblock)];
+
+            foreach ($segments as $segment) {
+                list($tag, $start, $end) = $segment;
+
+                if (!$tag) {
+                    continue;
+                }
+
+                if (!isset($tags[$tag])) {
+                    $tags[$tag] = [];
+                }
+
+                // NOTE: preg_match_all returns byte offsets, not character offsets.
+                $tagValue = substr($docblock, $start, $end - $start);
                 $tagValue = $this->normalizeNewlines($tagValue);
 
                 // Remove the delimiters of the docblock itself at the start of each line, if any.
-                $tagValue = preg_replace('/\n\s+\*\s*/', ' ', $tagValue);
+                $tagValue = preg_replace('/\n\s+\*\/?\s*/', ' ', $tagValue);
 
                 // Collapse multiple spaces, just like HTML does.
                 $tagValue = preg_replace('/\s\s+/', ' ', $tagValue);
 
-                $tags[$match[1]][] = trim($tagValue);
+                $tags[$tag][] = trim($tagValue);
             }
         }
 
@@ -122,6 +155,91 @@ class DocParser
         }
 
         return $result;
+    }
+
+    /**
+     * Indicates if the specified tag is valid. Tags should be lower-case.
+     *
+     * @param string $tag The tag, without the @ sign.
+     *
+     * @return bool
+     */
+    public function isValidTag($tag)
+    {
+        return in_array($tag, [
+            // PHPDOC tags, see also https://phpdoc.org/docs/latest/index.html .
+            'api',
+            'author',
+            'category',
+            'copyright',
+            'deprecated',
+            'example',
+            'filesource',
+            'global',
+            'ignore',
+            'internal',
+            'license',
+            'link',
+            'method',
+            'package',
+            'param',
+            'property',
+            'property-read',
+            'property-write',
+            'return',
+            'see',
+            'since',
+            'source',
+            'subpackage',
+            'throws',
+            'todo',
+            'uses',
+            'var',
+            'version',
+
+            'inheritdoc',
+            'inheritDoc',
+
+            // PHPUnit tags, see also https://phpunit.de/manual/current/en/appendixes.annotations.html .
+            'author',
+            'after',
+            'afterClass',
+            'backupGlobals',
+            'backupStaticAttributes',
+            'before',
+            'beforeClass',
+            'codeCoverageIgnore*',
+            'covers',
+            'coversDefaultClass',
+            'coversNothing',
+            'dataProvider',
+            'depends',
+            'expectedException',
+            'expectedExceptionCode',
+            'expectedExceptionMessage',
+            'expectedExceptionMessageRegExp',
+            'group',
+            'large',
+            'medium',
+            'preserveGlobalState',
+            'requires',
+            'runTestsInSeparateProcesses',
+            'runInSeparateProcess',
+            'small',
+            'test',
+            'testdox',
+            'ticket',
+            'uses',
+
+            // Doctrine annotation tags, see also http://doctrine-common.readthedocs.io/en/latest/reference/annotations.html .
+            'Annotation',
+            'Target',
+            'Enum',
+            'IgnoreAnnotation',
+            'Required',
+            'Attribute',
+            'Attributes'
+        ], true);
     }
 
     /**
@@ -243,33 +361,40 @@ class DocParser
      */
     protected function filterVar($docblock, $itemName, array $tags)
     {
+        $name = null;
         $type = null;
         $description = null;
 
         if (isset($tags[static::VAR_TYPE])) {
-            list($varType, $varName, $varDescription) = $this->filterParameterTag($tags[static::VAR_TYPE][0], 3);
+            foreach ($tags[static::VAR_TYPE] as $tag) {
+                list($varType, $varName, $varDescription) = $this->filterParameterTag($tag, 3);
 
-            if ($varName) {
-                if (mb_substr($varName, 0, 1) === '$') {
-                    // Example: "@var DateTime $foo My description". The tag includes the name of the property it
-                    // documents, it must match the property we're fetching documentation about.
-                    if (mb_substr($varName, 1) === $itemName) {
+                if ($varName) {
+                    if (mb_substr($varName, 0, 1) === '$') {
+                        // Example: "@var DateTime $foo My description". The tag includes the name of the property it
+                        // documents, it must match the property we're fetching documentation about.
+                        if (mb_substr($varName, 1) === $itemName) {
+                            $type = $varType;
+                            $name = $itemName;
+                            $description = $varDescription;
+
+                            break;
+                        }
+                    } else {
+                        // Example: "@var DateTime My description".
                         $type = $varType;
-                        $description = $varDescription;
+                        $description = trim($varName . ' ' . $varDescription);
                     }
-                } else {
-                    // Example: "@var DateTime My description".
+                } else if (!$varName && !$varDescription) {
+                    // Example: "@var DateTime".
                     $type = $varType;
-                    $description = trim($varName . ' ' . $varDescription);
                 }
-            } else if (!$varName && !$varDescription) {
-                // Example: "@var DateTime".
-                $type = $varType;
             }
         }
 
         return [
             'var' => [
+                'name'        => $name,
                 'type'        => $type,
                 'description' => $description
             ]

@@ -1,0 +1,185 @@
+{
+  "name": "yaml-sortkey",
+  "main": "./lib/yaml-sortkey",
+  "version": "0.1.0",
+  "description": "Sort YAML keys and validate YAML",
+  "keywords": [
+    "yaml",
+    "sort",
+    "validate",
+    "autosort"
+  ],
+  "activationCommands": {
+    "atom-workspace": "mobi-locales:validate_buffer"
+  },
+  "activationHooks": [
+    "language-yaml:grammar-used"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akfernun/yaml-sortkeys.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "js-yaml": ">=3.6.1"
+  },
+  "readme": "# yaml-sortkey package\n\nA short description of your package.\n\n![A screenshot of your package](https://f.cloud.github.com/assets/69169/2290250/c35d867a-a017-11e3-86be-cd7c5bf3ff9b.gif)\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/akfernun/yaml-sortkeys/issues"
+  },
+  "homepage": "https://github.com/akfernun/yaml-sortkeys#readme",
+  "_id": "yaml-sortkey@0.1.0",
+  "_shasum": "69f31d89b6753b320b8e0669952e5221be204477",
+  "_resolved": "file:../d-11664-64406-xn04qc/package.tgz",
+  "_from": "../d-11664-64406-xn04qc/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [
+      {
+        "name": "js-yaml",
+        "version": "3.6.1",
+        "path": "node_modules/js-yaml/index.js"
+      },
+      {
+        "name": "argparse",
+        "version": "1.0.7",
+        "path": "node_modules/js-yaml/node_modules/argparse/index.js"
+      },
+      {
+        "name": "sprintf-js",
+        "version": "1.0.3",
+        "path": "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/src/sprintf.js"
+      },
+      {
+        "name": "esprima",
+        "version": "2.7.2",
+        "path": "node_modules/js-yaml/node_modules/esprima/esprima.js"
+      }
+    ],
+    "extensions": {
+      ".js": [
+        "lib/yaml-sortkey.js",
+        "node_modules/js-yaml/bin/js-yaml.js",
+        "node_modules/js-yaml/dist/js-yaml.js",
+        "node_modules/js-yaml/dist/js-yaml.min.js",
+        "node_modules/js-yaml/index.js",
+        "node_modules/js-yaml/lib/js-yaml/common.js",
+        "node_modules/js-yaml/lib/js-yaml/dumper.js",
+        "node_modules/js-yaml/lib/js-yaml/exception.js",
+        "node_modules/js-yaml/lib/js-yaml/loader.js",
+        "node_modules/js-yaml/lib/js-yaml/mark.js",
+        "node_modules/js-yaml/lib/js-yaml/schema/core.js",
+        "node_modules/js-yaml/lib/js-yaml/schema/default_full.js",
+        "node_modules/js-yaml/lib/js-yaml/schema/default_safe.js",
+        "node_modules/js-yaml/lib/js-yaml/schema/failsafe.js",
+        "node_modules/js-yaml/lib/js-yaml/schema/json.js",
+        "node_modules/js-yaml/lib/js-yaml/schema.js",
+        "node_modules/js-yaml/lib/js-yaml/type/binary.js",
+        "node_modules/js-yaml/lib/js-yaml/type/bool.js",
+        "node_modules/js-yaml/lib/js-yaml/type/float.js",
+        "node_modules/js-yaml/lib/js-yaml/type/int.js",
+        "node_modules/js-yaml/lib/js-yaml/type/js/function.js",
+        "node_modules/js-yaml/lib/js-yaml/type/js/regexp.js",
+        "node_modules/js-yaml/lib/js-yaml/type/js/undefined.js",
+        "node_modules/js-yaml/lib/js-yaml/type/map.js",
+        "node_modules/js-yaml/lib/js-yaml/type/merge.js",
+        "node_modules/js-yaml/lib/js-yaml/type/null.js",
+        "node_modules/js-yaml/lib/js-yaml/type/omap.js",
+        "node_modules/js-yaml/lib/js-yaml/type/pairs.js",
+        "node_modules/js-yaml/lib/js-yaml/type/seq.js",
+        "node_modules/js-yaml/lib/js-yaml/type/set.js",
+        "node_modules/js-yaml/lib/js-yaml/type/str.js",
+        "node_modules/js-yaml/lib/js-yaml/type/timestamp.js",
+        "node_modules/js-yaml/lib/js-yaml/type.js",
+        "node_modules/js-yaml/lib/js-yaml.js",
+        "node_modules/js-yaml/node_modules/argparse/index.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/append/constant.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/append.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/count.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/help.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/store/constant.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/store/false.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/store/true.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/store.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/subparsers.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action/version.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/action_container.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/argparse.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/argument/error.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/argument/exclusive.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/argument/group.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/argument_parser.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/const.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/help/added_formatters.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/help/formatter.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/namespace.js",
+        "node_modules/js-yaml/node_modules/argparse/lib/utils.js",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/dist/angular-sprintf.min.js",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/dist/sprintf.min.js",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/gruntfile.js",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/src/angular-sprintf.js",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/src/sprintf.js",
+        "node_modules/js-yaml/node_modules/esprima/bin/esparse.js",
+        "node_modules/js-yaml/node_modules/esprima/bin/esvalidate.js",
+        "node_modules/js-yaml/node_modules/esprima/esprima.js"
+      ],
+      ".json": [
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/bower.json",
+        "node_modules/js-yaml/node_modules/argparse/node_modules/sprintf-js/package.json",
+        "node_modules/js-yaml/node_modules/argparse/package.json",
+        "node_modules/js-yaml/node_modules/esprima/package.json",
+        "node_modules/js-yaml/package.json",
+        "package.json"
+      ]
+    },
+    "folders": [
+      {
+        "paths": [
+          "keymaps",
+          "lib",
+          "menus",
+          "",
+          "spec"
+        ],
+        "dependencies": {
+          "js-yaml": ">=3.6.1"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/js-yaml/bin",
+          "node_modules/js-yaml/dist",
+          "node_modules/js-yaml",
+          "node_modules/js-yaml/lib/js-yaml",
+          "node_modules/js-yaml/lib/js-yaml/schema",
+          "node_modules/js-yaml/lib/js-yaml/type",
+          "node_modules/js-yaml/lib/js-yaml/type/js",
+          "node_modules/js-yaml/lib"
+        ],
+        "dependencies": {
+          "argparse": "^1.0.7",
+          "esprima": "^2.6.0"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/js-yaml/node_modules/argparse",
+          "node_modules/js-yaml/node_modules/argparse/lib/action/append",
+          "node_modules/js-yaml/node_modules/argparse/lib/action",
+          "node_modules/js-yaml/node_modules/argparse/lib/action/store",
+          "node_modules/js-yaml/node_modules/argparse/lib",
+          "node_modules/js-yaml/node_modules/argparse/lib/argument",
+          "node_modules/js-yaml/node_modules/argparse/lib/help"
+        ],
+        "dependencies": {
+          "sprintf-js": "~1.0.2"
+        }
+      }
+    ]
+  }
+}

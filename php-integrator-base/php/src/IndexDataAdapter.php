@@ -10,7 +10,7 @@ use UnexpectedValueException;
 /**
  * Adapts and resolves data from the index as needed to receive an appropriate output data format.
  */
-class IndexDataAdapter
+class IndexDataAdapter implements IndexDataAdapterInterface
 {
     /**
      * The storage to use for accessing index data.
@@ -25,9 +25,14 @@ class IndexDataAdapter
     protected $docblockAnalyzer;
 
     /**
-     * @var array
+     * @var TypeAnalyzer
      */
-    protected $parentLog = [];
+    protected $typeAnalyzer;
+
+    /**
+     * @var string[]
+     */
+    protected $resolutionStack = [];
 
     /**
      * Constructor.
@@ -42,26 +47,38 @@ class IndexDataAdapter
     /**
      * Retrieves information about the specified structural element.
      *
-     * @param int $id
+     * @param string $fqcn
+     *
+     * @throws UnexpectedValueException
      *
      * @return array
      */
-    public function getStructureInfo($id)
+    public function getStructureInfo($fqcn)
     {
-        $this->parentLog = [];
+        $this->resolutionStack = [$fqcn];
 
-        return $this->getDirectStructureInfo($id);
+        return $this->getDirectStructureInfo($fqcn);
     }
 
     /**
-     * @param int $id
+     * @param string $fqcn
+     *
+     * @throws UnexpectedValueException
      *
      * @return array
      */
-    public function getDirectStructureInfo($id)
+    protected function getDirectStructureInfo($fqcn)
     {
+        $rawInfo = $this->storage->getStructureRawInfo($fqcn);
+
+        if (!$rawInfo) {
+            throw new UnexpectedValueException('The structural element "' . $fqcn . '" was not found!');
+        }
+
+        $id = $rawInfo['id'];
+
         return $this->resolveStructure(
-            $this->storage->getStructureRawInfo($id),
+            $rawInfo,
             $this->storage->getStructureRawParents($id),
             $this->storage->getStructureRawChildren($id),
             $this->storage->getStructureRawInterfaces($id),
@@ -75,19 +92,26 @@ class IndexDataAdapter
     }
 
     /**
-     * @param int $id
+     * @param string $fqcn
+     * @param string $originFqcn
      *
      * @return array
      */
-    protected function getCheckedParentStructureInfo($id, $fqsen, $originFqsen)
+    protected function getCheckedStructureInfo($fqcn, $originFqcn)
     {
-        if (isset($this->parentLog[$fqsen][$originFqsen])) {
-            throw new IndexDataAdapter\CircularDependencyException("Circular dependency detected from {$originFqsen} to {$fqsen}!");
+        if (in_array($fqcn, $this->resolutionStack)) {
+            throw new CircularDependencyException(
+                "Circular dependency detected from {$originFqcn} to {$fqcn}!"
+            );
         }
 
-        $this->parentLog[$fqsen][$originFqsen] = true;
+        $this->resolutionStack[] = $fqcn;
 
-        return $this->getDirectStructureInfo($id);
+        $data = $this->getDirectStructureInfo($fqcn);
+
+        array_pop($this->resolutionStack);
+
+        return $data;
     }
 
     /**
@@ -119,23 +143,22 @@ class IndexDataAdapter
         $methods
     ) {
         $result = new ArrayObject([
-            'name'               => $element['fqsen'],
+            'name'               => $element['fqcn'],
             'startLine'          => (int) $element['start_line'],
             'endLine'            => (int) $element['end_line'],
             'shortName'          => $element['name'],
             'filename'           => $element['path'],
             'type'               => $element['type_name'],
             'isAbstract'         => !!$element['is_abstract'],
+            'isFinal'            => !!$element['is_final'],
             'isBuiltin'          => !!$element['is_builtin'],
             'isDeprecated'       => !!$element['is_deprecated'],
             'isAnnotation'       => !!$element['is_annotation'],
             'hasDocblock'        => !!$element['has_docblock'],
             'hasDocumentation'   => !!$element['has_docblock'],
 
-            'descriptions'       => [
-                'short' => $element['short_description'],
-                'long'  => $element['long_description']
-            ],
+            'shortDescription'   => $element['short_description'],
+            'longDescription'    => $element['long_description'],
 
             'parents'            => [],
             'interfaces'         => [],
@@ -165,7 +188,7 @@ class IndexDataAdapter
         $this->parsePropertyData($result, $properties, $element);
         $this->parseMethodData($result, $methods, $element);
 
-        $this->resolveReturnTypes($result, $element['fqsen']);
+        $this->resolveSpecialTypes($result, $element['fqcn']);
 
         return $result->getArrayCopy();
     }
@@ -180,15 +203,15 @@ class IndexDataAdapter
         foreach ($constants as $rawConstantData) {
             $result['constants'][$rawConstantData['name']] = array_merge($this->getConstantInfo($rawConstantData), [
                 'declaringClass' => [
-                    'name'            => $element['fqsen'],
-                    'filename'        => $element['path'],
-                    'startLine'       => (int) $element['start_line'],
-                    'endLine'         => (int) $element['end_line'],
-                    'type'            => $element['type_name'],
+                    'name'      => $element['fqcn'],
+                    'filename'  => $element['path'],
+                    'startLine' => (int) $element['start_line'],
+                    'endLine'   => (int) $element['end_line'],
+                    'type'      => $element['type_name'],
                 ],
 
                 'declaringStructure' => [
-                    'name'            => $element['fqsen'],
+                    'name'            => $element['fqcn'],
                     'filename'        => $element['path'],
                     'startLine'       => (int) $element['start_line'],
                     'endLine'         => (int) $element['end_line'],
@@ -233,7 +256,7 @@ class IndexDataAdapter
                 'override'       => $overriddenPropertyData,
 
                 'declaringClass' => [
-                    'name'            => $element['fqsen'],
+                    'name'            => $element['fqcn'],
                     'filename'        => $element['path'],
                     'startLine'       => (int) $element['start_line'],
                     'endLine'         => (int) $element['end_line'],
@@ -241,7 +264,7 @@ class IndexDataAdapter
                 ],
 
                 'declaringStructure' => [
-                    'name'            => $element['fqsen'],
+                    'name'            => $element['fqcn'],
                     'filename'        => $element['path'],
                     'startLine'       => (int) $element['start_line'],
                     'endLine'         => (int) $element['end_line'],
@@ -251,14 +274,10 @@ class IndexDataAdapter
                 ]
             ]);
 
-            if ($resultingProperty['return']['type'] === 'self') {
-                $resultingProperty['return']['resolvedType'] = $element['fqsen'];
-            }
-
             if ($existingProperty) {
-                $resultingProperty['descriptions']['long'] = $this->resolveInheritDoc(
-                    $resultingProperty['descriptions']['long'],
-                    $existingProperty['descriptions']['long']
+                $resultingProperty['longDescription'] = $this->resolveInheritDoc(
+                    $resultingProperty['longDescription'],
+                    $existingProperty['longDescription']
                 );
             }
 
@@ -302,7 +321,7 @@ class IndexDataAdapter
                 }
 
                 if ($this->isInheritingDocumentation($method)) {
-                    $inheritedData = $this->extractInheritedMethodInfo($existingMethod);
+                    $inheritedData = $this->extractInheritedMethodInfo($existingMethod, $method);
                 }
             }
 
@@ -311,7 +330,7 @@ class IndexDataAdapter
                 'implementation' => $implementedMethodData,
 
                 'declaringClass' => [
-                    'name'            => $element['fqsen'],
+                    'name'            => $element['fqcn'],
                     'filename'        => $element['path'],
                     'startLine'       => (int) $element['start_line'],
                     'endLine'         => (int) $element['end_line'],
@@ -319,7 +338,7 @@ class IndexDataAdapter
                 ],
 
                 'declaringStructure' => [
-                    'name'            => $element['fqsen'],
+                    'name'            => $element['fqcn'],
                     'filename'        => $element['path'],
                     'startLine'       => (int) $element['start_line'],
                     'endLine'         => (int) $element['end_line'],
@@ -329,14 +348,10 @@ class IndexDataAdapter
                 ]
             ]);
 
-            if ($resultingMethod['return']['type'] === 'self') {
-                $resultingMethod['return']['resolvedType'] = $element['fqsen'];
-            }
-
             if ($existingMethod) {
-                $resultingMethod['descriptions']['long'] = $this->resolveInheritDoc(
-                    $resultingMethod['descriptions']['long'],
-                    $existingMethod['descriptions']['long']
+                $resultingMethod['longDescription'] = $this->resolveInheritDoc(
+                    $resultingMethod['longDescription'],
+                    $existingMethod['longDescription']
                 );
             }
 
@@ -351,7 +366,7 @@ class IndexDataAdapter
     protected function parseChildrenData(ArrayObject $result, $children)
     {
         foreach ($children as $child) {
-            $result['directChildren'][] = $child['fqsen'];
+            $result['directChildren'][] = $child['fqcn'];
         }
     }
 
@@ -362,7 +377,7 @@ class IndexDataAdapter
     protected function parseImplementorsData(ArrayObject $result, $implementors)
     {
         foreach ($implementors as $implementor) {
-            $result['directImplementors'][] = $implementor['fqsen'];
+            $result['directImplementors'][] = $implementor['fqcn'];
         }
     }
 
@@ -373,7 +388,7 @@ class IndexDataAdapter
     protected function parseTraitUsersData(ArrayObject $result, $traitUsers)
     {
         foreach ($traitUsers as $trait) {
-            $result['directTraitUsers'][] = $trait['fqsen'];
+            $result['directTraitUsers'][] = $trait['fqcn'];
         }
     }
 
@@ -386,19 +401,19 @@ class IndexDataAdapter
     protected function parseParentData(ArrayObject $result, $parents)
     {
         foreach ($parents as $parent) {
-            $parentInfo = $this->getCheckedParentStructureInfo($parent['id'], $parent['fqsen'], $result['name']);
+            $parentInfo = $this->getCheckedStructureInfo($parent['fqcn'], $result['name']);
 
             if ($parentInfo) {
-                if (!$result['descriptions']['short']) {
-                    $result['descriptions']['short'] = $parentInfo['descriptions']['short'];
+                if (!$result['shortDescription']) {
+                    $result['shortDescription'] = $parentInfo['shortDescription'];
                 }
 
-                if (!$result['descriptions']['long']) {
-                    $result['descriptions']['long'] = $parentInfo['descriptions']['long'];
+                if (!$result['longDescription']) {
+                    $result['longDescription'] = $parentInfo['longDescription'];
                 } else {
-                    $result['descriptions']['long'] = $this->resolveInheritDoc(
-                        $result['descriptions']['long'],
-                        $parentInfo['descriptions']['long']
+                    $result['longDescription'] = $this->resolveInheritDoc(
+                        $result['longDescription'],
+                        $parentInfo['longDescription']
                     );
                 }
 
@@ -427,7 +442,7 @@ class IndexDataAdapter
     protected function parseInterfaceData(ArrayObject $result, $interfaces)
     {
         foreach ($interfaces as $interface) {
-            $interface = $this->getStructureInfo($interface['id']);
+            $interface = $this->getCheckedStructureInfo($interface['fqcn'], $result['name']);
 
             $result['interfaces'][] = $interface['name'];
             $result['directInterfaces'][] = $interface['name'];
@@ -453,13 +468,17 @@ class IndexDataAdapter
      *
      * @return array
      */
-    protected function parseTraitData(ArrayObject $result, Traversable $traits, $element)
+    protected function parseTraitData(ArrayObject $result, $traits, $element)
     {
+        if (empty($traits)) {
+            return;
+        }
+
         $traitAliases = $this->storage->getStructureTraitAliasesAssoc($element['id']);
         $traitPrecedences = $this->storage->getStructureTraitPrecedencesAssoc($element['id']);
 
         foreach ($traits as $trait) {
-            $trait = $this->getStructureInfo($trait['id']);
+            $trait = $this->getCheckedStructureInfo($trait['fqcn'], $result['name']);
 
             $result['traits'][] = $trait['name'];
             $result['directTraits'][] = $trait['name'];
@@ -478,7 +497,7 @@ class IndexDataAdapter
 
                 $resultingProperty = array_merge($property, $inheritedData, [
                     'declaringClass' => [
-                        'name'            => $element['fqsen'],
+                        'name'            => $element['fqcn'],
                         'filename'        => $element['path'],
                         'startLine'       => (int) $element['start_line'],
                         'endLine'         => (int) $element['end_line'],
@@ -487,9 +506,9 @@ class IndexDataAdapter
                 ]);
 
                 if ($existingProperty) {
-                    $resultingProperty['descriptions']['long'] = $this->resolveInheritDoc(
-                        $resultingProperty['descriptions']['long'],
-                        $existingProperty['descriptions']['long']
+                    $resultingProperty['longDescription'] = $this->resolveInheritDoc(
+                        $resultingProperty['longDescription'],
+                        $existingProperty['longDescription']
                     );
                 }
 
@@ -500,7 +519,7 @@ class IndexDataAdapter
                 if (isset($traitAliases[$method['name']])) {
                     $alias = $traitAliases[$method['name']];
 
-                    if ($alias['trait_fqsen'] === null || $alias['trait_fqsen'] === $trait['name']) {
+                    if ($alias['trait_fqcn'] === null || $alias['trait_fqcn'] === $trait['name']) {
                         $method['name']        = $alias['alias'] ?: $method['name'];
                         $method['isPublic']    = ($alias['access_modifier'] === 'public');
                         $method['isProtected'] = ($alias['access_modifier'] === 'protected');
@@ -516,7 +535,7 @@ class IndexDataAdapter
 
                     if ($existingMethod['declaringStructure']['type'] === 'trait') {
                         if (isset($traitPrecedences[$method['name']])) {
-                            if ($traitPrecedences[$method['name']]['trait_fqsen'] !== $trait['name']) {
+                            if ($traitPrecedences[$method['name']]['trait_fqcn'] !== $trait['name']) {
                                 // The method is present in multiple used traits and precedences indicate that the one
                                 // from this trait should not be imported.
                                 continue;
@@ -525,24 +544,24 @@ class IndexDataAdapter
                     }
 
                     if ($this->isInheritingDocumentation($method)) {
-                        $inheritedData = $this->extractInheritedMethodInfo($existingMethod);
+                        $inheritedData = $this->extractInheritedMethodInfo($existingMethod, $method);
                     }
                 }
 
                 $resultingMethod = array_merge($method, $inheritedData, [
                     'declaringClass' => [
-                        'name'            => $element['fqsen'],
-                        'filename'        => $element['path'],
-                        'startLine'       => (int) $element['start_line'],
-                        'endLine'         => (int) $element['end_line'],
-                        'type'            => $element['type_name'],
+                        'name'      => $element['fqcn'],
+                        'filename'  => $element['path'],
+                        'startLine' => (int) $element['start_line'],
+                        'endLine'   => (int) $element['end_line'],
+                        'type'      => $element['type_name'],
                     ]
                 ]);
 
                 if ($existingMethod) {
-                    $resultingMethod['descriptions']['long'] = $this->resolveInheritDoc(
-                        $resultingMethod['descriptions']['long'],
-                        $existingMethod['descriptions']['long']
+                    $resultingMethod['longDescription'] = $this->resolveInheritDoc(
+                        $resultingMethod['longDescription'],
+                        $existingMethod['longDescription']
                     );
                 }
 
@@ -553,23 +572,49 @@ class IndexDataAdapter
 
     /**
      * @param ArrayObject $result
-     * @param string      $elementFqsen
+     * @param string      $elementFqcn
      */
-    protected function resolveReturnTypes(ArrayObject $result, $elementFqsen)
+    protected function resolveSpecialTypes(ArrayObject $result, $elementFqcn)
     {
+        $typeAnalyzer = $this->getTypeAnalyzer();
+
+        $doResolveTypes = function (array &$type) use ($elementFqcn, $typeAnalyzer) {
+            if ($type['type'] === 'self') {
+                // self takes the type from the classlike it is first resolved in, so only resolve it once to ensure
+                // that it doesn't get overwritten.
+                if ($type['resolvedType'] === 'self') {
+                    $type['resolvedType'] = $typeAnalyzer->getNormalizedFqcn($elementFqcn, true);
+                }
+            } elseif ($type['type'] === '$this' || $type['type'] === 'static') {
+                $type['resolvedType'] = $typeAnalyzer->getNormalizedFqcn($elementFqcn, true);
+            } elseif ($typeAnalyzer->isClassType($type['fqcn'])) {
+                $type['resolvedType'] = $typeAnalyzer->getNormalizedFqcn($type['fqcn'], true);
+            } else {
+                $type['resolvedType'] = $type['fqcn'];
+            }
+        };
+
         foreach ($result['methods'] as $name => &$method) {
-            if ($method['return']['type'] === '$this' || $method['return']['type'] === 'static') {
-                $method['return']['resolvedType'] = $elementFqsen;
-            } elseif (!isset($method['return']['resolvedType'])) {
-                $method['return']['resolvedType'] = $method['return']['type'];
+            foreach ($method['parameters'] as &$parameter) {
+                foreach ($parameter['types'] as &$type) {
+                    $doResolveTypes($type);
+                }
+            }
+
+            foreach ($method['returnTypes'] as &$returnType) {
+                $doResolveTypes($returnType);
             }
         }
 
         foreach ($result['properties'] as $name => &$property) {
-            if ($property['return']['type'] === '$this' || $property['return']['type'] === 'static') {
-                $property['return']['resolvedType'] = $elementFqsen;
-            } elseif (!isset($property['return']['resolvedType'])) {
-                $property['return']['resolvedType'] = $property['return']['type'];
+            foreach ($property['types'] as &$type) {
+                $doResolveTypes($type);
+            }
+        }
+
+        foreach ($result['constants'] as $name => &$constants) {
+            foreach ($constants['types'] as &$type) {
+                $doResolveTypes($type);
             }
         }
     }
@@ -588,6 +633,7 @@ class IndexDataAdapter
             'isPrivate'          => ($rawInfo['access_modifier'] === 'private'),
             'isStatic'           => !!$rawInfo['is_static'],
             'isAbstract'         => !!$rawInfo['is_abstract'],
+            'isFinal'            => !!$rawInfo['is_final'],
 
             'override'           => null,
             'implementation'     => null,
@@ -610,13 +656,15 @@ class IndexDataAdapter
 
         foreach ($rawParameters as $rawParameter) {
             $parameters[] = [
-                'name'        => $rawParameter['name'],
-                'type'        => $rawParameter['type'],
-                'fullType'    => $rawParameter['full_type'],
-                'description' => $rawParameter['description'],
-                'isReference' => !!$rawParameter['is_reference'],
-                'isVariadic'  => !!$rawParameter['is_variadic'],
-                'isOptional'  => !!$rawParameter['is_optional']
+                'name'         => $rawParameter['name'],
+                'typeHint'     => $rawParameter['type_hint'],
+                'types'        => $this->getReturnTypeDataForSerializedTypes($rawParameter['types_serialized']),
+                'description'  => $rawParameter['description'],
+                'defaultValue' => $rawParameter['default_value'],
+                'isNullable'   => !!$rawParameter['is_nullable'],
+                'isReference'  => !!$rawParameter['is_reference'],
+                'isVariadic'   => !!$rawParameter['is_variadic'],
+                'isOptional'   => !!$rawParameter['is_optional']
             ];
         }
 
@@ -629,29 +677,25 @@ class IndexDataAdapter
         }
 
         return [
-            'name'             => $rawInfo['name'],
-            'fqsen'            => $rawInfo['fqsen'],
-            'isBuiltin'        => !!$rawInfo['is_builtin'],
-            'startLine'        => (int) $rawInfo['start_line'],
-            'endLine'          => (int) $rawInfo['end_line'],
-            'filename'         => $rawInfo['path'],
+            'name'              => $rawInfo['name'],
+            'fqcn'              => $rawInfo['fqcn'],
+            'isBuiltin'         => !!$rawInfo['is_builtin'],
+            'startLine'         => (int) $rawInfo['start_line'],
+            'endLine'           => (int) $rawInfo['end_line'],
+            'filename'          => $rawInfo['path'],
 
-            'parameters'       => $parameters,
-            'throws'           => $throwsAssoc,
-            'isDeprecated'     => !!$rawInfo['is_deprecated'],
-            'hasDocblock'      => !!$rawInfo['has_docblock'],
-            'hasDocumentation' => !!$rawInfo['has_docblock'],
+            'parameters'        => $parameters,
+            'throws'            => $throwsAssoc,
+            'isDeprecated'      => !!$rawInfo['is_deprecated'],
+            'hasDocblock'       => !!$rawInfo['has_docblock'],
+            'hasDocumentation'  => !!$rawInfo['has_docblock'],
 
-            'descriptions'  => [
-                'short' => $rawInfo['short_description'],
-                'long'  => $rawInfo['long_description']
-            ],
+            'shortDescription'  => $rawInfo['short_description'],
+            'longDescription'   => $rawInfo['long_description'],
+            'returnDescription' => $rawInfo['return_description'],
 
-            'return'        => [
-                'type'         => $rawInfo['return_type'],
-                'resolvedType' => $rawInfo['full_return_type'],
-                'description'  => $rawInfo['return_description']
-            ]
+            'returnTypeHint'    => $rawInfo['return_type_hint'],
+            'returnTypes'       => $this->getReturnTypeDataForSerializedTypes($rawInfo['return_types_serialized'])
         ];
     }
 
@@ -675,16 +719,11 @@ class IndexDataAdapter
             'hasDocblock'        => !!$rawInfo['has_docblock'],
             'hasDocumentation'   => !!$rawInfo['has_docblock'],
 
-            'descriptions'  => [
-                'short' => $rawInfo['short_description'],
-                'long'  => $rawInfo['long_description']
-            ],
+            'shortDescription'  => $rawInfo['short_description'],
+            'longDescription'   => $rawInfo['long_description'],
+            'typeDescription'   => $rawInfo['type_description'],
 
-            'return'        => [
-                'type'         => $rawInfo['return_type'],
-                'resolvedType' => $rawInfo['full_return_type'],
-                'description'  => $rawInfo['return_description']
-            ],
+            'types'             => $this->getReturnTypeDataForSerializedTypes($rawInfo['types_serialized']),
 
             'override'           => null,
             'declaringClass'     => null,
@@ -700,32 +739,49 @@ class IndexDataAdapter
     public function getConstantInfo(array $rawInfo)
     {
         return [
-            'name'             => $rawInfo['name'],
-            'fqsen'            => $rawInfo['fqsen'],
-            'isBuiltin'        => !!$rawInfo['is_builtin'],
-            'startLine'        => (int) $rawInfo['start_line'],
-            'endLine'          => (int) $rawInfo['end_line'],
-            'filename'         => $rawInfo['path'],
+            'name'              => $rawInfo['name'],
+            'fqcn'              => $rawInfo['fqcn'],
+            'isBuiltin'         => !!$rawInfo['is_builtin'],
+            'startLine'         => (int) $rawInfo['start_line'],
+            'endLine'           => (int) $rawInfo['end_line'],
+            'filename'          => $rawInfo['path'],
 
-            'isPublic'         => true,
-            'isProtected'      => false,
-            'isPrivate'        => false,
-            'isStatic'         => true,
-            'isDeprecated'     => !!$rawInfo['is_deprecated'],
-            'hasDocblock'      => !!$rawInfo['has_docblock'],
-            'hasDocumentation' => !!$rawInfo['has_docblock'],
+            'isPublic'          => true,
+            'isProtected'       => false,
+            'isPrivate'         => false,
+            'isStatic'          => true,
+            'isDeprecated'      => !!$rawInfo['is_deprecated'],
+            'hasDocblock'       => !!$rawInfo['has_docblock'],
+            'hasDocumentation'  => !!$rawInfo['has_docblock'],
 
-            'descriptions'  => [
-                'short' => $rawInfo['short_description'],
-                'long'  => $rawInfo['long_description']
-            ],
+            'shortDescription'  => $rawInfo['short_description'],
+            'longDescription'   => $rawInfo['long_description'],
+            'typeDescription'   => $rawInfo['type_description'],
 
-            'return'        => [
-                'type'         => $rawInfo['return_type'],
-                'resolvedType' => $rawInfo['full_return_type'],
-                'description'  => $rawInfo['return_description']
-            ],
+            'types'             => $this->getReturnTypeDataForSerializedTypes($rawInfo['types_serialized'])
         ];
+    }
+
+    /**
+     * @param array[] $serializedTypes
+     *
+     * @return array[]
+     */
+    protected function getReturnTypeDataForSerializedTypes($serializedTypes)
+    {
+        $types = [];
+
+        $rawTypes = unserialize($serializedTypes);
+
+        foreach ($rawTypes as $rawType) {
+            $types[] = [
+                'type'         => $rawType['type'],
+                'fqcn'         => $rawType['fqcn'],
+                'resolvedType' => $rawType['fqcn']
+            ];
+        }
+
+        return $types;
     }
 
     /**
@@ -740,7 +796,7 @@ class IndexDataAdapter
     {
         return
             !$processedData['hasDocblock'] ||
-            $this->getDocblockAnalyzer()->isFullInheritDocSyntax($processedData['descriptions']['short']);
+            $this->getDocblockAnalyzer()->isFullInheritDocSyntax($processedData['shortDescription']);
     }
 
     /**
@@ -773,8 +829,10 @@ class IndexDataAdapter
         $inheritedKeys = [
             'hasDocumentation',
             'isDeprecated',
-            'descriptions',
-            'return'
+            'shortDescription',
+            'longDescription',
+            'typeDescription',
+            'types'
         ];
 
         foreach ($processedData as $key => $value) {
@@ -790,21 +848,44 @@ class IndexDataAdapter
      * Extracts data from the specified (processed, i.e. already in the output format) method that is inheritable.
      *
      * @param array $processedData
+     * @param array $inheritingMethodData
      *
      * @return array
      */
-    protected function extractInheritedMethodInfo(array $processedData)
+    protected function extractInheritedMethodInfo(array $processedData, array $inheritingMethodData)
     {
         $info = [];
 
         $inheritedKeys = [
             'hasDocumentation',
             'isDeprecated',
-            'descriptions',
-            'return',
-            'parameters',
+            'shortDescription',
+            'longDescription',
+            'returnDescription',
+            'returnTypes',
             'throws'
         ];
+
+        // Normally parameters are inherited from the parent docblock. However, this causes problems when an overridden
+        // method adds an additional optional parameter or a subclass constructor uses completely different parameters.
+        // In either of these cases, we don't want to inherit the docblock parameters anymore, because it isn't
+        // correct anymore (and the developer should specify a new docblock specifying the changed parameters).
+        $inheritedMethodParameterNames = array_map(function (array $parameter) {
+            return $parameter['name'];
+        }, $processedData['parameters']);
+
+        $inheritingMethodParameterNames = array_map(function (array $parameter) {
+            return $parameter['name'];
+        }, $inheritingMethodData['parameters']);
+
+        // We need elements that are present in either A or B, but not in both. array_diff only returns items that
+        // are present in A, but not in B.
+        $parameterNameDiff1 = array_diff($inheritedMethodParameterNames, $inheritingMethodParameterNames);
+        $parameterNameDiff2 = array_diff($inheritingMethodParameterNames, $inheritedMethodParameterNames);
+
+        if (empty($parameterNameDiff1) && empty($parameterNameDiff2)) {
+            $inheritedKeys[] = 'parameters';
+        }
 
         foreach ($processedData as $key => $value) {
             if (in_array($key, $inheritedKeys)) {
@@ -827,5 +908,19 @@ class IndexDataAdapter
         }
 
         return $this->docblockAnalyzer;
+    }
+
+    /**
+     * Retrieves an instance of TypeAnalyzer. The object will only be created once if needed.
+     *
+     * @return TypeAnalyzer
+     */
+    protected function getTypeAnalyzer()
+    {
+        if (!$this->typeAnalyzer instanceof TypeAnalyzer) {
+            $this->typeAnalyzer = new TypeAnalyzer();
+        }
+
+        return $this->typeAnalyzer;
     }
 }

@@ -1,7 +1,7 @@
 {
   "name": "tablr",
   "main": "./lib/tablr",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Edit CSV files using a table editor",
   "repository": {
     "type": "git",
@@ -39,10 +39,10 @@
     "url": "https://github.com/abe33/atom-tablr/issues"
   },
   "homepage": "https://github.com/abe33/atom-tablr#readme",
-  "_id": "tablr@1.3.1",
-  "_shasum": "a2d605d5ce8fecd636692e5a2d4a5f86a31e9704",
-  "_resolved": "file:../d-116522-46784-b84013/package.tgz",
-  "_from": "../d-116522-46784-b84013/package.tgz",
+  "_id": "tablr@1.3.2",
+  "_shasum": "5755f93f003c3cde3835d459a31c453f7a50ba25",
+  "_resolved": "file:../d-11667-2973-1qbo1tj/package.tgz",
+  "_from": "../d-11667-2973-1qbo1tj/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -78,7 +78,7 @@
       },
       {
         "name": "es5-ext",
-        "version": "0.10.11",
+        "version": "0.10.12",
         "path": "node_modules/atom-utils/node_modules/event-kit/node_modules/grim/node_modules/emissary/node_modules/es6-weak-map/node_modules/es5-ext/index.js"
       },
       {
@@ -88,7 +88,7 @@
       },
       {
         "name": "es6-symbol",
-        "version": "3.0.2",
+        "version": "3.1.0",
         "path": "node_modules/atom-utils/node_modules/event-kit/node_modules/grim/node_modules/emissary/node_modules/es6-weak-map/node_modules/es5-ext/node_modules/es6-symbol/index.js"
       },
       {
@@ -133,7 +133,7 @@
       },
       {
         "name": "csv-parse",
-        "version": "1.1.1",
+        "version": "1.1.2",
         "path": "node_modules/csv/node_modules/csv-parse/lib/index.js"
       },
       {
@@ -178,7 +178,7 @@
       },
       {
         "name": "es5-ext",
-        "version": "0.10.11",
+        "version": "0.10.12",
         "path": "node_modules/property-accessors/node_modules/es6-weak-map/node_modules/es5-ext/index.js"
       },
       {
@@ -188,7 +188,7 @@
       },
       {
         "name": "es6-symbol",
-        "version": "3.0.2",
+        "version": "3.1.0",
         "path": "node_modules/property-accessors/node_modules/es6-weak-map/node_modules/es5-ext/node_modules/es6-symbol/index.js"
       },
       {
@@ -1467,7 +1467,7 @@
         ],
         "dependencies": {
           "es6-iterator": "2",
-          "es6-symbol": "~3.0.2"
+          "es6-symbol": "~3.1"
         }
       },
       {
@@ -1490,7 +1490,7 @@
         ],
         "dependencies": {
           "d": "~0.1.1",
-          "es5-ext": "~0.10.10"
+          "es5-ext": "~0.10.11"
         }
       },
       {
@@ -1744,7 +1744,7 @@
         ],
         "dependencies": {
           "es6-iterator": "2",
-          "es6-symbol": "~3.0.2"
+          "es6-symbol": "~3.1"
         }
       },
       {
@@ -1767,7 +1767,7 @@
         ],
         "dependencies": {
           "d": "~0.1.1",
-          "es5-ext": "~0.10.10"
+          "es5-ext": "~0.10.11"
         }
       },
       {

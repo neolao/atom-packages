@@ -147,6 +147,7 @@ module.exports = {
                 .all(promises)
                 .then((figuresData) => {
                     if (_.isEmpty(figuresData)) return this.updatePanel();
+                    console.log(figuresData);
                     var figuresModel = new FiguresModel(figuresData);
                     this.updatePanel(atom.views.getView(figuresModel));
                 });

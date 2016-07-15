@@ -6,7 +6,7 @@ use PhpIntegrator\IndexedTest;
 
 class ClassInfoTest extends IndexedTest
 {
-    protected function getClassInfo($file, $fqsen)
+    protected function getClassInfo($file, $fqcn)
     {
         $path = $this->getPathFor($file);
 
@@ -15,7 +15,7 @@ class ClassInfoTest extends IndexedTest
         $command = new ClassInfo();
         $command->setIndexDatabase($indexDatabase);
 
-        return $command->getClassInfo($fqsen);
+        return $command->getClassInfo($fqcn);
     }
 
     protected function getPathFor($file)
@@ -55,17 +55,14 @@ class ClassInfoTest extends IndexedTest
             'filename'           => $this->getPathFor($fileName),
             'type'               => 'class',
             'isAbstract'         => false,
+            'isFinal'            => false,
             'isBuiltin'          => false,
             'isDeprecated'       => false,
             'isAnnotation'       => false,
             'hasDocblock'        => true,
             'hasDocumentation'   => true,
-
-            'descriptions'       => [
-                'short' => 'This is the summary.',
-                'long'  => 'This is a long description.'
-            ],
-
+            'shortDescription'   => 'This is the summary.',
+            'longDescription'    => 'This is a long description.',
             'parents'            => [],
             'interfaces'         => [],
             'traits'             => [],
@@ -90,13 +87,22 @@ class ClassInfoTest extends IndexedTest
         $this->assertTrue($output['isAnnotation']);
     }
 
+    public function testFinalClassIsCorrectlyPickedUp()
+    {
+        $fileName = 'FinalClass.php';
+
+        $output = $this->getClassInfo($fileName, 'A\FinalClass');
+
+        $this->assertTrue($output['isFinal']);
+    }
+
     public function testDataIsCorrectForClassProperties()
     {
         $fileName = 'ClassProperty.php';
 
         $output = $this->getClassInfo($fileName, 'A\TestClass');
 
-        $this->assertEquals($output['properties']['testProperty'], [
+        $this->assertEquals([
             'name'               => 'testProperty',
             'startLine'          => 14,
             'endLine'            => 14,
@@ -108,21 +114,27 @@ class ClassInfoTest extends IndexedTest
             'isDeprecated'       => false,
             'hasDocblock'        => true,
             'hasDocumentation'   => true,
+            'shortDescription'   => 'This is the summary.',
+            'longDescription'    => 'This is a long description.',
+            'typeDescription'    => null,
 
-            'descriptions'       => [
-                'short' => 'This is the summary.',
-                'long'  => 'This is a long description.'
-            ],
+            'types'             => [
+                [
+                    'type'         => 'MyType',
+                    'fqcn'         => '\A\MyType',
+                    'resolvedType' => '\A\MyType'
+                ],
 
-            'return'             => [
-                'type'         => 'MyType',
-                'resolvedType' => 'A\MyType',
-                'description'  => null
+                [
+                    'type'         => 'string',
+                    'fqcn'         => 'string',
+                    'resolvedType' => 'string'
+                ]
             ],
 
             'override'           => null,
 
-            'declaringClass'     => [
+            'declaringClass' => [
                 'name'      => 'A\TestClass',
                 'filename'  => $this->getPathFor($fileName),
                 'startLine' => 5,
@@ -139,7 +151,36 @@ class ClassInfoTest extends IndexedTest
                 'startLineMember' => 14,
                 'endLineMember'   => 14
             ]
-        ]);
+        ], $output['properties']['testProperty']);
+    }
+
+    public function testCompoundClassPropertyStatementsHaveTheirDocblocksAnalyzedCorrectly()
+    {
+        $fileName = 'CompoundClassPropertyStatement.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertEquals('A description of the first property.', $output['properties']['testProperty1']['shortDescription']);
+        $this->assertEquals('This is a long description.', $output['properties']['testProperty1']['longDescription']);
+
+        $this->assertEquals([
+            [
+                'type'         => 'Foo1',
+                'fqcn'         => '\A\Foo1',
+                'resolvedType' => '\A\Foo1'
+            ]
+        ], $output['properties']['testProperty1']['types']);
+
+        $this->assertEquals('A description of the second property.', $output['properties']['testProperty2']['shortDescription']);
+        $this->assertEquals('This is a long description.', $output['properties']['testProperty2']['longDescription']);
+
+        $this->assertEquals([
+            [
+                'type'         => 'Foo2',
+                'fqcn'         => '\A\Foo2',
+                'resolvedType' => '\A\Foo2'
+            ]
+        ], $output['properties']['testProperty2']['types']);
     }
 
     public function testDataIsCorrectForClassMethods()
@@ -148,9 +189,9 @@ class ClassInfoTest extends IndexedTest
 
         $output = $this->getClassInfo($fileName, 'A\TestClass');
 
-        $this->assertEquals($output['methods']['testMethod'], [
+        $this->assertEquals([
             'name'               => 'testMethod',
-            'fqsen'              => null,
+            'fqcn'              => null,
             'isBuiltin'          => false,
             'startLine'          => 19,
             'endLine'            => 22,
@@ -158,33 +199,52 @@ class ClassInfoTest extends IndexedTest
 
             'parameters'         => [
                 [
-                    'name'        => 'firstParameter',
-                    'type'        => '\DateTime',
-                    'fullType'    => '\DateTime',
-                    'description' => 'First parameter description.',
-                    'isReference' => false,
-                    'isVariadic'  => false,
-                    'isOptional'  => false
+                    'name'         => 'firstParameter',
+                    'typeHint'     => '\DateTimeInterface',
+                    'description'  => 'First parameter description.',
+                    'defaultValue' => 'null',
+                    'isNullable'   => true,
+                    'isReference'  => false,
+                    'isVariadic'   => false,
+                    'isOptional'   => true,
+
+                    'types' => [
+                        [
+                            'type'         => '\DateTimeInterface',
+                            'fqcn'         => '\DateTimeInterface',
+                            'resolvedType' => '\DateTimeInterface'
+                        ],
+
+                        [
+                            'type'         => '\DateTime',
+                            'fqcn'         => '\DateTime',
+                            'resolvedType' => '\DateTime'
+                        ]
+                    ]
                 ],
 
                 [
-                    'name'        => 'secondParameter',
-                    'type'        => null,
-                    'fullType'    => null,
-                    'description' => null,
-                    'isReference' => true,
-                    'isVariadic'  => false,
-                    'isOptional'  => true
+                    'name'         => 'secondParameter',
+                    'typeHint'     => null,
+                    'description'  => null,
+                    'defaultValue' => 'true',
+                    'isNullable'   => false,
+                    'isReference'  => true,
+                    'isVariadic'   => false,
+                    'isOptional'   => true,
+                    'types'        => []
                 ],
 
                 [
-                    'name'        => 'thirdParameter',
-                    'type'        => null,
-                    'fullType'    => null,
-                    'description' => null,
-                    'isReference' => false,
-                    'isVariadic'  => true,
-                    'isOptional'  => false
+                    'name'         => 'thirdParameter',
+                    'typeHint'     => null,
+                    'description'  => null,
+                    'defaultValue' => null,
+                    'isNullable'   => false,
+                    'isReference'  => false,
+                    'isVariadic'   => true,
+                    'isOptional'   => false,
+                    'types'        => []
                 ]
             ],
 
@@ -197,15 +257,23 @@ class ClassInfoTest extends IndexedTest
             'hasDocblock'        => true,
             'hasDocumentation'   => true,
 
-            'descriptions'       => [
-                'short' => 'This is the summary.',
-                'long'  => 'This is a long description.'
-            ],
+            'shortDescription'   => 'This is the summary.',
+            'longDescription'    => 'This is a long description.',
+            'returnDescription'  => null,
+            'returnTypeHint'     => null,
 
-            'return'             => [
-                'type'         => 'mixed',
-                'resolvedType' => 'mixed',
-                'description'  => null
+            'returnTypes' => [
+                [
+                    'type'         => 'mixed',
+                    'fqcn'         => 'mixed',
+                    'resolvedType' => 'mixed'
+                ],
+
+                [
+                    'type'         => 'bool',
+                    'fqcn'         => 'bool',
+                    'resolvedType' => 'bool'
+                ]
             ],
 
             'isMagic'            => false,
@@ -214,6 +282,7 @@ class ClassInfoTest extends IndexedTest
             'isPrivate'          => false,
             'isStatic'           => false,
             'isAbstract'         => false,
+            'isFinal'            => false,
             'override'           => null,
             'implementation'     => null,
 
@@ -234,7 +303,16 @@ class ClassInfoTest extends IndexedTest
                 'startLineMember' => 19,
                 'endLineMember'   => 22
             ]
-        ]);
+        ], $output['methods']['testMethod']);
+    }
+
+    public function testFinalMethodIsCorrectlyPickedUp()
+    {
+        $fileName = 'FinalClassMethod.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertTrue($output['methods']['finalMethod']['isFinal']);
     }
 
     public function testDataIsCorrectForClassConstants()
@@ -245,7 +323,7 @@ class ClassInfoTest extends IndexedTest
 
         $this->assertEquals($output['constants']['TEST_CONSTANT'], [
             'name'               => 'TEST_CONSTANT',
-            'fqsen'              => null,
+            'fqcn'              => null,
             'isBuiltin'          => false,
             'startLine'          => 14,
             'endLine'            => 14,
@@ -258,15 +336,22 @@ class ClassInfoTest extends IndexedTest
             'hasDocblock'        => true,
             'hasDocumentation'   => true,
 
-            'descriptions'       => [
-                'short' => 'This is the summary.',
-                'long'  => 'This is a long description.'
-            ],
+            'shortDescription'   => 'This is the summary.',
+            'longDescription'    => 'This is a long description.',
+            'typeDescription'    => null,
 
-            'return'             => [
-                'type'         => 'MyType',
-                'resolvedType' => 'A\MyType',
-                'description'  => null
+            'types'             => [
+                [
+                    'type'         => 'MyType',
+                    'fqcn'         => '\A\MyType',
+                    'resolvedType' => '\A\MyType'
+                ],
+
+                [
+                    'type'         => 'string',
+                    'fqcn'         => 'string',
+                    'resolvedType' => 'string'
+                ]
             ],
 
             'declaringClass'     => [
@@ -297,14 +382,12 @@ class ClassInfoTest extends IndexedTest
         $parentClassOutput = $this->getClassInfo($fileName, 'A\ParentClass');
         $anotherChildClassOutput = $this->getClassInfo($fileName, 'A\AnotherChildClass');
 
-        $this->assertEquals([
-            'short' => 'This is the summary.',
-            'long'  => 'This is a long description.'
-        ], $childClassOutput['descriptions']);
+        $this->assertEquals('This is the summary.', $childClassOutput['shortDescription']);
+        $this->assertEquals('This is a long description.', $childClassOutput['longDescription']);
 
         $this->assertEquals(
-            'Pre. ' . $parentClassOutput['descriptions']['long'] . ' Post.',
-            $anotherChildClassOutput['descriptions']['long']
+            'Pre. ' . $parentClassOutput['longDescription'] . ' Post.',
+            $anotherChildClassOutput['longDescription']
         );
     }
 
@@ -320,8 +403,9 @@ class ClassInfoTest extends IndexedTest
         $keysToTestForEquality = [
             'hasDocumentation',
             'isDeprecated',
-            'descriptions',
-            'return',
+            'longDescription',
+            'shortDescription',
+            'returnTypes',
             'parameters',
             'throws'
         ];
@@ -344,18 +428,18 @@ class ClassInfoTest extends IndexedTest
         }
 
         $this->assertEquals(
-            $childClassOutput['methods']['inheritDocBaseClassTest']['descriptions']['long'],
-            'Pre. ' . $parentClassOutput['methods']['inheritDocBaseClassTest']['descriptions']['long'] . ' Post.'
+            $childClassOutput['methods']['inheritDocBaseClassTest']['longDescription'],
+            'Pre. ' . $parentClassOutput['methods']['inheritDocBaseClassTest']['longDescription'] . ' Post.'
         );
 
         $this->assertEquals(
-            $childClassOutput['methods']['inheritDocInterfaceTest']['descriptions']['long'],
-            'Pre. ' . $interfaceOutput['methods']['inheritDocInterfaceTest']['descriptions']['long'] . ' Post.'
+            $childClassOutput['methods']['inheritDocInterfaceTest']['longDescription'],
+            'Pre. ' . $interfaceOutput['methods']['inheritDocInterfaceTest']['longDescription'] . ' Post.'
         );
 
         $this->assertEquals(
-            $childClassOutput['methods']['inheritDocTraitTest']['descriptions']['long'],
-            'Pre. ' . $traitOutput['methods']['inheritDocTraitTest']['descriptions']['long'] . ' Post.'
+            $childClassOutput['methods']['inheritDocTraitTest']['longDescription'],
+            'Pre. ' . $traitOutput['methods']['inheritDocTraitTest']['longDescription'] . ' Post.'
         );
     }
 
@@ -370,8 +454,10 @@ class ClassInfoTest extends IndexedTest
         $keysToTestForEquality = [
             'hasDocumentation',
             'isDeprecated',
-            'descriptions',
-            'return'
+            'shortDescription',
+            'longDescription',
+            'typeDescription',
+            'types'
         ];
 
         foreach ($keysToTestForEquality as $key) {
@@ -387,13 +473,13 @@ class ClassInfoTest extends IndexedTest
         }
 
         $this->assertEquals(
-            $childClassOutput['properties']['inheritDocBaseClassTest']['descriptions']['long'],
-            'Pre. ' . $parentClassOutput['properties']['inheritDocBaseClassTest']['descriptions']['long'] . ' Post.'
+            $childClassOutput['properties']['inheritDocBaseClassTest']['longDescription'],
+            'Pre. ' . $parentClassOutput['properties']['inheritDocBaseClassTest']['longDescription'] . ' Post.'
         );
 
         $this->assertEquals(
-            $childClassOutput['properties']['inheritDocTraitTest']['descriptions']['long'],
-            'Pre. ' . $traitOutput['properties']['inheritDocTraitTest']['descriptions']['long'] . ' Post.'
+            $childClassOutput['properties']['inheritDocTraitTest']['longDescription'],
+            'Pre. ' . $traitOutput['properties']['inheritDocTraitTest']['longDescription'] . ' Post.'
         );
     }
 
@@ -403,7 +489,79 @@ class ClassInfoTest extends IndexedTest
 
         $output = $this->getClassInfo($fileName, 'A\ChildClass');
 
-        $this->assertEquals($output['methods']['parentTraitMethod']['override'], [
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'description'  => null,
+                'defaultValue' => null,
+                'isNullable'   => false,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => false,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ]
+                ]
+            ]
+        ], $output['methods']['__construct']['parameters']);
+
+        $this->assertEquals([
+            'startLine'   => 17,
+            'endLine'     => 20,
+            'wasAbstract' => false,
+
+            'declaringClass' => [
+                'name'      => 'A\ParentClass',
+                'filename'  => $this->getPathFor($fileName),
+                'startLine' => 13,
+                'endLine'   => 26,
+                'type'      => 'class'
+            ],
+
+            'declaringStructure' => [
+                'name'            => 'A\ParentClass',
+                'filename'        => $this->getPathFor($fileName),
+                'startLine'       => 13,
+                'endLine'         => 26,
+                'type'            => 'class',
+                'startLineMember' => 17,
+                'endLineMember'   => 20
+            ]
+        ], $output['methods']['__construct']['override']);
+
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'description'  => null,
+                'defaultValue' => 'null',
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['parentTraitMethod']['parameters']);
+
+        $this->assertEquals([
             'startLine'   => 7,
             'endLine'     => 10,
             'wasAbstract' => false,
@@ -412,7 +570,7 @@ class ClassInfoTest extends IndexedTest
                 'name'      => 'A\ParentClass',
                 'filename'  => $this->getPathFor($fileName),
                 'startLine' => 13,
-                'endLine'   => 21,
+                'endLine'   => 26,
                 'type'      => 'class'
             ],
 
@@ -425,18 +583,45 @@ class ClassInfoTest extends IndexedTest
                 'startLineMember' => 7,
                 'endLineMember'   => 10
             ]
-        ]);
+        ], $output['methods']['parentTraitMethod']['override']);
 
-        $this->assertEquals($output['methods']['parentMethod']['override'], [
-            'startLine'   => 17,
-            'endLine'     => 20,
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'description'  => null,
+                'defaultValue' => 'null',
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['parentMethod']['parameters']);
+
+        $this->assertEquals([
+            'startLine'   => 22,
+            'endLine'     => 25,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => 'A\ParentClass',
                 'filename'  => $this->getPathFor($fileName),
                 'startLine' => 13,
-                'endLine'   => 21,
+                'endLine'   => 26,
                 'type'      => 'class'
             ],
 
@@ -444,36 +629,90 @@ class ClassInfoTest extends IndexedTest
                 'name'            => 'A\ParentClass',
                 'filename'        => $this->getPathFor($fileName),
                 'startLine'       => 13,
-                'endLine'         => 21,
+                'endLine'         => 26,
                 'type'            => 'class',
-                'startLineMember' => 17,
-                'endLineMember'   => 20
+                'startLineMember' => 22,
+                'endLineMember'   => 25
             ]
-        ]);
+        ], $output['methods']['parentMethod']['override']);
 
-        $this->assertEquals($output['methods']['traitMethod']['override'], [
-            'startLine'   => 25,
-            'endLine'     => 28,
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'description'  => null,
+                'defaultValue' => 'null',
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['traitMethod']['parameters']);
+
+        $this->assertEquals([
+            'startLine'   => 30,
+            'endLine'     => 33,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => 'A\ChildClass',
                 'filename'  =>  $this->getPathFor($fileName),
-                'startLine' => 33,
-                'endLine'   => 56,
+                'startLine' => 38,
+                'endLine'   => 66,
                 'type'      => 'class'
             ],
 
             'declaringStructure' => [
                 'name'            => 'A\TestTrait',
                 'filename'        => $this->getPathFor($fileName),
-                'startLine'       => 23,
-                'endLine'         => 31,
+                'startLine'       => 28,
+                'endLine'         => 36,
                 'type'            => 'trait',
-                'startLineMember' => 25,
-                'endLineMember'   => 28
+                'startLineMember' => 30,
+                'endLineMember'   => 33
             ]
-        ]);
+        ], $output['methods']['traitMethod']['override']);
+
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'defaultValue' => 'null',
+                'description'  => null,
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['abstractMethod']['parameters']);
 
         $this->assertEquals($output['methods']['abstractMethod']['override']['wasAbstract'], true);
     }
@@ -537,7 +776,34 @@ class ClassInfoTest extends IndexedTest
 
         $output = $this->getClassInfo($fileName, 'A\ChildClass');
 
-        $this->assertEquals($output['methods']['parentInterfaceMethod']['implementation'], [
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'defaultValue' => 'null',
+                'description'  => null,
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['parentInterfaceMethod']['parameters']);
+
+        $this->assertEquals([
             'startLine' => 7,
             'endLine'   => 7,
 
@@ -558,9 +824,36 @@ class ClassInfoTest extends IndexedTest
                 'startLineMember' => 7,
                 'endLineMember'   => 7
             ]
-        ]);
+        ], $output['methods']['parentInterfaceMethod']['implementation']);
 
-        $this->assertEquals($output['methods']['interfaceMethod']['implementation'], [
+        $this->assertEquals([
+            [
+                'name'         => 'foo',
+                'typeHint'     => 'Foo',
+                'description'  => null,
+                'defaultValue' => 'null',
+                'isNullable'   => true,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+
+                'types' => [
+                    [
+                        'type'         => 'Foo',
+                        'fqcn'         => '\A\Foo',
+                        'resolvedType' => '\A\Foo'
+                    ],
+
+                    [
+                        'type'         => 'null',
+                        'fqcn'         => 'null',
+                        'resolvedType' => 'null'
+                    ]
+                ]
+            ]
+        ], $output['methods']['interfaceMethod']['parameters']);
+
+        $this->assertEquals([
             'startLine' => 17,
             'endLine'   => 17,
 
@@ -581,7 +874,7 @@ class ClassInfoTest extends IndexedTest
                 'startLineMember' => 17,
                 'endLineMember'   => 17
             ]
-        ]);
+        ], $output['methods']['interfaceMethod']['implementation']);
     }
 
     public function testMethodParameterTypesFallBackToDocblock()
@@ -591,10 +884,10 @@ class ClassInfoTest extends IndexedTest
         $output = $this->getClassInfo($fileName, 'A\TestClass');
         $parameters = $output['methods']['testMethod']['parameters'];
 
-        $this->assertEquals($parameters[0]['type'], '\DateTime');
-        $this->assertEquals($parameters[1]['type'], 'boolean');
-        $this->assertEquals($parameters[2]['type'], 'mixed');
-        $this->assertEquals($parameters[3]['type'], '\Traversable[]');
+        $this->assertEquals($parameters[0]['types'][0]['type'], '\DateTime');
+        $this->assertEquals($parameters[1]['types'][0]['type'], 'boolean');
+        $this->assertEquals($parameters[2]['types'][0]['type'], 'mixed');
+        $this->assertEquals($parameters[3]['types'][0]['type'], '\Traversable[]');
     }
 
     public function testMagicClassPropertiesArePickedUpCorrectly()
@@ -613,15 +906,16 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], false);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => 'Description 1.',
-            'long'  => ''
-        ]);
+        $this->assertEquals($data['shortDescription'], 'Description 1.');
+        $this->assertEquals($data['longDescription'], '');
+        $this->assertEquals($data['typeDescription'], null);
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'Type1',
-            'resolvedType' => 'A\Type1',
-            'description'  => null
+        $this->assertEquals($data['types'], [
+            [
+                'type'         => 'Type1',
+                'fqcn'         => '\A\Type1',
+                'resolvedType' => '\A\Type1'
+            ]
         ]);
 
         $data = $output['properties']['prop2'];
@@ -634,15 +928,15 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], false);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => 'Description 2.',
-            'long'  => ''
-        ]);
+        $this->assertEquals($data['shortDescription'], 'Description 2.');
+        $this->assertEquals($data['longDescription'], '');
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'Type2',
-            'resolvedType' => 'A\Type2',
-            'description'  => null
+        $this->assertEquals($data['types'], [
+            [
+                'type'         => 'Type2',
+                'fqcn'         => '\A\Type2',
+                'resolvedType' => '\A\Type2'
+            ]
         ]);
 
         $data = $output['properties']['prop3'];
@@ -655,15 +949,15 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], false);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => 'Description 3.',
-            'long'  => ''
-        ]);
+        $this->assertEquals($data['shortDescription'], 'Description 3.');
+        $this->assertEquals($data['longDescription'], '');
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'Type3',
-            'resolvedType' => 'A\Type3',
-            'description'  => null
+        $this->assertEquals($data['types'], [
+            [
+                'type'         => 'Type3',
+                'fqcn'         => '\A\Type3',
+                'resolvedType' => '\A\Type3'
+            ]
         ]);
 
         $data = $output['properties']['prop4'];
@@ -676,15 +970,15 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], true);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => 'Description 4.',
-            'long'  => ''
-        ]);
+        $this->assertEquals($data['shortDescription'], 'Description 4.');
+        $this->assertEquals($data['longDescription'], '');
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'Type4',
-            'resolvedType' => 'A\Type4',
-            'description'  => null
+        $this->assertEquals($data['types'], [
+            [
+                'type'         => 'Type4',
+                'fqcn'         => '\A\Type4',
+                'resolvedType' => '\A\Type4'
+            ]
         ]);
     }
 
@@ -703,18 +997,20 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocblock'], false);
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], false);
+        $this->assertNull($data['returnTypeHint']);
 
         $this->assertEquals($data['parameters'], []);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => null,
-            'long'  => null
-        ]);
+        $this->assertNull($data['shortDescription']);
+        $this->assertNull($data['longDescription']);
+        $this->assertNull($data['returnDescription']);
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'void',
-            'resolvedType' => 'void',
-            'description'  => null
+        $this->assertEquals($data['returnTypes'], [
+            [
+                'type'         => 'void',
+                'fqcn'         => 'void',
+                'resolvedType' => 'void'
+            ]
         ]);
 
         $data = $output['methods']['someMethod'];
@@ -726,58 +1022,80 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocblock'], false);
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], false);
+        $this->assertNull($data['returnTypeHint']);
 
         $this->assertEquals($data['parameters'], [
             [
-                'name'        => 'a',
-                'type'        => null,
-                'fullType'    => null,
-                'description' => null,
-                'isReference' => false,
-                'isVariadic'  => false,
-                'isOptional'  => false
+                'name'         => 'a',
+                'typeHint'     => null,
+                'description'  => null,
+                'defaultValue' => null,
+                'isNullable'   => false,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => false,
+                'types'        => []
             ],
 
             [
-                'name'        => 'b',
-                'type'        => null,
-                'fullType'    => null,
-                'description' => null,
-                'isReference' => false,
-                'isVariadic'  => false,
-                'isOptional'  => false
+                'name'         => 'b',
+                'typeHint'     => null,
+                'description'  => null,
+                'defaultValue' => null,
+                'isNullable'   => false,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => false,
+                'types'        => []
             ],
 
             [
-                'name'        => 'c',
-                'type'        => 'array',
-                'fullType'    => 'array',
-                'description' => null,
-                'isReference' => false,
-                'isVariadic'  => false,
-                'isOptional'  => true
+                'name'         => 'c',
+                'typeHint'     => null,
+                'description'  => null,
+                'defaultValue' => null,
+                'isNullable'   => false,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+                'types'        => [
+                    [
+                        'type'         => 'array',
+                        'fqcn'         => 'array',
+                        'resolvedType' => 'array'
+                    ]
+                ]
             ],
 
             [
-                'name'        => 'd',
-                'type'        => 'Type',
-                'fullType'    => 'A\Type',
-                'description' => null,
-                'isReference' => false,
-                'isVariadic'  => false,
-                'isOptional'  => true
+                'name'         => 'd',
+                'typeHint'     => null,
+                'description'  => null,
+                'defaultValue' => null,
+                'isNullable'   => false,
+                'isReference'  => false,
+                'isVariadic'   => false,
+                'isOptional'   => true,
+                'types'        => [
+                    [
+                        'type'         => 'Type',
+                        'fqcn'         => '\A\Type',
+                        'resolvedType' => '\A\Type'
+                    ]
+                ]
             ]
         ]);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => "Description of method Test second line.",
-            'long'  => ''
-        ]);
+        $this->assertEquals($data['shortDescription'], 'Description of method Test second line.');
+        $this->assertEquals($data['longDescription'], '');
+        $this->assertNull($data['returnDescription']);
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'TestClass',
-            'resolvedType' => 'A\TestClass',
-            'description'  => null
+        $this->assertEquals($data['returnTypes'], [
+            [
+                'type'         => 'TestClass',
+                'fqcn'         => '\A\TestClass',
+                'resolvedType' => '\A\TestClass'
+            ]
         ]);
 
         $data = $output['methods']['magicFooStatic'];
@@ -789,18 +1107,20 @@ class ClassInfoTest extends IndexedTest
         $this->assertEquals($data['hasDocblock'], false);
         $this->assertEquals($data['hasDocumentation'], false);
         $this->assertEquals($data['isStatic'], true);
+        $this->assertNull($data['returnTypeHint']);
 
         $this->assertEquals($data['parameters'], []);
 
-        $this->assertEquals($data['descriptions'], [
-            'short' => null,
-            'long'  => null
-        ]);
+        $this->assertNull($data['shortDescription']);
+        $this->assertNull($data['longDescription']);
+        $this->assertNull($data['returnDescription']);
 
-        $this->assertEquals($data['return'], [
-            'type'         => 'void',
-            'resolvedType' => 'void',
-            'description'  => null
+        $this->assertEquals($data['returnTypes'], [
+            [
+                'type'         => 'void',
+                'fqcn'         => 'void',
+                'resolvedType' => 'void'
+            ]
         ]);
     }
 
@@ -863,13 +1183,13 @@ class ClassInfoTest extends IndexedTest
         $this->assertThat($output['methods'], $this->arrayHasKey('baseTraitMethod'));
 
         $this->assertEquals(
-            $output['properties']['inheritDocTest']['descriptions']['long'],
-            'Pre. ' . $baseClassOutput['properties']['inheritDocTest']['descriptions']['long'] . ' Post.'
+            $output['properties']['inheritDocTest']['longDescription'],
+            'Pre. ' . $baseClassOutput['properties']['inheritDocTest']['longDescription'] . ' Post.'
         );
 
         $this->assertEquals(
-            $output['properties']['inheritEntireDocblockTest']['descriptions']['long'],
-            $baseClassOutput['properties']['inheritEntireDocblockTest']['descriptions']['long']
+            $output['properties']['inheritEntireDocblockTest']['longDescription'],
+            $baseClassOutput['properties']['inheritEntireDocblockTest']['longDescription']
         );
 
         // Test the 'as' keyword for renaming trait method.
@@ -887,121 +1207,183 @@ class ClassInfoTest extends IndexedTest
 
         $output = $this->getClassInfo($fileName, 'A\childClass');
 
-        $this->assertEquals($output['properties']['basePropSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['properties']['basePropSelf']['types']);
 
-        $this->assertEquals($output['properties']['basePropStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['properties']['basePropStatic']['types']);
 
-        $this->assertEquals($output['properties']['basePropThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['properties']['basePropThis']['types']);
 
-        $this->assertEquals($output['properties']['propSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['properties']['propSelf']['types']);
 
-        $this->assertEquals($output['properties']['propStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['properties']['propStatic']['types']);
 
-        $this->assertEquals($output['properties']['propThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['properties']['propThis']['types']);
 
-        $this->assertEquals($output['methods']['baseMethodSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['methods']['baseMethodSelf']['returnTypes']);
 
-        $this->assertEquals($output['methods']['baseMethodStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['baseMethodStatic']['returnTypes']);
 
-        $this->assertEquals($output['methods']['baseMethodThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['baseMethodThis']['returnTypes']);
 
-        $this->assertEquals($output['methods']['methodSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['methodSelf']['returnTypes']);
 
-        $this->assertEquals($output['methods']['methodStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['methodStatic']['returnTypes']);
 
-        $this->assertEquals($output['methods']['methodThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['methodThis']['returnTypes']);
 
-        $this->assertEquals($output['methods']['methodOwnClassName']['return'], [
-            'type'         => 'childClass',
-            'resolvedType' => 'A\childClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'childClass',
+                'fqcn'         => '\A\childClass',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['methodOwnClassName']['returnTypes']);
+
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['methods']['baseMethodWithParameters']['parameters'][0]['types']);
+
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['baseMethodWithParameters']['parameters'][1]['types']);
+
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\childClass'
+            ]
+        ], $output['methods']['baseMethodWithParameters']['parameters'][2]['types']);
 
         $output = $this->getClassInfo($fileName, 'A\ParentClass');
 
-        $this->assertEquals($output['properties']['basePropSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['properties']['basePropSelf']['types']);
 
-        $this->assertEquals($output['properties']['basePropStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['properties']['basePropStatic']['types']);
 
-        $this->assertEquals($output['properties']['basePropThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['properties']['basePropThis']['types']);
 
-        $this->assertEquals($output['methods']['baseMethodSelf']['return'], [
-            'type'         => 'self',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'self',
+                'fqcn'         => 'self',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['methods']['baseMethodSelf']['returnTypes']);
 
-        $this->assertEquals($output['methods']['baseMethodStatic']['return'], [
-            'type'         => 'static',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => 'static',
+                'fqcn'         => 'static',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['methods']['baseMethodStatic']['returnTypes']);
 
-        $this->assertEquals($output['methods']['baseMethodThis']['return'], [
-            'type'         => '$this',
-            'resolvedType' => 'A\ParentClass',
-            'description'  => null
-        ]);
+        $this->assertEquals([
+            [
+                'type'         => '$this',
+                'fqcn'         => '$this',
+                'resolvedType' => '\A\ParentClass'
+            ]
+        ], $output['methods']['baseMethodThis']['returnTypes']);
     }
 
     public function testMethodDocblockParameterTypesGetPrecedenceOverTypeHints()
@@ -1010,34 +1392,59 @@ class ClassInfoTest extends IndexedTest
 
         $output = $this->getClassInfo($fileName, 'A\TestClass');
 
-        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['type']);
-        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['fullType']);
-        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['type']);
-        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['fullType']);
+        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['types'][0]['type']);
+        $this->assertEquals('string[]', $output['methods']['testMethod']['parameters'][0]['types'][0]['fqcn']);
+        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['types'][0]['type']);
+        $this->assertEquals('string', $output['methods']['testMethod']['parameters'][1]['types'][0]['fqcn']);
     }
 
-    public function testMethodWithoutDocblockHasNullReturnType()
+    public function testItemsWithoutDocblockHaveNoTypes()
     {
         $fileName = 'ClassMethodNoDocblock.php';
 
         $output = $this->getClassInfo($fileName, 'A\TestClass');
 
-        $this->assertNull($output['methods']['testMethod']['parameters'][0]['type']);
-        $this->assertNull($output['methods']['testMethod']['parameters'][0]['fullType']);
-        $this->assertNull($output['methods']['testMethod']['return']['type']);
-        $this->assertNull($output['methods']['testMethod']['return']['resolvedType']);
-        $this->assertNull($output['properties']['testProperty']['return']['type']);
-        $this->assertNull($output['properties']['testProperty']['return']['resolvedType']);
-        $this->assertNull($output['constants']['TEST_CONSTANT']['return']['type']);
-        $this->assertNull($output['constants']['TEST_CONSTANT']['return']['resolvedType']);
+        $this->assertEmpty($output['methods']['testMethod']['parameters'][0]['types']);
+        $this->assertEmpty($output['methods']['testMethod']['returnTypes']);
+        $this->assertEmpty($output['properties']['testProperty']['types']);
+        $this->assertEmpty($output['constants']['TEST_CONSTANT']['types']);
+    }
+
+    public function testCorrectlyFindsClassesInNamelessNamespace()
+    {
+        $fileName = 'ClassNamelessNamespace.php';
+
+        $output = $this->getClassInfo($fileName, 'TestClass');
+
+        $this->assertEquals('TestClass', $output['name']);
     }
 
     /**
-     * @expectedException \PhpIntegrator\IndexDataAdapter\CircularDependencyException
+     * @expectedException \PhpIntegrator\CircularDependencyException
      */
-    public function testThrowsExceptionOnCircularDependency()
+    public function testThrowsExceptionOnCircularDependencyWithClassExtendingItself()
     {
-        $fileName = 'CircularDependency.php';
+        $fileName = 'CircularDependencyExtends.php';
+
+        $output = $this->getClassInfo($fileName, 'A\C');
+    }
+
+    /**
+     * @expectedException \PhpIntegrator\CircularDependencyException
+     */
+    public function testThrowsExceptionOnCircularDependencyWithClassImplementingItself()
+    {
+        $fileName = 'CircularDependencyImplements.php';
+
+        $output = $this->getClassInfo($fileName, 'A\C');
+    }
+
+    /**
+     * @expectedException \PhpIntegrator\CircularDependencyException
+     */
+    public function testThrowsExceptionOnCircularDependencyWithClassUsingItselfAsTrait()
+    {
+        $fileName = 'CircularDependencyUses.php';
 
         $output = $this->getClassInfo($fileName, 'A\C');
     }

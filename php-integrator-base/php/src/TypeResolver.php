@@ -27,7 +27,7 @@ class TypeResolver
      *
      * @param string|null $namespace The current namespace.
      * @param array {
-     *     @param string|null $fqsen
+     *     @param string|null $fqcn
      *     @param string      $alias
      * } $imports
      */
@@ -38,7 +38,7 @@ class TypeResolver
     }
 
     /**
-     * Resolves and determines the FQSEN of the specified type.
+     * Resolves and determines the FQCN of the specified type.
      *
      * @param string $type
      *
@@ -52,13 +52,14 @@ class TypeResolver
             return $type;
         }
 
+        $fullName = null;
         $typeParts = explode('\\', $type);
 
         foreach ($this->imports as $import) {
             if ($import['alias'] === $typeParts[0]) {
                 array_shift($typeParts);
 
-                $fullName = $import['fqsen'];
+                $fullName = $import['fqcn'];
 
                 if (!empty($typeParts)) {
                     /*
@@ -73,20 +74,22 @@ class TypeResolver
                     $fullName .= '\\' . implode('\\', $typeParts);
                 }
 
-                return $fullName;
+                break;
             }
         }
 
-        // Still here? There must be no explicit use statement, default to the current namespace.
-        $fullName = $this->namespace ? ($this->namespace . '\\') : '';
-        $fullName .= $type;
+        if (!$fullName) {
+            // Still here? There must be no explicit use statement, default to the current namespace.
+            $fullName = $this->namespace ? ($this->namespace . '\\') : '';
+            $fullName .= $type;
+        }
 
-        return $fullName;
+        return $this->getTypeAnalyzer()->getNormalizedFqcn($fullName, true);
     }
 
     /**
-     * "Unresolves" a FQSEN, turning it back into a name relative to local use statements. If no local type could be
-     * determined, null is returned.
+     * "Unresolves" a FQCN, turning it back into a name relative to local use statements. If no local type could be
+     * determined, the FQCN is returned (as that is the only way the type can be referenced locally).
      *
      * @param string $type
      *
@@ -104,20 +107,30 @@ class TypeResolver
 
         $imports = $this->imports;
 
-        if ($this->namespace) {
-            $namespaceParts = explode('\\', $this->namespace);
-
-            // The namespace is also acts as a "use statement".
-            $imports[] = [
-                'fqsen' => $this->namespace,
-                'alias' => array_pop($namespaceParts)
-            ];
-        }
-
         $typeFqcn = $this->getTypeAnalyzer()->getNormalizedFqcn($type);
 
+        if ($this->namespace) {
+            $namespaceFqcn = $this->getTypeAnalyzer()->getNormalizedFqcn($this->namespace);
+
+            $namespaceParts = explode('\\', $namespaceFqcn);
+
+            if (mb_strpos($typeFqcn, $namespaceFqcn) === 0) {
+                $typeWithoutNamespacePrefix = mb_substr($typeFqcn, mb_strlen($namespaceFqcn) + 1);
+
+                $typeWithoutNamespacePrefixParts = explode('\\', $typeWithoutNamespacePrefix);
+
+                // The namespace also acts as a use statement, but the rules are slightly different: in namespace A,
+                // the class \A\B becomes B rather than A\B (the latter which would happen if there were a use
+                // statement "use A;").
+                $imports[] = [
+                    'fqcn'  => $namespaceFqcn . '\\' . $typeWithoutNamespacePrefixParts[0],
+                    'alias' => $typeWithoutNamespacePrefixParts[0]
+                ];
+            }
+        }
+
         foreach ($imports as $import) {
-            $importFqcn = $this->getTypeAnalyzer()->getNormalizedFqcn($import['fqsen']);
+            $importFqcn = $this->getTypeAnalyzer()->getNormalizedFqcn($import['fqcn']);
 
             if (mb_strpos($typeFqcn, $importFqcn) === 0) {
                 $localizedType = $import['alias'] . mb_substr($typeFqcn, mb_strlen($importFqcn));
@@ -130,7 +143,7 @@ class TypeResolver
             }
         }
 
-        return $bestLocalizedType;
+        return $bestLocalizedType ?: $this->getTypeAnalyzer()->getNormalizedFqcn($type, true);
     }
 
     /**

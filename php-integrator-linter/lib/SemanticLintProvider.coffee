@@ -87,7 +87,7 @@ class IndexingProvider
                         "<strong>#{item.name}</strong> was not found."
                     )
 
-            if response.warnings.unusedUseStatements?
+            if response.warnings.unusedUseStatements? and response.errors.syntaxErrors?.length == 0
                 for item in response.warnings.unusedUseStatements
                     messages.push @createLinterMessageForOutputItem(
                         editor,
@@ -209,8 +209,13 @@ class IndexingProvider
      * @return {Object}
     ###
     createLinterMessageForOutputItem: (editor, item, type, html) ->
-        startPoint = editor.getBuffer().positionForCharacterIndex(item.start)
-        endPoint   = editor.getBuffer().positionForCharacterIndex(item.end)
+        text =  editor.getBuffer().getText()
+
+        startCharacterOffset = @service.getCharacterOffsetFromByteOffset(item.start, text)
+        endCharacterOffset   = @service.getCharacterOffsetFromByteOffset(item.end, text)
+
+        startPoint = editor.getBuffer().positionForCharacterIndex(startCharacterOffset)
+        endPoint   = editor.getBuffer().positionForCharacterIndex(endCharacterOffset)
 
         return {
             type     : type
