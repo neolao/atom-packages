@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-annotations",
   "main": "./lib/Main",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shows annotations (e.g. for overriden methods interface implementations) in your PHP source code.",
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~1.0": "setService"
+        "^1.0": "setService"
       }
     }
   },
@@ -34,10 +34,10 @@
     "url": "https://github.com/Gert-dev/php-integrator-annotations/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-annotations#readme",
-  "_id": "php-integrator-annotations@1.0.0",
-  "_shasum": "3505d6c7fddef41fe38015b65bfbbae6394a24f8",
-  "_resolved": "file:../d-116527-88877-1aicku/package.tgz",
-  "_from": "../d-116527-88877-1aicku/package.tgz",
+  "_id": "php-integrator-annotations@1.0.1",
+  "_shasum": "9f705da884a9d0468b8645472cb05c28bdd63b70",
+  "_resolved": "file:../d-116627-74180-1pdimso/package.tgz",
+  "_from": "../d-116627-74180-1pdimso/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [

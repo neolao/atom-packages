@@ -11,8 +11,6 @@ use PhpIntegrator\Indexing;
 use PhpIntegrator\DocParser;
 use PhpIntegrator\TypeAnalyzer;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 use PhpIntegrator\IndexDataAdapter\ProviderCachingProxy;
 
 use PhpIntegrator\Indexing\Scanner;
@@ -28,7 +26,7 @@ use PhpParser\ParserFactory;
 /**
  * Command that reindexes a file or folder.
  */
-class Reindex extends BaseCommand
+class Reindex extends AbstractCommand
 {
     /**
      * @var ProjectIndexer
@@ -66,11 +64,6 @@ class Reindex extends BaseCommand
     protected $typeAnalyzer;
 
     /**
-     * @var ParserFactory
-     */
-    protected $parserFactory;
-
-    /**
      * @var StorageInterface
      */
     protected $storageForIndexers;
@@ -80,7 +73,7 @@ class Reindex extends BaseCommand
      */
     protected function attachOptions(OptionCollection $optionCollection)
     {
-        $optionCollection->add('source:', 'The file or directory to index.')->isa('string');
+        $optionCollection->add('source+', 'The file or directory to index. Can be passed multiple times to process multiple items at once.')->isa('string');
         $optionCollection->add('stdin?', 'If set, file contents will not be read from disk but the contents from STDIN will be used instead.');
         $optionCollection->add('v|verbose?', 'If set, verbose output will be displayed.');
         $optionCollection->add('s|stream-progress?', 'If set, progress will be streamed. Incompatible with verbose mode.');
@@ -91,8 +84,8 @@ class Reindex extends BaseCommand
      */
     protected function process(ArrayAccess $arguments)
     {
-        if (!isset($arguments['source'])) {
-            throw new UnexpectedValueException('The file or directory to index is required for this command.');
+        if (!isset($arguments['source']) || empty($arguments['source'])) {
+            throw new UnexpectedValueException('At least one file or directory to index is required for this command.');
         }
 
         return $this->reindex(
@@ -104,63 +97,111 @@ class Reindex extends BaseCommand
     }
 
     /**
+     * @param string[] $paths
+     * @param bool     $useStdin
+     * @param bool     $showOutput
+     * @param bool     $doStreamProgress
+     *
+     * @return string
+     */
+    public function reindex(array $paths, $useStdin, $showOutput, $doStreamProgress)
+    {
+        $success = true;
+
+        foreach ($paths as $path) {
+            if (!$this->reindexItem($path, $useStdin, $showOutput, $doStreamProgress)) {
+                $success = false;
+                break;
+            }
+        }
+
+        return $this->outputJson($success, []);
+    }
+
+    /**
      * @param string $path
      * @param bool   $useStdin
      * @param bool   $showOutput
      * @param bool   $doStreamProgress
+     *
+     * @return bool
      */
-    public function reindex($path, $useStdin, $showOutput, $doStreamProgress)
+    protected function reindexItem($path, $useStdin, $showOutput, $doStreamProgress)
     {
-        if (is_dir($path)) {
-            // Yes, we abuse the error channel...
-            $loggingStream = $showOutput ? fopen('php://stdout', 'w') : null;
-            $progressStream = $doStreamProgress ? fopen('php://stderr', 'w') : null;
-
-            $this->getProjectIndexer()
-                ->setProgressStream($progressStream)
-                ->setLoggingStream($loggingStream)
-                ->index($path);
-
-            if ($progressStream) {
-                fclose($progressStream);
-            }
-
-            return $this->outputJson(true, []);
-        } elseif (is_file($path) || $useStdin) {
-            $code = null;
-
-            if ($useStdin) {
-                // NOTE: This call is blocking if there is no input!
-                $code = file_get_contents('php://stdin');
-            }
-
-            $databaseFileHandle = null;
-
-            if ($this->indexDatabase->getDatabasePath() !== ':memory:') {
-                // All other commands don't abide by these locks, so they can just happily continue using the database (as
-                // they are only reading, that poses no problem). However, writing in a transaction will cause the database
-                // to become locked, which poses a problem if two simultaneous reindexing processes are spawned. If that
-                // happens, just block until the database becomes available again. If we don't, we will receive an
-                // exception from the driver.
-                $databaseFileHandle = fopen($this->indexDatabase->getDatabasePath(), 'r+b');
-                flock($databaseFileHandle, LOCK_EX);
-            }
-
-            try {
-                $this->getFileIndexer()->index($path, $code ?: null);
-            } catch (Indexing\IndexingFailedException $e) {
-                return $this->outputJson(false, []);
-            }
-
-            if ($databaseFileHandle) {
-                flock($databaseFileHandle, LOCK_UN);
-                fclose($databaseFileHandle);
-            }
-
-            return $this->outputJson(true, []);
+        if (!is_dir($path) && !is_file($path) && !$useStdin) {
+            throw new UnexpectedValueException('The specified file or directory "' . $path . '" does not exist!');
         }
 
-        throw new UnexpectedValueException('The specified file or directory "' . $path . '" does not exist!');
+        $success = true;
+        $exception = null;
+
+        try {
+            if (is_dir($path)) {
+                $success = $this->reindexDirectory($path, $showOutput, $doStreamProgress);
+            } else {
+                $code = $this->getSourceCode($path, $useStdin);
+
+                $success = $this->reindexFile($path, $code);
+            }
+        } catch (\Exception $e) {
+            $exception = $e;
+        }
+
+        if ($exception) {
+            throw $exception;
+        }
+
+        return $success;
+    }
+
+    /**
+     * @param string $path
+     * @param bool   $showOutput
+     * @param bool   $doStreamProgress
+     *
+     * @return bool
+     */
+    protected function reindexDirectory($path, $showOutput, $doStreamProgress)
+    {
+        // Yes, we abuse the error channel...
+        $loggingStream = $showOutput ? fopen('php://stdout', 'w') : null;
+        $progressStream = $doStreamProgress ? fopen('php://stderr', 'w') : null;
+
+        $this->getProjectIndexer()
+            ->setProgressStream($progressStream)
+            ->setLoggingStream($loggingStream)
+            ->index($path);
+
+        if ($loggingStream) {
+            fclose($loggingStream);
+        }
+
+        if ($progressStream) {
+            fclose($progressStream);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string $path
+     * @param string $code
+     *
+     * @return bool
+     */
+    protected function reindexFile($path, $code)
+    {
+        if (mb_detect_encoding($code, 'UTF-8', true) !== 'UTF-8') {
+            throw new UnexpectedValueException("The file {$path} is not UTF-8!");
+        }
+
+        try {
+            $this->getFileIndexer()->index($path, $code);
+        } catch (Indexing\IndexingFailedException $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -190,7 +231,7 @@ class Reindex extends BaseCommand
                 $this->getStorageForIndexers(),
                 $this->getTypeAnalyzer(),
                 $this->getDocParser(),
-                $this->getParserFactory()
+                $this->getParser()
             );
         }
 
@@ -273,17 +314,5 @@ class Reindex extends BaseCommand
         }
 
         return $this->docParser;
-    }
-
-    /**
-     * @return DocParser
-     */
-    protected function getParserFactory()
-    {
-        if (!$this->parserFactory) {
-            $this->parserFactory = new ParserFactory();
-        }
-
-        return $this->parserFactory;
     }
 }

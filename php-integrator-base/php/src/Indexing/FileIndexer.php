@@ -47,11 +47,6 @@ class FileIndexer
     protected $typeAnalyzer;
 
     /**
-     * @var ParserFactory
-     */
-    protected $parserFactory;
-
-    /**
      * @var Parser
      */
     protected $parser;
@@ -70,34 +65,28 @@ class FileIndexer
      * @param StorageInterface $storage
      * @param TypeAnalyzer     $typeAnalyzer
      * @param DocParser        $docParser
-     * @param ParserFactory    $parserFactory
+     * @param Parser           $parser
      */
     public function __construct(
         StorageInterface $storage,
         TypeAnalyzer $typeAnalyzer,
         DocParser $docParser,
-        ParserFactory $parserFactory
+        Parser $parser
     ) {
         $this->storage = $storage;
         $this->typeAnalyzer = $typeAnalyzer;
         $this->docParser = $docParser;
-        $this->parserFactory = $parserFactory;
+        $this->parser = $parser;
     }
 
     /**
      * Indexes the specified file.
      *
-     * @param string      $filePath
-     * @param string|null $code     The source code of the file. If null, will be fetched automatically.
+     * @param string $filePath
+     * @param string $code
      */
-    public function index($filePath, $code = null)
+    public function index($filePath, $code)
     {
-        $code = $code ?: @file_get_contents($filePath);
-
-        if (!is_string($code)) {
-            throw new IndexingFailedException();
-        }
-
         try {
             $nodes = $this->getParser()->parse($code);
 
@@ -416,11 +405,23 @@ class FileIndexer
             DocParser::DESCRIPTION
         ], $rawData['name']);
 
+        $varDocumentation = isset($documentation['var']['$' . $rawData['name']]) ?
+            $documentation['var']['$' . $rawData['name']] :
+            null;
+
+        $shortDescription = $documentation['descriptions']['short'];
+
         $types = [];
 
-        if ($documentation['var']['type']) {
+        if ($varDocumentation) {
+            // You can place documentation after the @var tag as well as at the start of the docblock. Fall back
+            // from the latter to the former.
+            if (!empty($varDocumentation['description'])) {
+                $shortDescription = $varDocumentation['description'];
+            }
+
             $types = $this->getTypeDataForTypeSpecification(
-                $documentation['var']['type'],
+                $varDocumentation['type'],
                 $rawData['startLine'],
                 $useStatementFetchingVisitor
             );
@@ -435,9 +436,9 @@ class FileIndexer
             'is_builtin'            => 0,
             'is_deprecated'         => $documentation['deprecated'] ? 1 : 0,
             'has_docblock'          => empty($rawData['docComment']) ? 0 : 1,
-            'short_description'     => $documentation['descriptions']['short'],
+            'short_description'     => $shortDescription,
             'long_description'      => $documentation['descriptions']['long'],
-            'type_description'      => $documentation['var']['description'],
+            'type_description'      => $varDocumentation ? $varDocumentation['description'] : null,
             'types_serialized'      => serialize($types),
             'structure_id'          => $seId
         ]);
@@ -465,19 +466,23 @@ class FileIndexer
             DocParser::DESCRIPTION
         ], $rawData['name']);
 
-        $shortDescription = $documentation['descriptions']['short'];
+        $varDocumentation = isset($documentation['var']['$' . $rawData['name']]) ?
+            $documentation['var']['$' . $rawData['name']] :
+            null;
 
-        // You can place documentation after the @var tag as well as at the start of the docblock. Fall back
-        // from the latter to the former.
-        if (!empty($documentation['var']['description'])) {
-            $shortDescription = $documentation['var']['description'];
-        }
+        $shortDescription = $documentation['descriptions']['short'];
 
         $types = [];
 
-        if ($documentation && $documentation['var']['type']) {
+        if ($varDocumentation) {
+            // You can place documentation after the @var tag as well as at the start of the docblock. Fall back
+            // from the latter to the former.
+            if (!empty($varDocumentation['description'])) {
+                $shortDescription = $varDocumentation['description'];
+            }
+
             $types = $this->getTypeDataForTypeSpecification(
-                $documentation['var']['type'],
+                $varDocumentation['type'],
                 $rawData['startLine'],
                 $useStatementFetchingVisitor
             );
@@ -501,7 +506,7 @@ class FileIndexer
             'has_docblock'          => empty($rawData['docComment']) ? 0 : 1,
             'short_description'     => $shortDescription,
             'long_description'      => $documentation['descriptions']['long'],
-            'type_description'      => $documentation['var']['description'],
+            'type_description'      => $varDocumentation ? $varDocumentation['description'] : null,
             'structure_id'          => $seId,
             'access_modifier_id'    => $amId,
             'types_serialized'      => serialize($types)
@@ -884,18 +889,6 @@ class FileIndexer
      */
     protected function getParser()
     {
-        if (!$this->parser) {
-            $lexer = new Lexer([
-                'usedAttributes' => [
-                    'comments', 'startLine', 'endLine', 'startFilePos', 'endFilePos'
-                ]
-            ]);
-
-            $this->parser = $this->parserFactory->create(ParserFactory::PREFER_PHP7, $lexer, [
-                'throwOnError' => false
-            ]);
-        }
-
         return $this->parser;
     }
 }

@@ -1,0 +1,53 @@
+{
+  "name": "aligner-javascript",
+  "main": "./lib/main",
+  "version": "1.0.0",
+  "description": "Javascript support for aligner",
+  "keywords": [
+    "aligner",
+    "alignment",
+    "align",
+    "javascript",
+    "babel"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adrianlee44/atom-aligner-javascript.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0"
+  },
+  "dependencies": {},
+  "providedServices": {
+    "aligner.provider": {
+      "versions": {
+        "1.0.0": "getProvider"
+      }
+    }
+  },
+  "readme": "# aligner-javascript\n\n[Aligner](https://github.com/adrianlee44/atom-aligner) add-on to support Javascript.\n\n## Installation\nAligner must be installed along with this package. For more information, please check out [Aligner](https://github.com/adrianlee44/atom-aligner)\n\n## Changelog\n- 2016-07-21   v1.0.0   Initial release\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/adrianlee44/atom-aligner-javascript/issues"
+  },
+  "homepage": "https://github.com/adrianlee44/atom-aligner-javascript#readme",
+  "_id": "aligner-javascript@1.0.0",
+  "_shasum": "87b5478ee2b7b3ff0dfbfef6c98851934b02c4fc",
+  "_resolved": "file:../d-116621-99945-vf1cod/package.tgz",
+  "_from": "../d-116621-99945-vf1cod/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".js": [
+        "lib/main.js",
+        "lib/provider.js"
+      ],
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
+}

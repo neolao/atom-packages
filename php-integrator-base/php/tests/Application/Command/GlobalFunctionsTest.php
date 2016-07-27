@@ -12,15 +12,17 @@ class GlobalFunctionsTest extends IndexedTest
 
         $indexDatabase = $this->getDatabaseForTestFile($path);
 
-        $command = new GlobalFunctions();
+        $command = new GlobalFunctions($this->getParser());
         $command->setIndexDatabase($indexDatabase);
 
         $output = $command->getGlobalFunctions();
 
-        $this->assertThat($output, $this->arrayHasKey('firstFunction'));
-        $this->assertEquals($output['firstFunction']['fqcn'], 'A\firstFunction');
-        $this->assertThat($output, $this->arrayHasKey('secondFunction'));
-        $this->assertEquals($output['secondFunction']['fqcn'], 'A\secondFunction');
+        $this->assertThat($output, $this->arrayHasKey('A\firstFunction'));
+        $this->assertEquals($output['A\firstFunction']['name'], 'firstFunction');
+        $this->assertEquals($output['A\firstFunction']['fqcn'], 'A\firstFunction');
+        $this->assertThat($output, $this->arrayHasKey('A\secondFunction'));
+        $this->assertEquals($output['A\secondFunction']['name'], 'secondFunction');
+        $this->assertEquals($output['A\secondFunction']['fqcn'], 'A\secondFunction');
         $this->assertThat($output, $this->logicalNot($this->arrayHasKey('shouldNotShowUp')));
     }
 }

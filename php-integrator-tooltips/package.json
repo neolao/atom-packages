@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-tooltips",
   "main": "./lib/Main",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shows tooltips (e.g. for methods and classes) in your PHP source code.",
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~1.0": "setService"
+        "^1.0": "setService"
       }
     }
   },
@@ -35,10 +35,10 @@
     "url": "https://github.com/Gert-dev/php-integrator-tooltips/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-tooltips#readme",
-  "_id": "php-integrator-tooltips@1.0.0",
-  "_shasum": "2e54980c5f53eeeef973181463cdc0067c4e226a",
-  "_resolved": "file:../d-116527-88919-1b5s1yt/package.tgz",
-  "_from": "../d-116527-88919-1b5s1yt/package.tgz",
+  "_id": "php-integrator-tooltips@1.0.1",
+  "_shasum": "1c9bcd6b6780c669ec169f9824f8423bf095821d",
+  "_resolved": "file:../d-116627-74222-1avwzp9/package.tgz",
+  "_from": "../d-116627-74222-1avwzp9/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [

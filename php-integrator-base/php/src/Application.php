@@ -3,8 +3,15 @@
 namespace PhpIntegrator;
 
 use Exception;
+use UnexpectedValueException;
 
 use Doctrine\Common\Cache\FilesystemCache;
+
+use PhpIntegrator\Application\Command\CachingParserProxy;
+
+use PhpParser\Lexer;
+use PhpParser\Parser;
+use PhpParser\ParserFactory;
 
 /**
  * Main application class.
@@ -17,6 +24,16 @@ class Application
     protected $filesystemCache;
 
     /**
+     * @var CachingParserProxy
+     */
+    protected $cachingParserProxy;
+
+    /**
+     * @var Parser
+     */
+    protected $parser;
+
+    /**
      * Handles the application process.
      *
      * @param array $arguments The arguments to pass.
@@ -25,8 +42,15 @@ class Application
      */
     public function handle(array $arguments)
     {
+        if (count($arguments) < 3) {
+            throw new UnexpectedValueException('Not enough argument supplied. Usage: . <project> <command> [<addtional parameters>]');
+        }
+
         $programName = array_shift($arguments);
+        $projectName = array_shift($arguments);
         $command = array_shift($arguments);
+
+        // This seems to be needed for GetOptionKit.
         array_unshift($arguments, $programName);
 
         $commands = [
@@ -39,15 +63,17 @@ class Application
             '--localize-type'       => 'LocalizeType',
             '--semantic-lint'       => 'SemanticLint',
             '--available-variables' => 'AvailableVariables',
-            '--variable-types'      => 'VariableTypes',
             '--deduce-types'        => 'DeduceTypes'
         ];
 
         if (isset($commands[$command])) {
             $className = "\\PhpIntegrator\\Application\\Command\\{$commands[$command]}";
 
-            /** @var \PhpIntegrator\Application\CommandInterface $command */
-            $command = new $className($this->getFilesystemCache());
+            /** @var \PhpIntegrator\Application\Command\CommandInterface $command */
+            $command = new $className(
+                $this->getCachingParserProxy(),
+                $this->getFilesystemCache($projectName)
+            );
 
             if (interface_exists('Throwable')) {
                 // PHP >= 7.
@@ -74,23 +100,56 @@ class Application
     /**
      * Retrieves an instance of FilesystemCache. The object will only be created once if needed.
      *
+     * @param string $project
+     *
      * @return FilesystemCache
      */
-    protected function getFilesystemCache()
+    protected function getFilesystemCache($project)
     {
         if (!$this->filesystemCache instanceof FilesystemCache) {
-            // For some reason, Windows gives permission denied errors in any folder when Doctrine Cache tries to
-            // read its cache files again. For this reason, disable caching temporarily. See also
-            // https://github.com/Gert-dev/php-integrator-base/issues/185
-            if (mb_strtoupper(mb_substr(PHP_OS, 0, 3)) === 'WIN') {
-                return null;
-            }
-
             $this->filesystemCache = new FilesystemCache(
-                sys_get_temp_dir() . '/php-integrator-base/' . Application\Command::DATABASE_VERSION . '/'
+                sys_get_temp_dir() .
+                '/php-integrator-base/' .
+                $project . '/' .
+                Application\Command\AbstractCommand::DATABASE_VERSION .
+                '/'
             );
         }
 
         return $this->filesystemCache;
+    }
+
+    /**
+     * @return CachingParserProxy
+     */
+    protected function getCachingParserProxy()
+    {
+        if (!$this->cachingParserProxy instanceof CachingParserProxy) {
+            $this->cachingParserProxy = new CachingParserProxy($this->getParser());
+        }
+
+        return $this->cachingParserProxy;
+    }
+
+    /**
+     * @return Parser
+     */
+    protected function getParser()
+    {
+        if (!$this->parser) {
+            $lexer = new Lexer([
+                'usedAttributes' => [
+                    'comments', 'startLine', 'endLine', 'startFilePos', 'endFilePos'
+                ]
+            ]);
+
+            $parserFactory = new ParserFactory();
+
+            $this->parser = $parserFactory->create(ParserFactory::PREFER_PHP7, $lexer, [
+                'throwOnError' => false
+            ]);
+        }
+
+        return $this->parser;
     }
 }

@@ -8,12 +8,10 @@ use GetOptionKit\OptionCollection;
 
 use PhpIntegrator\IndexDataAdapter;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 /**
  * Command that shows a list of available classes, interfaces and traits.
  */
-class ClassList extends BaseCommand
+class ClassList extends AbstractCommand
 {
     /**
      * @inheritDoc
@@ -44,7 +42,7 @@ class ClassList extends BaseCommand
      {
          $result = [];
 
-         $storageProxy = new ClassList\ProxyProvider($this->indexDatabase);
+         $storageProxy = new ClassList\ProxyProvider($this->getIndexDataAdapterProvider());
          $dataAdapter = new IndexDataAdapter($storageProxy);
 
          foreach ($this->indexDatabase->getAllStructuresRawInfo($file) as $element) {

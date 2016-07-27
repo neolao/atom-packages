@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-autocomplete-plus",
   "main": "./lib/Main",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Provides autocompletion for your PHP source code.",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~1.0": "setService"
+        "^1.0": "setService"
       }
     }
   },
@@ -40,10 +40,10 @@
     "url": "https://github.com/Gert-dev/php-integrator-autocomplete-plus/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-autocomplete-plus#readme",
-  "_id": "php-integrator-autocomplete-plus@1.0.1",
-  "_shasum": "9d6f514f97aafca354feb11848014e9a35059356",
-  "_resolved": "file:../d-116611-32037-1kdwos2/package.tgz",
-  "_from": "../d-116611-32037-1kdwos2/package.tgz",
+  "_id": "php-integrator-autocomplete-plus@1.0.3",
+  "_shasum": "d8731a8f41e4041d2c06e22fb2459b0483f9bef8",
+  "_resolved": "file:../d-116627-74187-h83tzs/package.tgz",
+  "_from": "../d-116627-74187-h83tzs/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [],

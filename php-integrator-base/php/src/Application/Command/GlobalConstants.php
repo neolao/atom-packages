@@ -6,12 +6,10 @@ use ArrayAccess;
 
 use PhpIntegrator\IndexDataAdapter;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 /**
  * Command that shows a list of global constants.
  */
-class GlobalConstants extends BaseCommand
+class GlobalConstants extends AbstractCommand
 {
     /**
      * @inheritDoc
@@ -31,7 +29,7 @@ class GlobalConstants extends BaseCommand
         $constants = [];
 
         foreach ($this->indexDatabase->getGlobalConstants() as $constant) {
-            $constants[$constant['name']] = $this->getIndexDataAdapter()->getConstantInfo($constant);
+            $constants[$constant['fqcn']] = $this->getIndexDataAdapter()->getConstantInfo($constant);
         }
 
         return $constants;

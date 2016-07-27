@@ -12,6 +12,33 @@ module.exports =
             default     : true
             order       : 1
 
+        showUnknownMembers:
+            title       : 'Show unknown members'
+            description : '''
+                Highlights class members that could not be found. Note that this can a large strain on performance.
+            '''
+            type        : 'boolean'
+            default     : false
+            order       : 2
+
+        showUnknownGlobalFunctions:
+            title       : 'Show unknown global functions'
+            description : '''
+                Highlights global functions that could not be found.
+            '''
+            type        : 'boolean'
+            default     : true
+            order       : 3
+
+        showUnknownGlobalConstants:
+            title       : 'Show unknown global constants'
+            description : '''
+                Highlights global constants that could not be found.
+            '''
+            type        : 'boolean'
+            default     : true
+            order       : 4
+
         showUnusedUseStatements:
             title       : 'Show unused use statements'
             description : '''
@@ -19,7 +46,7 @@ module.exports =
             '''
             type        : 'boolean'
             default     : true
-            order       : 2
+            order       : 5
 
         validateDocblockCorrectness:
             title       : 'Validate docblock correctness'
@@ -30,7 +57,7 @@ module.exports =
             '''
             type        : 'boolean'
             default     : true
-            order       : 3
+            order       : 6
 
     ###*
      * The name of the package.

@@ -10,8 +10,6 @@ use GetOptionKit\OptionCollection;
 use PhpIntegrator\DocParser;
 use PhpIntegrator\TypeAnalyzer;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 use PhpIntegrator\Indexing\IndexDatabase;
 
 use PhpParser\Error;
@@ -24,17 +22,27 @@ use PhpParser\ParserFactory;
  * Command that lints a file's semantics (i.e. it does not deal with syntax errors, as this is already handled by the
  * indexer).
  */
-class SemanticLint extends BaseCommand
+class SemanticLint extends AbstractCommand
 {
-    /**
-     * @var Parser
-     */
-    protected $parser;
-
     /**
      * @var ClassInfo
      */
     protected $classInfoCommand;
+
+    /**
+     * @var DeduceTypes
+     */
+    protected $deduceTypesCommand;
+
+    /**
+     * @var GlobalFunctions
+     */
+    protected $globalFunctions;
+
+    /**
+     * @var GlobalConstants
+     */
+    protected $globalConstants;
 
     /**
      * @var ResolveType
@@ -59,6 +67,9 @@ class SemanticLint extends BaseCommand
         $optionCollection->add('file?', 'The file to lint.')->isa('string');
         $optionCollection->add('stdin?', 'If set, file contents will not be read from disk but the contents from STDIN will be used instead.');
         $optionCollection->add('no-unknown-classes?', 'If set, unknown class names will not be returned.');
+        $optionCollection->add('no-unknown-members?', 'If set, unknown class member linting will not be performed.');
+        $optionCollection->add('no-unknown-global-functions?', 'If set, unknown global function linting will not be performed.');
+        $optionCollection->add('no-unknown-global-constants?', 'If set, unknown global constant linting will not be performed.');
         $optionCollection->add('no-docblock-correctness?', 'If set, docblock correctness will not be analyzed.');
         $optionCollection->add('no-unused-use-statements?', 'If set, unused use statements will not be returned.');
     }
@@ -81,6 +92,9 @@ class SemanticLint extends BaseCommand
             $arguments['file']->value,
             $code,
             !(isset($arguments['no-unknown-classes']) && $arguments['no-unknown-classes']->value),
+            !(isset($arguments['no-unknown-members']) && $arguments['no-unknown-members']->value),
+            !(isset($arguments['no-unknown-global-functions']) && $arguments['no-unknown-global-functions']->value),
+            !(isset($arguments['no-unknown-global-constants']) && $arguments['no-unknown-global-constants']->value),
             !(isset($arguments['no-docblock-correctness']) && $arguments['no-docblock-correctness']->value),
             !(isset($arguments['no-unused-use-statements']) && $arguments['no-unused-use-statements']->value)
         );
@@ -92,6 +106,9 @@ class SemanticLint extends BaseCommand
      * @param string $file
      * @param string $code
      * @param bool   $retrieveUnknownClasses
+     * @param bool   $retrieveUnknownMembers
+     * @param bool   $retrieveUnknownGlobalFunctions
+     * @param bool   $retrieveUnknownGlobalConstants
      * @param bool   $analyzeDocblockCorrectness
      * @param bool   $retrieveUnusedUseStatements
      *
@@ -101,6 +118,9 @@ class SemanticLint extends BaseCommand
         $file,
         $code,
         $retrieveUnknownClasses = true,
+        $retrieveUnknownMembers = true,
+        $retrieveUnknownGlobalFunctions = true,
+        $retrieveUnknownGlobalConstants = true,
         $analyzeDocblockCorrectness = true,
         $retrieveUnusedUseStatements = true
     ) {
@@ -143,6 +163,49 @@ class SemanticLint extends BaseCommand
                 );
 
                 foreach ($unknownClassAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+            }
+
+            $unknownMemberAnalyzer = null;
+
+            if ($retrieveUnknownMembers) {
+                $unknownMemberAnalyzer = new SemanticLint\UnknownMemberAnalyzer(
+                    $this->getDeduceTypesCommand(),
+                    $this->getClassInfoCommand(),
+                    $this->getResolveTypeCommand(),
+                    $this->getTypeAnalyzer(),
+                    $file,
+                    $code
+                );
+
+                foreach ($unknownMemberAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+            }
+
+            $unknownGlobalFunctionAnalyzer = null;
+
+            if ($retrieveUnknownGlobalFunctions) {
+                $unknownGlobalFunctionAnalyzer = new SemanticLint\UnknownGlobalFunctionAnalyzer(
+                    $this->getGlobalFunctionsCommand(),
+                    $this->getTypeAnalyzer()
+                );
+
+                foreach ($unknownGlobalFunctionAnalyzer->getVisitors() as $visitor) {
+                    $traverser->addVisitor($visitor);
+                }
+            }
+
+            $unknownGlobalConstantAnalyzer = null;
+
+            if ($retrieveUnknownGlobalFunctions) {
+                $unknownGlobalConstantAnalyzer = new SemanticLint\UnknownGlobalConstantAnalyzer(
+                    $this->getGlobalConstantsCommand(),
+                    $this->getTypeAnalyzer()
+                );
+
+                foreach ($unknownGlobalConstantAnalyzer->getVisitors() as $visitor) {
                     $traverser->addVisitor($visitor);
                 }
             }
@@ -197,6 +260,21 @@ class SemanticLint extends BaseCommand
                 $output['errors']['unknownClasses'] = $unknownClassAnalyzer->getOutput();
             }
 
+            if ($unknownMemberAnalyzer) {
+                $analyzerOutput = $unknownMemberAnalyzer->getOutput();
+
+                $output['errors']['unknownMembers']   = $analyzerOutput['errors'];
+                $output['warnings']['unknownMembers'] = $analyzerOutput['warnings'];
+            }
+
+            if ($unknownGlobalFunctionAnalyzer) {
+                $output['errors']['unknownGlobalFunctions'] = $unknownGlobalFunctionAnalyzer->getOutput();
+            }
+
+            if ($unknownGlobalConstantAnalyzer) {
+                $output['errors']['unknownGlobalConstants'] = $unknownGlobalConstantAnalyzer->getOutput();
+            }
+
             if ($docblockCorrectnessAnalyzer) {
                 $output['warnings']['docblockIssues'] = $docblockCorrectnessAnalyzer->getOutput();
             }
@@ -227,11 +305,24 @@ class SemanticLint extends BaseCommand
     protected function getClassInfoCommand()
     {
         if (!$this->classInfoCommand) {
-            $this->classInfoCommand = new ClassInfo($this->cache);
+            $this->classInfoCommand = new ClassInfo($this->getParser(), $this->cache);
             $this->classInfoCommand->setIndexDatabase($this->indexDatabase);
         }
 
         return $this->classInfoCommand;
+    }
+
+    /**
+     * @return DeduceTypes
+     */
+    protected function getDeduceTypesCommand()
+    {
+        if (!$this->deduceTypesCommand) {
+            $this->deduceTypesCommand = new DeduceTypes($this->getParser(), $this->cache);
+            $this->deduceTypesCommand->setIndexDatabase($this->indexDatabase);
+        }
+
+        return $this->deduceTypesCommand;
     }
 
     /**
@@ -240,11 +331,37 @@ class SemanticLint extends BaseCommand
     protected function getResolveTypeCommand()
     {
         if (!$this->resolveTypeCommand) {
-            $this->resolveTypeCommand = new ResolveType($this->cache);
+            $this->resolveTypeCommand = new ResolveType($this->getParser(), $this->cache);
             $this->resolveTypeCommand->setIndexDatabase($this->indexDatabase);
         }
 
         return $this->resolveTypeCommand;
+    }
+
+    /**
+     * @return GlobalFunctions
+     */
+    protected function getGlobalFunctionsCommand()
+    {
+        if (!$this->globalFunctions) {
+            $this->globalFunctions = new GlobalFunctions($this->getParser(), $this->cache);
+            $this->globalFunctions->setIndexDatabase($this->indexDatabase);
+        }
+
+        return $this->globalFunctions;
+    }
+
+    /**
+     * @return GlobalConstants
+     */
+    protected function getGlobalConstantsCommand()
+    {
+        if (!$this->globalConstants) {
+            $this->globalConstants = new GlobalConstants($this->getParser(), $this->cache);
+            $this->globalConstants->setIndexDatabase($this->indexDatabase);
+        }
+
+        return $this->globalConstants;
     }
 
     /**
@@ -269,25 +386,5 @@ class SemanticLint extends BaseCommand
         }
 
         return $this->docParser;
-    }
-
-    /**
-     * @return Parser
-     */
-    protected function getParser()
-    {
-        if (!$this->parser) {
-            $lexer = new Lexer([
-                'usedAttributes' => [
-                    'comments', 'startLine', 'endLine', 'startFilePos', 'endFilePos'
-                ]
-            ]);
-
-            $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer, [
-                'throwOnError' => false
-            ]);
-        }
-
-        return $this->parser;
     }
 }

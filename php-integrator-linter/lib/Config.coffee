@@ -23,6 +23,9 @@ class Config
 
         @data =
             showUnknownClasses          : true
+            showUnknownMembers          : true
+            showUnknownGlobalFunctions  : true
+            showUnknownGlobalConstants  : true
             showUnusedUseStatements     : true
             validateDocblockCorrectness : true
 

@@ -4,12 +4,10 @@ namespace PhpIntegrator\Application\Command;
 
 use ArrayAccess;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 /**
  * Command that shows a list of global functions.
  */
-class GlobalFunctions extends BaseCommand
+class GlobalFunctions extends AbstractCommand
 {
     /**
      * @inheritDoc
@@ -29,7 +27,7 @@ class GlobalFunctions extends BaseCommand
          $result = [];
 
          foreach ($this->indexDatabase->getGlobalFunctions() as $function) {
-             $result[$function['name']] = $this->getIndexDataAdapter()->getFunctionInfo($function);
+             $result[$function['fqcn']] = $this->getIndexDataAdapter()->getFunctionInfo($function);
          }
 
          return $result;

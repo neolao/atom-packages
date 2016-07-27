@@ -24,6 +24,9 @@ class AtomConfig extends Config
     ###
     load: () ->
         @set('showUnknownClasses', atom.config.get("#{@packageName}.showUnknownClasses"))
+        @set('showUnknownMembers', atom.config.get("#{@packageName}.showUnknownMembers"))
+        @set('showUnknownGlobalFunctions', atom.config.get("#{@packageName}.showUnknownGlobalFunctions"))
+        @set('showUnknownGlobalConstants', atom.config.get("#{@packageName}.showUnknownGlobalConstants"))
         @set('showUnusedUseStatements', atom.config.get("#{@packageName}.showUnusedUseStatements"))
         @set('validateDocblockCorrectness', atom.config.get("#{@packageName}.validateDocblockCorrectness"))
 
@@ -33,6 +36,15 @@ class AtomConfig extends Config
     attachListeners: () ->
         atom.config.onDidChange "#{@packageName}.showUnknownClasses", () =>
             @set('showUnknownClasses', atom.config.get("#{@packageName}.showUnknownClasses"))
+
+        atom.config.onDidChange "#{@packageName}.showUnknownMembers", () =>
+            @set('showUnknownMembers', atom.config.get("#{@packageName}.showUnknownMembers"))
+
+        atom.config.onDidChange "#{@packageName}.showUnknownGlobalFunctions", () =>
+            @set('showUnknownGlobalFunctions', atom.config.get("#{@packageName}.showUnknownGlobalFunctions"))
+
+        atom.config.onDidChange "#{@packageName}.showUnknownGlobalConstants", () =>
+            @set('showUnknownGlobalConstants', atom.config.get("#{@packageName}.showUnknownGlobalConstants"))
 
         atom.config.onDidChange "#{@packageName}.showUnusedUseStatements", () =>
             @set('showUnusedUseStatements', atom.config.get("#{@packageName}.showUnusedUseStatements"))

@@ -20,7 +20,7 @@ The source code was originally based on the php-autocomplete-plus code base, but
 
 ## What do I need to do to make it work?
 Currently the following is required in order to get the package up and running:
-  * **PHP** - To run this package properly, you need at least PHP 5.4. The code you're actually writing can be anything ranging from PHP 5.2 up to (and including) PHP 7.0.
+  * **PHP** - To run this package properly, you need at least PHP 5.5. The code you're actually writing can be anything ranging from PHP 5.2 up to (and including) PHP 7.0.
     * **php-sqlite** and SQLite >= 3.7.11 - Required as back end for the indexing database.
   * **PSR-compliant code** - Write code that follows the PSR standards, especially regarding namespacing.
   * **Documentation** and **type hinting** - Write proper docblocks that follow the draft PSR-5 standard (inspired by phpDocumentor's implementation) or use type hinting as much as possible:
@@ -41,6 +41,7 @@ Some features may or may not work outside these restrictions. **Don't forget to 
 You can very easily start using the service by simply consuming the service in your package (see also the `package.json` and `Main.coffee` files of the packages listed above for an example). The service is a single exposed class, which is located in the [Service.coffee](https://github.com/Gert-dev/php-integrator-base/blob/master/lib/Service.coffee) file, along with docblocks explaining what they do and what they accept as parameters.
 
 As the service allows fetching information about the code base, other packages can do all kinds of interesting things with it that brings Atom closer to an IDE for PHP, yet completely open-source. Here are some idea's of things that could be done with the service (besides what the existing packages listed above already do):
+* [A project-wide symbol viewer that supports fuzzy matching on symbols (much like Atom's fuzzy file matcher)](https://github.com/Gert-dev/php-integrator-navigation/issues/23).
 * A package listing all the classes implementing an interface, using a trait, or extending another class.
 * A package performing a semantic lint on an entire project, showing various problems with each file in a navigatable list.
 * An (UML?) class diagram builder that creates a visual representation of the relations between all classes in a code base (i.e. their implemented interfaces, base classes and traits).

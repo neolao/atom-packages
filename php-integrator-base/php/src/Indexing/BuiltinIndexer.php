@@ -129,7 +129,7 @@ class BuiltinIndexer
     {
         return $this->storage->insert(IndexStorageItemEnum::CONSTANTS, [
             'name'               => $name,
-            'fqcn'              => $name,
+            'fqcn'               => $name,
             'file_id'            => null,
             'start_line'         => null,
             'end_line'           => null,
@@ -162,7 +162,7 @@ class BuiltinIndexer
                     continue;
                 }
 
-                $this->indexFunctionLike($function);
+                $this->indexFunction($function);
             }
         }
     }
@@ -228,7 +228,7 @@ class BuiltinIndexer
             if (method_exists($parameter, 'isVariadic')) {
                 $isVariadic = $parameter->isVariadic();
             }
-            
+
             $type = null;
             $types = [];
 
@@ -344,8 +344,8 @@ class BuiltinIndexer
         $structureTypeMap = $this->getStructureTypeMap();
 
         $structureId = $this->storage->insertStructure([
-            'name'              => $element->getShortName(),
-            'fqcn'             => $element->getName(),
+            'name'              => $this->getStructureShortName($element),
+            'fqcn'              => $this->getStructureFqcn($element),
             'file_id'           => null,
             'start_line'        => null,
             'end_line'          => null,
@@ -392,6 +392,18 @@ class BuiltinIndexer
         foreach ($element->getConstants() as $constantName => $constantValue) {
             $this->indexClassConstant($constantName, $structureId);
         }
+    }
+
+    /**
+     * @param ReflectionFunction $function
+     */
+    protected function indexFunction(ReflectionFunction $function)
+    {
+        $functionId = $this->indexFunctionLike($function);
+
+        $this->storage->update(IndexStorageItemEnum::FUNCTIONS, $functionId, [
+            'fqcn' => $function->getName()
+        ]);
     }
 
     /**
@@ -471,6 +483,53 @@ class BuiltinIndexer
         $this->storage->update(IndexStorageItemEnum::CONSTANTS, $constantId, [
             'structure_id' => $structureId
         ]);
+    }
+
+    /**
+     * Retrieves the short name of the specified classlike.
+     *
+     * Some of PHP's built-in classes have inconsistent naming. An example is the COM class, which is called 'COM'
+     * according to the documentation but is actually called 'com' when fetching a list of built-in classes. PHP in
+     * itself is mostly case insenstive, but as we aren't, we must at least ensure that the users get the expected
+     * results when consulting the documentation.
+     *
+     * @param ReflectionClass $element
+     *
+     * @return string
+     */
+    protected function getStructureShortName(ReflectionClass $element)
+    {
+        $correctionMap = [
+            'com'     => 'COM',
+            'dotnet'  => 'DOTNET',
+            'variant' => 'VARIANT'
+        ];
+
+        $shortName = $element->getShortName();
+
+        return isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $shortName;
+    }
+
+    /**
+     * Retrieves the FQCN of the specified classlike.
+     *
+     * See {@see getStructureShortName} for more information on why this is necessary.
+     *
+     * @param ReflectionClass $element
+     *
+     * @return string
+     */
+    protected function getStructureFqcn(ReflectionClass $element)
+    {
+        $correctionMap = [
+            'com'     => 'COM',
+            'dotnet'  => 'DOTNET',
+            'variant' => 'VARIANT'
+        ];
+
+        $shortName = $element->getShortName();
+
+        return isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $shortName;
     }
 
     /**

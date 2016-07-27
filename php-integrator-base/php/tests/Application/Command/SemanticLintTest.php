@@ -14,7 +14,7 @@ class SemanticLintTest extends IndexedTest
 
         $indexDatabase = $this->getDatabaseForTestFile($path, $indexingMayFail);
 
-        $command = new SemanticLint();
+        $command = new SemanticLint($this->getParser());
         $command->setIndexDatabase($indexDatabase);
 
         return $command->semanticLint($path, file_get_contents($path));
@@ -69,15 +69,15 @@ class SemanticLintTest extends IndexedTest
             [
                 'name'      => 'DateTime',
                 'namespace' => 'A',
-                'start'     => 56,
-                'end'       => 64
+                'start'     => 97,
+                'end'       => 105
             ],
 
             [
                 'name'      => 'SplFileInfo',
                 'namespace' => 'B',
-                'start'     => 117,
-                'end'       => 128
+                'start'     => 153,
+                'end'       => 164
             ]
         ], $output['errors']['unknownClasses']);
     }
@@ -122,6 +122,146 @@ class SemanticLintTest extends IndexedTest
                 'end'       => 256
             ]
         ], $output['errors']['unknownClasses']);
+    }
+
+    public function testReportsInvalidMemberCallsOnAnExpressionWithoutAType()
+    {
+        $output = $this->lintFile('UnknownMemberExpressionWithNoType.php');
+
+        $this->assertEquals([
+            [
+                'memberName' => 'foo',
+                'start'      => 21,
+                'end'        => 32
+            ]
+        ], $output['errors']['unknownMembers']['expressionHasNoType']);
+    }
+
+    public function testReportsInvalidMemberCallsOnAnExpressionThatDoesNotReturnAClasslike()
+    {
+        $output = $this->lintFile('UnknownMemberExpressionWithNoClasslike.php');
+
+        $this->assertEquals([
+            [
+                'memberName'     => 'foo',
+                'expressionType' => 'int',
+                'start'          => 57,
+                'end'            => 68
+            ],
+
+            [
+                'memberName'     => 'foo',
+                'expressionType' => 'bool',
+                'start'          => 57,
+                'end'            => 68
+            ]
+        ], $output['errors']['unknownMembers']['expressionIsNotClasslike']);
+    }
+
+    public function testReportsInvalidMemberCallsOnAnExpressionThatReturnsAClasslikeWithNoSuchMember()
+    {
+        $output = $this->lintFile('UnknownMemberExpressionWithNoSuchMember.php');
+
+        $this->assertEquals([
+            [
+                'memberName'     => 'foo',
+                'expressionType' => '\A\Foo',
+                'start'          => 124,
+                'end'            => 135
+            ],
+
+            [
+                'memberName'     => 'bar',
+                'expressionType' => '\A\Foo',
+                'start'          => 137,
+                'end'            => 147
+            ],
+
+            [
+                'memberName'     => 'CONSTANT',
+                'expressionType' => '\A\Foo',
+                'start'          => 187,
+                'end'            => 200
+            ]
+        ], $output['errors']['unknownMembers']['expressionHasNoSuchMember']);
+    }
+
+    public function testReportsInvalidMemberCallsOnAnExpressionThatReturnsAClasslikeWithNoSuchMemberCausingANewMemberToBeCreated()
+    {
+        $output = $this->lintFile('UnknownMemberExpressionWithNoSuchMember.php');
+
+        $this->assertEquals([
+            [
+                'memberName'     => 'test',
+                'expressionType' => '\A\Foo',
+                'start'          => 80,
+                'end'            => 91
+            ],
+
+            [
+                'memberName'     => 'fooProp',
+                'expressionType' => '\A\Foo',
+                'start'          => 149,
+                'end'            => 162
+            ],
+
+            [
+                'memberName'     => 'barProp',
+                'expressionType' => '\A\Foo',
+                'start'          => 168,
+                'end'            => 181
+            ]
+        ], $output['warnings']['unknownMembers']['expressionNewMemberWillBeCreated']);
+    }
+
+    public function testReportsUnknownGlobalFunctions()
+    {
+        $output = $this->lintFile('UnknownGlobalFunctions.php');
+
+        $this->assertEquals([
+            [
+                'name'  => 'foo',
+                'start' => 42,
+                'end'   => 47
+            ],
+
+            [
+                'name'  => 'bar',
+                'start' => 49,
+                'end'   => 54
+            ],
+
+            [
+                'name'  => '\A\foo',
+                'start' => 56,
+                'end'   => 64
+            ]
+        ], $output['errors']['unknownGlobalFunctions']);
+    }
+
+    public function testReportsUnknownGlobalConstants()
+    {
+        $output = $this->lintFile('UnknownGlobalConstants.php');
+
+        $this->assertEquals([
+            [
+                'name'  => 'FOO',
+                'start' => 40,
+                'end'   => 43
+            ],
+
+            [
+                'name'  => 'BAR',
+                'start' => 45,
+                'end'   => 48
+            ],
+
+            [
+                'name'  => '\A\FOO',
+                'start' => 50,
+                'end'   => 56
+            ]
+        ], $output['errors']['unknownGlobalConstants']);
     }
 
     public function testReportsUnusedUseStatementsWithSingleNamespace()
@@ -362,7 +502,7 @@ class SemanticLintTest extends IndexedTest
      */
     public function testThrowsExceptionOnUnknownFile()
     {
-        $command = new SemanticLint();
+        $command = new SemanticLint($this->getParser());
         $command->setIndexDatabase(new IndexDatabase(':memory:', 1));
 
         $output = $this->lintFile('MissingFile.php');

@@ -2,8 +2,8 @@
 
 use PhpIntegrator\Application;
 
-if (version_compare(PHP_VERSION, '5.4.0') === -1) {
-    die('You need at least PHP 5.4, your current version is PHP ' . PHP_VERSION);
+if (version_compare(PHP_VERSION, '5.5.0') === -1) {
+    die('You need at least PHP 5.5, your current version is PHP ' . PHP_VERSION);
 }
 
 if (!function_exists('mb_substr')) {
@@ -27,6 +27,8 @@ if (function_exists('xdebug_disable')) {
 // Explicitly set the timezone to avoid warnings in some older PHP 5 versions. Also, this prevents files suddenly being
 // picked up as being modified if the user changes the timezone in php.ini.
 date_default_timezone_set('UTC');
+
+mb_internal_encoding('UTF-8');
 
 chdir(__DIR__);
 

@@ -112,9 +112,10 @@ class Service
      * Performs a semantic lint of the specified file.
      *
      * @param {String}      file
-     * @param {String|null} source The source code of the file to index. May be null if a directory is passed instead.
-     * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses,
-     *                              noDocblockCorrectness and noUnusedUseStatements are supported.
+     * @param {String|null} source  The source code of the file to index. May be null if a directory is passed instead.
+     * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses, noUnknownMembers,
+     *                              noUnknownGlobalFunctions, noUnknownGlobalConstants, noDocblockCorrectness and
+     *                              noUnusedUseStatements are supported.
      *
      * @return {Promise}
     ###
@@ -135,6 +136,8 @@ class Service
 
     ###*
      * Fetches the types of the specified variable at the specified location.
+     *
+     * @deprecated Use deduceTypes instead.
      *
      * @param {String}      name   The variable to fetch, including its leading dollar sign.
      * @param {String}      file   The path to the file to examine.
@@ -160,12 +163,29 @@ class Service
         return @proxy.deduceTypes(parts, file, source, offset)
 
     ###*
+     * Convenience alias for {@see deduceTypes}.
+     *
+     * @param {TextEditor} editor
+     * @param {Range}      bufferPosition
+     * @param {String}     name
+     *
+     * @return {Promise}
+    ###
+    deduceTypesAt: (parts, editor, bufferPosition) ->
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
+
+        bufferText = editor.getBuffer().getText()
+
+        return @deduceTypes(parts, editor.getPath(), bufferText, offset)
+
+    ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
-     * @param {String}      path                   The full path to the file  or folder to refresh.
-     * @param {String|null} source                 The source code of the file to index. May be null if a directory is
-     *                                             passed instead.
-     * @param {Callback}    progressStreamCallback A method to invoke each time progress streaming data is received.
+     * @param {String|Array} path                   The full path to the file  or folder to refresh. Alternatively,
+     *                                              this can be a list of items to index at the same time.
+     * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
+     *                                              passed instead.
+     * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
      *
      * @return {Promise}
     ###
@@ -263,6 +283,8 @@ class Service
     ###*
      * Retrieves the types of a variable, relative to the context at the specified buffer location. Class names will
      * be returned in their full form (full class name, with a leading slash).
+     *
+     * @deprecated Use deduceTypesAt instead.
      *
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition

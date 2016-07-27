@@ -19,6 +19,11 @@ class Proxy
     indexDatabaseName: null
 
     ###*
+     * The name of the project.
+    ###
+    projectName: null
+
+    ###*
      * Constructor.
      *
      * @param {Config} config
@@ -127,7 +132,13 @@ class Proxy
      * @return {Promise}
     ###
     getClassList: () ->
-        return @performRequest(['--class-list', '--database=' + @getIndexDatabasePath()])
+        parameters = [
+            @projectName,
+            '--class-list',
+            '--database=' + @getIndexDatabasePath()
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Retrieves a list of available classes in the specified file.
@@ -140,7 +151,14 @@ class Proxy
         if not file
             throw new Error('No file passed!')
 
-        return @performRequest(['--class-list', '--database=' + @getIndexDatabasePath(), '--file=' + file])
+        parameters = [
+            @projectName,
+            '--class-list',
+            '--database=' + @getIndexDatabasePath(),
+            '--file=' + file
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Retrieves a list of available global constants.
@@ -148,7 +166,13 @@ class Proxy
      * @return {Promise}
     ###
     getGlobalConstants: () ->
-        return @performRequest(['--constants', '--database=' + @getIndexDatabasePath()])
+        parameters = [
+            @projectName,
+            '--constants',
+            '--database=' + @getIndexDatabasePath()
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Retrieves a list of available global functions.
@@ -156,7 +180,13 @@ class Proxy
      * @return {Promise}
     ###
     getGlobalFunctions: () ->
-        return @performRequest(['--functions', '--database=' + @getIndexDatabasePath()])
+        parameters = [
+            @projectName,
+            '--functions',
+            '--database=' + @getIndexDatabasePath()
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Retrieves a list of available members of the class (or interface, trait, ...) with the specified name.
@@ -169,9 +199,14 @@ class Proxy
         if not className
             throw new Error('No class name passed!')
 
-        return @performRequest(
-            ['--class-info', '--database=' + @getIndexDatabasePath(), '--name=' + className]
-        )
+        parameters = [
+            @projectName,
+            '--class-info',
+            '--database=' + @getIndexDatabasePath(),
+            '--name=' + className
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Resolves a local type in the specified file, based on use statements and the namespace.
@@ -187,9 +222,16 @@ class Proxy
         throw new Error('No line passed!') if not line
         throw new Error('No type passed!') if not type
 
-        return @performRequest(
-            ['--resolve-type', '--database=' + @getIndexDatabasePath(), '--file=' + file, '--line=' + line, '--type=' + type]
-        )
+        parameters = [
+            @projectName,
+            '--resolve-type',
+            '--database=' + @getIndexDatabasePath(),
+            '--file=' + file,
+            '--line=' + line,
+            '--type=' + type
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Localizes a type to the specified file, making it relative to local use statements, if possible. If not possible,
@@ -206,27 +248,50 @@ class Proxy
         throw new Error('No line passed!') if not line
         throw new Error('No type passed!') if not type
 
-        return @performRequest(
-            ['--localize-type', '--database=' + @getIndexDatabasePath(), '--file=' + file, '--line=' + line, '--type=' + type]
-        )
+        parameters = [
+            @projectName,
+            '--localize-type',
+            '--database=' + @getIndexDatabasePath(),
+            '--file=' + file,
+            '--line=' + line,
+            '--type=' + type
+        ]
+
+        return @performRequest(parameters)
 
     ###*
      * Performs a semantic lint of the specified file.
      *
      * @param {String}      file
      * @param {String|null} source  The source code of the file to index. May be null if a directory is passed instead.
-     * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses,
-     *                              noDocblockCorrectness and noUnusedUseStatements are supported.
+     * @param {Object}      options Additional options to set. Boolean properties noUnknownClasses, noUnknownMembers,
+     *                              noUnknownGlobalFunctions, noUnknownGlobalConstants, noDocblockCorrectness and
+     *                              noUnusedUseStatements are supported.
      *
      * @return {Promise}
     ###
     semanticLint: (file, source, options = {}) ->
         throw new Error('No file passed!') if not file
 
-        parameters = ['--semantic-lint', '--database=' + @getIndexDatabasePath(), '--file=' + file, '--stdin']
+        parameters = [
+            @projectName,
+            '--semantic-lint',
+            '--database=' + @getIndexDatabasePath(),
+            '--file=' + file,
+            '--stdin'
+        ]
 
         if options.noUnknownClasses == true
             parameters.push('--no-unknown-classes')
+
+        if options.noUnknownMembers == true
+            parameters.push('--no-unknown-members')
+
+        if options.noUnknownGlobalFunctions == true
+            parameters.push('--no-unknown-global-functions')
+
+        if options.noUnknownGlobalConstants == true
+            parameters.push('--no-unknown-global-constants')
 
         if options.noDocblockCorrectness == true
             parameters.push('--no-docblock-correctness')
@@ -259,14 +324,21 @@ class Proxy
         else
             parameter = '--stdin'
 
-        return @performRequest(
-            ['--available-variables', '--database=' + @getIndexDatabasePath(), parameter, '--offset=' + offset, '--charoffset'],
-            null,
-            source
-        )
+        parameters = [
+            @projectName,
+            '--available-variables',
+            '--database=' + @getIndexDatabasePath(),
+            parameter,
+            '--offset=' + offset,
+            '--charoffset'
+        ]
+
+        return @performRequest(parameters, null, source)
 
     ###*
      * Fetches the types of the specified variable at the specified location.
+     *
+     * @deprecated Use deduceTypes instead.
      *
      * @param {String}      name   The variable to fetch, including its leading dollar sign.
      * @param {String}      file   The path to the file to examine.
@@ -276,22 +348,7 @@ class Proxy
      * @return {Promise}
     ###
     getVariableTypes: (name, file, source, offset) ->
-        if not file?
-            throw 'A path to a file must be passed!'
-
-        parameters = ['--variable-types', '--database=' + @getIndexDatabasePath(), '--name=' + name, '--offset=' + offset, '--charoffset']
-
-        if file?
-            parameters.push('--file=' + file)
-
-        if source?
-            parameters.push('--stdin')
-
-        return @performRequest(
-            parameters,
-            null,
-            source
-        )
+        return @deduceTypes([name], file, source, offset)
 
     ###*
      * Deduces the resulting types of an expression based on its parts.
@@ -307,7 +364,13 @@ class Proxy
         if not file?
             throw 'A path to a file must be passed!'
 
-        parameters = ['--deduce-types', '--database=' + @getIndexDatabasePath(), '--offset=' + offset, '--charoffset']
+        parameters = [
+            @projectName,
+            '--deduce-types',
+            '--database=' + @getIndexDatabasePath(),
+            '--offset=' + offset,
+            '--charoffset'
+        ]
 
         if file?
             parameters.push('--file=' + file)
@@ -327,15 +390,25 @@ class Proxy
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
-     * @param {String}      path                   The full path to the file  or folder to refresh.
-     * @param {String|null} source                 The source code of the file to index. May be null if a directory is
-     *                                             passed instead.
-     * @param {Callback}    progressStreamCallback A method to invoke each time progress streaming data is received.
+     * @param {String|Array} path                   The full path to the file  or folder to refresh. Alternatively,
+     *                                              this can be a list of items to index at the same time.
+     * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
+     *                                              passed instead.
+     * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
      *
      * @return {Promise}
     ###
     reindex: (path, source, progressStreamCallback) ->
-        if not path
+        if typeof path == "string"
+            pathsToIndex = []
+
+            if path
+                pathsToIndex.push(path)
+
+        else
+            pathsToIndex = path
+
+        if path.length == 0
             throw new Error('No filename passed!')
 
         progressStreamCallbackWrapper = null
@@ -349,7 +422,15 @@ class Proxy
                 for percentage in percentages
                     progressStreamCallback(percentage)
 
-        parameters = ['--reindex', '--database=' + @getIndexDatabasePath(), '--source=' + path, '--stream-progress']
+        parameters = [
+            @projectName,
+            '--reindex',
+            '--database=' + @getIndexDatabasePath(),
+            '--stream-progress'
+        ]
+
+        for pathToIndex in pathsToIndex
+            parameters.push('--source=' + pathToIndex)
 
         if source?
             parameters.push('--stdin')
@@ -367,6 +448,14 @@ class Proxy
     ###
     setIndexDatabaseName: (name) ->
         @indexDatabaseName = name
+
+    ###*
+     * Sets the project name to pass.
+     *
+     * @param {String} name
+    ###
+    setProjectName: (name) ->
+        @projectName = name
 
     ###*
      * Retrieves the full path to the database file to use.

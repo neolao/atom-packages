@@ -12,7 +12,7 @@ class ClassInfoTest extends IndexedTest
 
         $indexDatabase = $this->getDatabaseForTestFile($path);
 
-        $command = new ClassInfo();
+        $command = new ClassInfo($this->getParser());
         $command->setIndexDatabase($indexDatabase);
 
         return $command->getClassInfo($fqcn);
@@ -152,6 +152,16 @@ class ClassInfoTest extends IndexedTest
                 'endLineMember'   => 14
             ]
         ], $output['properties']['testProperty']);
+    }
+
+    public function testPropertyDescriptionAfterVarTagTakesPrecedenceOverDocblockSummary()
+    {
+        $fileName = 'ClassPropertyDescriptionPrecedence.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertEquals('This is a description after the var tag.', $output['properties']['testProperty']['shortDescription']);
+        $this->assertEquals('This is a long description.', $output['properties']['testProperty']['longDescription']);
     }
 
     public function testCompoundClassPropertyStatementsHaveTheirDocblocksAnalyzedCorrectly()
@@ -372,6 +382,16 @@ class ClassInfoTest extends IndexedTest
                 'endLineMember'   => 14
             ]
         ]);
+    }
+
+    public function testConstantDescriptionAfterVarTagTakesPrecedenceOverDocblockSummary()
+    {
+        $fileName = 'ClassConstantDescriptionPrecedence.php';
+
+        $output = $this->getClassInfo($fileName, 'A\TestClass');
+
+        $this->assertEquals('This is a description after the var tag.', $output['constants']['TEST_CONSTANT']['shortDescription']);
+        $this->assertEquals('This is a long description.', $output['constants']['TEST_CONSTANT']['longDescription']);
     }
 
     public function testDocblockInheritanceWorksProperlyForClasses()

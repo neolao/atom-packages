@@ -8,8 +8,6 @@ use UnexpectedValueException;
 
 use GetOptionKit\OptionCollection;
 
-use PhpIntegrator\Application\Command as BaseCommand;
-
 use PhpParser\Lexer;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
@@ -18,13 +16,8 @@ use PhpParser\NodeTraverser;
 /**
  * Command that shows information about the scopes at a specific position in a file.
  */
-class AvailableVariables extends BaseCommand
+class AvailableVariables extends AbstractCommand
 {
-    /**
-     * @var Parser
-     */
-    protected $parser;
-
     /**
      * @inheritDoc
      */
@@ -102,25 +95,5 @@ class AvailableVariables extends BaseCommand
          }
 
          return $outputVariables;
-     }
-
-     /**
-      * @return Parser
-      */
-     protected function getParser()
-     {
-         if (!$this->parser) {
-             $lexer = new Lexer([
-                 'usedAttributes' => [
-                     'comments', 'startFilePos', 'endFilePos'
-                 ]
-             ]);
-
-             $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7, $lexer, [
-                 'throwOnError' => false
-             ]);
-         }
-
-         return $this->parser;
      }
 }

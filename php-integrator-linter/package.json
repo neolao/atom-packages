@@ -1,7 +1,7 @@
 {
   "name": "php-integrator-linter",
   "main": "./lib/Main",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Lints your PHP source code to indicate various problems such as missing methods.",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "~1.0": "setService"
+        "^1.1": "setService"
       }
     },
     "linter-indie": {
@@ -41,16 +41,16 @@
     "integration",
     "php-integrator"
   ],
-  "readme": "# php-integrator-linter\n<p align=\"right\">\n:coffee:\n<a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YKTNLZCRHMRTJ\">Send me some coffee beans</a>\n</p>\n\nThis package provides linting for your PHP source code using [PHP Integrator](https://github.com/Gert-dev/php-integrator-base) as well as [linter](https://github.com/atom-community/linter).\n\n**Note that the [php-integrator-base](https://github.com/Gert-dev/php-integrator-base) package is required and needs to be set up correctly for this package to function correctly.**\n\nThis package is not meant to be a replacement for existing PHP linters, but more as a complementary package that will indicate additional issues that the existing linters can't detect.\n\nWhat is included?\n  * Shows warnings about unused use statements.\n  * Shows erroneous class names that can't be resolved.\n  * Shows errors returned by the base service's indexing process.\n\n![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)\n",
+  "readme": "# php-integrator-linter\n<p align=\"right\">\n:coffee:\n<a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YKTNLZCRHMRTJ\">Send me some coffee beans</a>\n</p>\n\nThis package provides linting for your PHP source code using [PHP Integrator](https://github.com/Gert-dev/php-integrator-base) as well as [linter](https://github.com/atom-community/linter).\n\n**Note that the [php-integrator-base](https://github.com/Gert-dev/php-integrator-base) package is required and needs to be set up correctly for this package to function correctly.**\n\nThis package is not meant to be a replacement for existing PHP linters, but more as a complementary package that will indicate additional issues that the existing linters can't detect.\n\nWhat is included?\n  * Shows docblock issues.\n  * Shows usage of unknown class members.\n  * Shows usage of unknown global functions.\n  * Shows usage of unknown global constants.\n  * Shows warnings about unused use statements.\n  * Shows erroneous class names that can't be resolved.\n  * Shows errors returned by the base service's indexing process.\n\n![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)\n",
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/Gert-dev/php-integrator-linter/issues"
   },
   "homepage": "https://github.com/Gert-dev/php-integrator-linter#readme",
-  "_id": "php-integrator-linter@1.0.1",
-  "_shasum": "50cc039a09266c6452c3a8f1fd979e88a7250227",
-  "_resolved": "file:../d-116529-31917-lja9bk/package.tgz",
-  "_from": "../d-116529-31917-lja9bk/package.tgz",
+  "_id": "php-integrator-linter@1.1.0",
+  "_shasum": "51537d67d97dbd2cac90bfdd6b71806254206c3e",
+  "_resolved": "file:../d-116627-74208-1wnxaga/package.tgz",
+  "_from": "../d-116627-74208-1wnxaga/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [

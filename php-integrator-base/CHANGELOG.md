@@ -1,3 +1,55 @@
+## 1.1.0
+### Features and enhancements
+* Caching performance has been improved.
+* Added simple support for multiple root folders in the tree view.
+* At least PHP 5.5 is now required to run the service. PHP 5.4 has been declared end of life for quite some time now and 5.5 will be declared end of life 10 July 2016. This does not affect the code you can actually write, the indexer still supports PHP 5.2 up to PHP 7.0, it is just the PHP interpreter running the indexer that had a required version bump.
+* Some commands delegate work to other commands, but each command that requires parsing performed its own parsing of the (same) source code, even though it only needs to happen once. This unnecessary overhead has been removed, resulting in performance improvements across the board.
+* The strictness on `instanceof` has been lifted. The variable type deducer is now able to parse somewhat more complex if statements:
+
+```php
+if ((1 ^ 0) && true && $b instanceof B && ($test || false && true)) {    
+    // $b will now be recognized as an instance of B.
+}
+```
+
+* If-statements containing variable handling functions such as `is_string`, `is_bool` will now influence type deduction:
+
+```php
+if (is_string($b) || is_array($b)) {    
+    // $b is now of type string|array.
+}
+```
+
+### Bugs fixed
+* The PHP Mess Detector `@SuppressWarnings` docblock tag will no longer be linted as unknown tag.
+* Different projects weren't using different caches. This means that in some cases the wrong cache was being used.
+* In some cases, the internal cache wasn't cleared when a class was modified, which resulted in old data being displayed.
+* Text following the `@var` tag in docblocks for class constants will now serve as short descriptions (summaries), similar to class properties.
+* Some internal PHP classes, such as `COM` have inconsistent naming (i.e. `COM` is actually returned as being named `com`). These are now corrected during indexing so you can use the names from the documentation. (For PHP this isn't a problem as it is mostly case insensitive, but we are.)
+* *Caching has been reenabled on Windows*, a fix has been applied that should refrain errors from popping up. The cache will simply reset itself if it runs into the erroneous condition (the reason behind which, up this date, is still unknown to me). This way, users are still able to enjoy some caching (users that did not experience any problems at all previously will be able to enjoy full caching).
+
+### Changes for developers
+* Builtin functions did not have a FQCN set.
+* Added `deduceTypesAt` as a convenience alias.
+* The global function and constant list will now return a mapping of FQCN's to data (instead of names to data).
+* `semanticLint` learned how to validate unknown class members, global functions and global constants, which can be used by linter packages.
+* The path passed to handlers registered using `onDidFinishIndexing` and `onDidFailIndexing` will now be an array for project indexes (but not file indexes) as they can contain multiple root folders.
+* `getVariableTypes` is now deprecated as it is just an alias for calling `deduceTypes` and `deduceTypes` with the variable name as the sole part. It will now also just proxy calls to deduceTypes internally.
+
+## 1.0.10
+### Bugs fixed
+* Cleaned up the reindexing process. The locks that were causing so much trouble have been removed for now.
+  * It was originally added as multiple concurrent indexing processes locked the database to ensure the other processes wait their turn. However, testing this again without it seems to indicate SQLite (automatically) gracefully waits for the transaction to finish. Either they accidentally solved the original problem, or the original problem might only manifest in certain circumstances. If the problem reappears anyway, I will investigate alternative solutions.
+
+## 1.0.9
+### Bugs fixed
+* An error is now returned if a file is not in UTF-8 encoding.
+* The encoding is now explicitly set to UTF-8, in case the encoding in your php.ini is set to something else.
+
+## 1.0.8
+### Bugs fixed
+* Fixed the database file never getting unlocked if indexing failed.
+
 ## 1.0.7
 ### Bugs fixed
 * Fixed the `setCachePrefix` error on Windows.

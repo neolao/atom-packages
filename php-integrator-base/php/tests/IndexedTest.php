@@ -2,6 +2,8 @@
 
 namespace PhpIntegrator;
 
+use ReflectionClass;
+
 use PhpIntegrator\Application\Command;
 
 use PhpIntegrator\Indexing\IndexDatabase;
@@ -12,15 +14,27 @@ use PhpIntegrator\Indexing\IndexDatabase;
  */
 abstract class IndexedTest extends \PHPUnit_Framework_TestCase
 {
+    protected function getParser()
+    {
+        $app = new Application();
+
+        $refClass = new ReflectionClass(Application::class);
+        $refMethod = $refClass->getMethod('getParser');
+
+        $refMethod->setAccessible(true);
+
+        return $refMethod->invoke($app);
+    }
+
     protected function getDatabaseForTestFile($testPath, $mayFail = false)
     {
         $indexDatabase = new IndexDatabase(':memory:', 1);
 
-        $reindexCommand = new Command\Reindex();
+        $reindexCommand = new Command\Reindex($this->getParser());
         $reindexCommand->setIndexDatabase($indexDatabase);
 
         $reindexOutput = $reindexCommand->reindex(
-            $testPath,
+            [$testPath],
             false,
             false,
             false
