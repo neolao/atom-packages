@@ -122,7 +122,15 @@ class Proxy
     ###
     performRequest: (args, streamCallback = null, stdinData = null) ->
         php = @config.get('phpCommand')
+
+        args.unshift(@projectName)
+
         parameters = @prepareParameters(args)
+
+        if not @projectName
+            return new Promise (resolve, reject) ->
+                reject()
+
 
         return @performRequestAsync(php, parameters, streamCallback, stdinData)
 
@@ -133,7 +141,6 @@ class Proxy
     ###
     getClassList: () ->
         parameters = [
-            @projectName,
             '--class-list',
             '--database=' + @getIndexDatabasePath()
         ]
@@ -152,7 +159,6 @@ class Proxy
             throw new Error('No file passed!')
 
         parameters = [
-            @projectName,
             '--class-list',
             '--database=' + @getIndexDatabasePath(),
             '--file=' + file
@@ -167,7 +173,6 @@ class Proxy
     ###
     getGlobalConstants: () ->
         parameters = [
-            @projectName,
             '--constants',
             '--database=' + @getIndexDatabasePath()
         ]
@@ -181,7 +186,6 @@ class Proxy
     ###
     getGlobalFunctions: () ->
         parameters = [
-            @projectName,
             '--functions',
             '--database=' + @getIndexDatabasePath()
         ]
@@ -200,7 +204,6 @@ class Proxy
             throw new Error('No class name passed!')
 
         parameters = [
-            @projectName,
             '--class-info',
             '--database=' + @getIndexDatabasePath(),
             '--name=' + className
@@ -223,7 +226,6 @@ class Proxy
         throw new Error('No type passed!') if not type
 
         parameters = [
-            @projectName,
             '--resolve-type',
             '--database=' + @getIndexDatabasePath(),
             '--file=' + file,
@@ -249,7 +251,6 @@ class Proxy
         throw new Error('No type passed!') if not type
 
         parameters = [
-            @projectName,
             '--localize-type',
             '--database=' + @getIndexDatabasePath(),
             '--file=' + file,
@@ -274,7 +275,6 @@ class Proxy
         throw new Error('No file passed!') if not file
 
         parameters = [
-            @projectName,
             '--semantic-lint',
             '--database=' + @getIndexDatabasePath(),
             '--file=' + file,
@@ -321,11 +321,10 @@ class Proxy
         if file?
             parameter = '--file=' + file
 
-        else
+        if source?
             parameter = '--stdin'
 
         parameters = [
-            @projectName,
             '--available-variables',
             '--database=' + @getIndexDatabasePath(),
             parameter,
@@ -353,19 +352,25 @@ class Proxy
     ###*
      * Deduces the resulting types of an expression based on its parts.
      *
-     * @param {Array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
-     * @param {String}      file   The path to the file to examine.
-     * @param {String|null} source The source code to search. May be null if a file is passed instead.
-     * @param {Number}      offset The character offset into the file to examine.
+     * @param {Array|null}  parts             One or more strings that are part of the expression, e.g.
+     *                                        ['$this', 'foo()']. If null, the expression will automatically be deduced
+     *                                        based on the offset.
+     * @param {String}      file              The path to the file to examine.
+     * @param {String|null} source            The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset            The character offset into the file to examine.
+     * @param {bool}        ignoreLastElement Whether to remove the last element or not, this is useful when the user
+     *                                        is still writing code, e.g. "$this->foo()->b" would normally return the
+     *                                        type (class) of 'b', as it is the last element, but as the user is still
+     *                                        writing code, you may instead be interested in the type of 'foo()'
+     *                                        instead.
      *
      * @return {Promise}
     ###
-    deduceTypes: (parts, file, source, offset) ->
+    deduceTypes: (parts, file, source, offset, ignoreLastElement) ->
         if not file?
             throw 'A path to a file must be passed!'
 
         parameters = [
-            @projectName,
             '--deduce-types',
             '--database=' + @getIndexDatabasePath(),
             '--offset=' + offset,
@@ -378,14 +383,60 @@ class Proxy
         if source?
             parameters.push('--stdin')
 
-        for part in parts
-            parameters.push('--part=' + part)
+        if ignoreLastElement
+            parameters.push('--ignore-last-element')
+
+        if parts?
+            for part in parts
+                parameters.push('--part=' + part)
 
         return @performRequest(
             parameters,
             null,
             source
         )
+
+    ###*
+     * Fetches invocation information of a method or function call.
+     *
+     * @param {String|null} file   The path to the file to examine. May be null if the source parameter is passed.
+     * @param {String|null} source The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset The character offset into the file to examine.
+     *
+     * @return {Promise}
+    ###
+    getInvocationInfo: (file, source, offset) ->
+        if not file? and not source?
+            throw 'Either a path to a file or source code must be passed!'
+
+        if file?
+            parameter = '--file=' + file
+
+        if source?
+            parameter = '--stdin'
+
+        parameters = [
+            '--invocation-info',
+            '--database=' + @getIndexDatabasePath(),
+            parameter,
+            '--offset=' + offset,
+            '--charoffset'
+        ]
+
+        return @performRequest(parameters, null, source)
+
+    ###*
+     * Truncates the database.
+     *
+     * @return {Promise}
+    ###
+    truncate: () ->
+        parameters = [
+            '--truncate',
+            '--database=' + @getIndexDatabasePath()
+        ]
+
+        return @performRequest(parameters, null, null)
 
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
@@ -395,10 +446,12 @@ class Proxy
      * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
      *                                              passed instead.
      * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
+     * @param {Array}        excludedPaths          A list of paths to exclude from indexing.
+     * @param {Array}        fileExtensionsToIndex  A list of file extensions (without leading dot) to index.
      *
      * @return {Promise}
     ###
-    reindex: (path, source, progressStreamCallback) ->
+    reindex: (path, source, progressStreamCallback, excludedPaths, fileExtensionsToIndex) ->
         if typeof path == "string"
             pathsToIndex = []
 
@@ -413,7 +466,14 @@ class Proxy
 
         progressStreamCallbackWrapper = null
 
+        parameters = [
+            '--reindex',
+            '--database=' + @getIndexDatabasePath()
+        ]
+
         if progressStreamCallback?
+            parameters.push('--stream-progress')
+
             progressStreamCallbackWrapper = (output) =>
                 # Sometimes we receive multiple lines in bulk, so we must ensure it remains split correctly.
                 percentages = output.toString('ascii').split("\n")
@@ -422,18 +482,17 @@ class Proxy
                 for percentage in percentages
                     progressStreamCallback(percentage)
 
-        parameters = [
-            @projectName,
-            '--reindex',
-            '--database=' + @getIndexDatabasePath(),
-            '--stream-progress'
-        ]
-
         for pathToIndex in pathsToIndex
             parameters.push('--source=' + pathToIndex)
 
         if source?
             parameters.push('--stdin')
+
+        for excludedPath in excludedPaths
+            parameters.push('--exclude=' + excludedPath)
+
+        for fileExtensionToIndex in fileExtensionsToIndex
+            parameters.push('--extension=' + fileExtensionToIndex)
 
         return @performRequest(
             parameters,

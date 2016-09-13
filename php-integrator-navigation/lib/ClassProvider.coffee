@@ -227,10 +227,11 @@ class ClassProvider extends AbstractProvider
         rows = text.split('\n')
 
         for key,row of rows
-            regex = /@param|@var|@return|@throws|@see/g
+            if /@param|@var|@return|@throws|@see/g.test(row)
+                @addMarkerToCommentLine(row.split(' '), parseInt(key), editor, true, 0, 0, false)
 
-            if regex.test(row)
-                @addMarkerToCommentLine(row.split(' '), parseInt(key), editor, true)
+            else if /@\\?([A-Za-z0-9_]+)\\?([A-Za-zA-Z_\\]*)?/g.test(row)
+                @addMarkerToCommentLine(row.split(' '), parseInt(key), editor, true, 0, 0, true)
 
     ###*
      * Removes any annotations that were created for the specified editor.
@@ -279,18 +280,32 @@ class ClassProvider extends AbstractProvider
      * @param {int} currentIndex  = 0 The current column index the search is on.
      * @param {int} offset        = 0 Any offset that should be applied when creating the marker.
     ###
-    addMarkerToCommentLine: (words, rowIndex, editor, shouldBreak, currentIndex = 0, offset = 0) ->
-        for key,value of words
-            regex = /^\\?([A-Za-z0-9_]+)\\?([A-Za-zA-Z_\\]*)?/g
+    addMarkerToCommentLine: (words, rowIndex, editor, shouldBreak, currentIndex = 0, offset = 0, isAnnotation = false) ->
+        if isAnnotation
+            regex = /^@(\\?(?:[A-Za-z0-9_]+)\\?(?:[A-Za-zA-Z_\\]*)?)/g
 
-            if regex.test(value) && @service.isBasicType(value) == false
+        else
+            regex = /^(\\?(?:[A-Za-z0-9_]+)\\?(?:[A-Za-zA-Z_\\]*)?)/g
+
+        for key,value of words
+            continue if value.length == 0
+
+            newValue = value.match(regex)
+
+            if newValue? && @service.isBasicType(value) == false
+                newValue = newValue[0]
+
                 if value.includes('|')
                     @addMarkerToCommentLine value.split('|'), rowIndex, editor, false, currentIndex, parseInt(key)
 
                 else
+                    if isAnnotation
+                        newValue = newValue.substr(1)
+                        currentIndex += 1
+
                     range = [
                         [rowIndex, currentIndex + parseInt(key) + offset],
-                        [rowIndex, currentIndex + parseInt(key) + value.length + offset]
+                        [rowIndex, currentIndex + parseInt(key) + newValue.length + offset]
                     ]
 
                     # NOTE: New markers are added on startup as initialization is done, so making them persistent will cause the
@@ -300,7 +315,7 @@ class ClassProvider extends AbstractProvider
                     })
 
                     markerProperties =
-                        term: value
+                        term: newValue
 
                     marker.setProperties markerProperties
 

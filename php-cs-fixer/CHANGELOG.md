@@ -1,6 +1,10 @@
+## 2.5.9
+
+* Adding the option to run php without a php.ini file (props to [@christopherrolfe198](https://github.com/christopherrolfe198))
+
 ## 2.5.3
 
-* Changed default value of `php-cs-ficer` path
+* Changed default value of `php-cs-fixer` path
 * Show context-menu only for PHP files (props to [@joanhey](https://github.com/joanhey))
 
 ## 2.5.2

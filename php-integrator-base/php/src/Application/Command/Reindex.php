@@ -64,6 +64,11 @@ class Reindex extends AbstractCommand
     protected $typeAnalyzer;
 
     /**
+     * @var DeduceTypes
+     */
+    protected $deduceTypes;
+
+    /**
      * @var StorageInterface
      */
     protected $storageForIndexers;
@@ -74,6 +79,8 @@ class Reindex extends AbstractCommand
     protected function attachOptions(OptionCollection $optionCollection)
     {
         $optionCollection->add('source+', 'The file or directory to index. Can be passed multiple times to process multiple items at once.')->isa('string');
+        $optionCollection->add('exclude+', 'An absolute path to exclude. Can be passed multiple times.')->isa('string');
+        $optionCollection->add('extension+', 'An extension (without leading dot) to index. Can be passed multiple times.')->isa('string');
         $optionCollection->add('stdin?', 'If set, file contents will not be read from disk but the contents from STDIN will be used instead.');
         $optionCollection->add('v|verbose?', 'If set, verbose output will be displayed.');
         $optionCollection->add('s|stream-progress?', 'If set, progress will be streamed. Incompatible with verbose mode.');
@@ -88,12 +95,16 @@ class Reindex extends AbstractCommand
             throw new UnexpectedValueException('At least one file or directory to index is required for this command.');
         }
 
-        return $this->reindex(
+        $success = $this->reindex(
             $arguments['source']->value,
             isset($arguments['stdin']),
             isset($arguments['verbose']),
-            isset($arguments['stream-progress'])
+            isset($arguments['stream-progress']),
+            isset($arguments['exclude'], $arguments['exclude']->value) ? $arguments['exclude']->value : [],
+            isset($arguments['extension'], $arguments['extension']->value) ? $arguments['extension']->value : []
         );
+
+        return $this->outputJson($success, []);
     }
 
     /**
@@ -101,47 +112,57 @@ class Reindex extends AbstractCommand
      * @param bool     $useStdin
      * @param bool     $showOutput
      * @param bool     $doStreamProgress
-     *
-     * @return string
-     */
-    public function reindex(array $paths, $useStdin, $showOutput, $doStreamProgress)
-    {
-        $success = true;
-
-        foreach ($paths as $path) {
-            if (!$this->reindexItem($path, $useStdin, $showOutput, $doStreamProgress)) {
-                $success = false;
-                break;
-            }
-        }
-
-        return $this->outputJson($success, []);
-    }
-
-    /**
-     * @param string $path
-     * @param bool   $useStdin
-     * @param bool   $showOutput
-     * @param bool   $doStreamProgress
+     * @param string[] $excludedPaths
+     * @param string[] $extensionsToIndex
      *
      * @return bool
      */
-    protected function reindexItem($path, $useStdin, $showOutput, $doStreamProgress)
-    {
-        if (!is_dir($path) && !is_file($path) && !$useStdin) {
-            throw new UnexpectedValueException('The specified file or directory "' . $path . '" does not exist!');
+    public function reindex(
+        array $paths,
+        $useStdin,
+        $showOutput,
+        $doStreamProgress,
+        array $excludedPaths = [],
+        array $extensionsToIndex = ['php']
+    ) {
+        if ($useStdin) {
+            if (count($paths) > 1) {
+                throw new UnexpectedValueException('Reading from STDIN is only possible when a single path is specified!');
+            } elseif (!is_file($paths[0])) {
+                throw new UnexpectedValueException('Reading from STDIN is only possible for a single file!');
+            }
         }
 
         $success = true;
         $exception = null;
 
         try {
-            if (is_dir($path)) {
-                $success = $this->reindexDirectory($path, $showOutput, $doStreamProgress);
-            } else {
-                $code = $this->getSourceCode($path, $useStdin);
+            // Yes, we abuse the error channel...
+            $loggingStream = $showOutput ? fopen('php://stdout', 'w') : null;
+            $progressStream = $doStreamProgress ? fopen('php://stderr', 'w') : null;
 
-                $success = $this->reindexFile($path, $code);
+            try {
+                $this->getProjectIndexer()
+                    ->setProgressStream($progressStream)
+                    ->setLoggingStream($loggingStream);
+
+                $sourceOverrideMap = [];
+
+                if ($useStdin) {
+                    $sourceOverrideMap[$paths[0]] = $this->getSourceCodeHelper()->getSourceCode($paths[0], true);
+                }
+
+                $this->getProjectIndexer()->index($paths, $extensionsToIndex, $excludedPaths, $sourceOverrideMap);
+            } catch (Indexing\IndexingFailedException $e) {
+                $success = false;
+            }
+
+            if ($loggingStream) {
+                fclose($loggingStream);
+            }
+
+            if ($progressStream) {
+                fclose($progressStream);
             }
         } catch (\Exception $e) {
             $exception = $e;
@@ -155,56 +176,6 @@ class Reindex extends AbstractCommand
     }
 
     /**
-     * @param string $path
-     * @param bool   $showOutput
-     * @param bool   $doStreamProgress
-     *
-     * @return bool
-     */
-    protected function reindexDirectory($path, $showOutput, $doStreamProgress)
-    {
-        // Yes, we abuse the error channel...
-        $loggingStream = $showOutput ? fopen('php://stdout', 'w') : null;
-        $progressStream = $doStreamProgress ? fopen('php://stderr', 'w') : null;
-
-        $this->getProjectIndexer()
-            ->setProgressStream($progressStream)
-            ->setLoggingStream($loggingStream)
-            ->index($path);
-
-        if ($loggingStream) {
-            fclose($loggingStream);
-        }
-
-        if ($progressStream) {
-            fclose($progressStream);
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string $path
-     * @param string $code
-     *
-     * @return bool
-     */
-    protected function reindexFile($path, $code)
-    {
-        if (mb_detect_encoding($code, 'UTF-8', true) !== 'UTF-8') {
-            throw new UnexpectedValueException("The file {$path} is not UTF-8!");
-        }
-
-        try {
-            $this->getFileIndexer()->index($path, $code);
-        } catch (Indexing\IndexingFailedException $e) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * @return ProjectIndexer
      */
     protected function getProjectIndexer()
@@ -214,7 +185,8 @@ class Reindex extends AbstractCommand
                 $this->getStorageForIndexers(),
                 $this->getBuiltinIndexer(),
                 $this->getFileIndexer(),
-                $this->getScanner()
+                $this->getScanner(),
+                $this->getSourceCodeHelper()
             );
         }
 
@@ -231,6 +203,7 @@ class Reindex extends AbstractCommand
                 $this->getStorageForIndexers(),
                 $this->getTypeAnalyzer(),
                 $this->getDocParser(),
+                $this->getDeduceTypes(),
                 $this->getParser()
             );
         }
@@ -244,7 +217,7 @@ class Reindex extends AbstractCommand
     protected function getBuiltinIndexer()
     {
         if (!$this->builtinIndexer) {
-            $this->builtinIndexer = new BuiltinIndexer($this->getStorageForIndexers());
+            $this->builtinIndexer = new BuiltinIndexer($this->getStorageForIndexers(), $this->getTypeAnalyzer());
         }
 
         return $this->builtinIndexer;
@@ -256,7 +229,7 @@ class Reindex extends AbstractCommand
     protected function getStorageForIndexers()
     {
         if (!$this->storageForIndexers) {
-            $this->storageForIndexers = new CallbackStorageProxy($this->indexDatabase, function ($fqcn) {
+            $this->storageForIndexers = new CallbackStorageProxy($this->getIndexDatabase(), function ($fqcn) {
                 $provider = $this->getIndexDataAdapterProvider();
 
                 if ($provider instanceof ProviderCachingProxy) {
@@ -286,7 +259,7 @@ class Reindex extends AbstractCommand
     protected function getFileModifiedMap()
     {
         if (!$this->fileModifiedMap) {
-            $this->fileModifiedMap = $this->indexDatabase->getFileModifiedMap();
+            $this->fileModifiedMap = $this->getIndexDatabase()->getFileModifiedMap();
         }
 
         return $this->fileModifiedMap;
@@ -302,6 +275,18 @@ class Reindex extends AbstractCommand
         }
 
         return $this->typeAnalyzer;
+    }
+
+    /**
+     * @return DeduceTypes
+     */
+    protected function getDeduceTypes()
+    {
+        if (!$this->deduceTypes) {
+            $this->deduceTypes = new DeduceTypes($this->getParser(), $this->cache, $this->getIndexDatabase());
+        }
+
+        return $this->deduceTypes;
     }
 
     /**

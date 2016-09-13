@@ -1,22 +1,43 @@
 {
-  "name": "php-integrator-linter",
-  "main": "./lib/Main",
-  "version": "1.1.0",
-  "description": "Lints your PHP source code to indicate various problems such as missing methods.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Gert-dev/php-integrator-linter.git"
+  "_args": [
+    [
+      {
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+        "type": "local"
+      },
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37334-wweoen"
+    ]
+  ],
+  "_from": "../d-116813-37334-zxnfdx/package.tgz",
+  "_id": "php-integrator-linter@1.2.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/php-integrator-linter",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+    "type": "local"
   },
-  "license": "GPL-3.0",
-  "engines": {
-    "atom": ">=1.8.0 <2.0.0"
-  },
-  "providedServices": {
-    "linter": {
-      "versions": {
-        "1.0.0": "getProviders"
-      }
-    }
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-116813-37334-zxnfdx/package.tgz",
+  "_shasum": "506015cfd84123b409cb9a857fd7b52791a3418c",
+  "_shrinkwrap": null,
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37334-zxnfdx/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37334-wweoen",
+  "bugs": {
+    "url": "https://github.com/php-integrator/atom-linter/issues"
   },
   "consumedServices": {
     "php-integrator.service": {
@@ -33,6 +54,12 @@
   "dependencies": {
     "jquery": "~2.1.4"
   },
+  "description": "Lints your PHP source code to indicate various problems such as missing methods.",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=1.8.0 <2.0.0"
+  },
+  "homepage": "https://github.com/php-integrator/atom-linter#readme",
   "keywords": [
     "php",
     "linter",
@@ -41,135 +68,22 @@
     "integration",
     "php-integrator"
   ],
-  "readme": "# php-integrator-linter\n<p align=\"right\">\n:coffee:\n<a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YKTNLZCRHMRTJ\">Send me some coffee beans</a>\n</p>\n\nThis package provides linting for your PHP source code using [PHP Integrator](https://github.com/Gert-dev/php-integrator-base) as well as [linter](https://github.com/atom-community/linter).\n\n**Note that the [php-integrator-base](https://github.com/Gert-dev/php-integrator-base) package is required and needs to be set up correctly for this package to function correctly.**\n\nThis package is not meant to be a replacement for existing PHP linters, but more as a complementary package that will indicate additional issues that the existing linters can't detect.\n\nWhat is included?\n  * Shows docblock issues.\n  * Shows usage of unknown class members.\n  * Shows usage of unknown global functions.\n  * Shows usage of unknown global constants.\n  * Shows warnings about unused use statements.\n  * Shows erroneous class names that can't be resolved.\n  * Shows errors returned by the base service's indexing process.\n\n![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)\n",
-  "readmeFilename": "README.md",
-  "bugs": {
-    "url": "https://github.com/Gert-dev/php-integrator-linter/issues"
+  "license": "GPL-3.0",
+  "main": "./lib/Main",
+  "name": "php-integrator-linter",
+  "optionalDependencies": {},
+  "providedServices": {
+    "linter": {
+      "versions": {
+        "1.0.0": "getProviders"
+      }
+    }
   },
-  "homepage": "https://github.com/Gert-dev/php-integrator-linter#readme",
-  "_id": "php-integrator-linter@1.1.0",
-  "_shasum": "51537d67d97dbd2cac90bfdd6b71806254206c3e",
-  "_resolved": "file:../d-116627-74208-1wnxaga/package.tgz",
-  "_from": "../d-116627-74208-1wnxaga/package.tgz",
-  "_atomModuleCache": {
-    "version": 1,
-    "dependencies": [
-      {
-        "name": "jquery",
-        "version": "2.1.4",
-        "path": "node_modules/jquery/dist/jquery.js"
-      }
-    ],
-    "extensions": {
-      ".coffee": [
-        "lib/AtomConfig.coffee",
-        "lib/Config.coffee",
-        "lib/Main.coffee",
-        "lib/SemanticLintProvider.coffee"
-      ],
-      ".json": [
-        "node_modules/jquery/bower.json",
-        "node_modules/jquery/package.json",
-        "package.json"
-      ],
-      ".js": [
-        "node_modules/jquery/dist/jquery.js",
-        "node_modules/jquery/dist/jquery.min.js",
-        "node_modules/jquery/src/ajax/jsonp.js",
-        "node_modules/jquery/src/ajax/load.js",
-        "node_modules/jquery/src/ajax/parseJSON.js",
-        "node_modules/jquery/src/ajax/parseXML.js",
-        "node_modules/jquery/src/ajax/script.js",
-        "node_modules/jquery/src/ajax/var/nonce.js",
-        "node_modules/jquery/src/ajax/var/rquery.js",
-        "node_modules/jquery/src/ajax/xhr.js",
-        "node_modules/jquery/src/ajax.js",
-        "node_modules/jquery/src/attributes/attr.js",
-        "node_modules/jquery/src/attributes/classes.js",
-        "node_modules/jquery/src/attributes/prop.js",
-        "node_modules/jquery/src/attributes/support.js",
-        "node_modules/jquery/src/attributes/val.js",
-        "node_modules/jquery/src/attributes.js",
-        "node_modules/jquery/src/callbacks.js",
-        "node_modules/jquery/src/core/access.js",
-        "node_modules/jquery/src/core/init.js",
-        "node_modules/jquery/src/core/parseHTML.js",
-        "node_modules/jquery/src/core/ready.js",
-        "node_modules/jquery/src/core/var/rsingleTag.js",
-        "node_modules/jquery/src/core.js",
-        "node_modules/jquery/src/css/addGetHookIf.js",
-        "node_modules/jquery/src/css/curCSS.js",
-        "node_modules/jquery/src/css/defaultDisplay.js",
-        "node_modules/jquery/src/css/hiddenVisibleSelectors.js",
-        "node_modules/jquery/src/css/support.js",
-        "node_modules/jquery/src/css/swap.js",
-        "node_modules/jquery/src/css/var/cssExpand.js",
-        "node_modules/jquery/src/css/var/getStyles.js",
-        "node_modules/jquery/src/css/var/isHidden.js",
-        "node_modules/jquery/src/css/var/rmargin.js",
-        "node_modules/jquery/src/css/var/rnumnonpx.js",
-        "node_modules/jquery/src/css.js",
-        "node_modules/jquery/src/data/Data.js",
-        "node_modules/jquery/src/data/accepts.js",
-        "node_modules/jquery/src/data/var/data_priv.js",
-        "node_modules/jquery/src/data/var/data_user.js",
-        "node_modules/jquery/src/data.js",
-        "node_modules/jquery/src/deferred.js",
-        "node_modules/jquery/src/deprecated.js",
-        "node_modules/jquery/src/dimensions.js",
-        "node_modules/jquery/src/effects/Tween.js",
-        "node_modules/jquery/src/effects/animatedSelector.js",
-        "node_modules/jquery/src/effects.js",
-        "node_modules/jquery/src/event/ajax.js",
-        "node_modules/jquery/src/event/alias.js",
-        "node_modules/jquery/src/event/support.js",
-        "node_modules/jquery/src/event.js",
-        "node_modules/jquery/src/exports/amd.js",
-        "node_modules/jquery/src/exports/global.js",
-        "node_modules/jquery/src/intro.js",
-        "node_modules/jquery/src/jquery.js",
-        "node_modules/jquery/src/manipulation/_evalUrl.js",
-        "node_modules/jquery/src/manipulation/support.js",
-        "node_modules/jquery/src/manipulation/var/rcheckableType.js",
-        "node_modules/jquery/src/manipulation.js",
-        "node_modules/jquery/src/offset.js",
-        "node_modules/jquery/src/outro.js",
-        "node_modules/jquery/src/queue/delay.js",
-        "node_modules/jquery/src/queue.js",
-        "node_modules/jquery/src/selector-native.js",
-        "node_modules/jquery/src/selector-sizzle.js",
-        "node_modules/jquery/src/selector.js",
-        "node_modules/jquery/src/serialize.js",
-        "node_modules/jquery/src/sizzle/dist/sizzle.js",
-        "node_modules/jquery/src/sizzle/dist/sizzle.min.js",
-        "node_modules/jquery/src/traversing/findFilter.js",
-        "node_modules/jquery/src/traversing/var/rneedsContext.js",
-        "node_modules/jquery/src/traversing.js",
-        "node_modules/jquery/src/var/arr.js",
-        "node_modules/jquery/src/var/class2type.js",
-        "node_modules/jquery/src/var/concat.js",
-        "node_modules/jquery/src/var/hasOwn.js",
-        "node_modules/jquery/src/var/indexOf.js",
-        "node_modules/jquery/src/var/pnum.js",
-        "node_modules/jquery/src/var/push.js",
-        "node_modules/jquery/src/var/rnotwhite.js",
-        "node_modules/jquery/src/var/slice.js",
-        "node_modules/jquery/src/var/strundefined.js",
-        "node_modules/jquery/src/var/support.js",
-        "node_modules/jquery/src/var/toString.js",
-        "node_modules/jquery/src/wrap.js"
-      ]
-    },
-    "folders": [
-      {
-        "paths": [
-          "lib",
-          ""
-        ],
-        "dependencies": {
-          "jquery": "~2.1.4"
-        }
-      }
-    ]
-  }
+  "readme": "# atom-linter\n<p align=\"right\">\n:coffee:\n<a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YKTNLZCRHMRTJ\">Send me some coffee beans</a>\n</p>\n\nThis package provides linting for your PHP source code using [PHP Integrator](https://github.com/php-integrator/atom-base) as well as [linter](https://github.com/atom-community/linter).\n\n**Note that the [php-integrator-base](https://github.com/php-integrator/atom-base) package is required and needs to be set up correctly for this package to function correctly.**\n\nThis package is not meant to be a replacement for existing PHP linters, but more as a complementary package that will indicate additional issues that the existing linters can't detect.\n\nWhat is included?\n  * Shows docblock issues.\n  * Shows usage of unknown class members.\n  * Shows usage of unknown global functions.\n  * Shows usage of unknown global constants.\n  * Shows warnings about unused use statements.\n  * Shows erroneous class names that can't be resolved.\n  * Shows errors returned by the base service's indexing process.\n\n![GPLv3 Logo](http://gplv3.fsf.org/gplv3-127x51.png)\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-integrator/atom-linter.git"
+  },
+  "version": "1.2.1"
 }

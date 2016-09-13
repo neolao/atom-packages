@@ -7,152 +7,73 @@
  * @fileoverview Linter.
  */
 
-const Configuration = require('remark/lib/cli/configuration.js');
-const loadPlugin = require('load-plugin');
+/* eslint-disable import/no-extraneous-dependencies, import/no-unresolved */
 
-/* Lazy loading these */
-let remark = null;
-let lint = null;
+const CompositeDisposable = require('atom').CompositeDisposable;
+const path = require('path');
+const config = require('./config');
+
+let engine;
+let processor;
+let subscriptions;
+let scopes;
+let detectIgnore;
+
+function lint(editor) {
+  return engine({
+    processor,
+    detectIgnore,
+    rcName: '.remarkrc',
+    rcPath: path.resolve(__dirname, 'config.js'),
+    packageField: 'remarkConfig',
+    ignoreName: '.remarkignore',
+    presetPrefix: 'remark-preset',
+    pluginPrefix: 'remark'
+  })(editor);
+}
 
 /**
  * Linter-markdown.
  *
  * @return {LinterConfiguration}
  */
-function linter() {
-  const CODE_EXPRESSION = /`([^`]+)`/g;
-
-  /**
-   * Transform a (stringified) vfile range to a linter
-   * nested-tuple.
-   *
-   * @param {Object} location - Positional information.
-   * @return {Array.<Array.<number>>} - Linter range.
-   */
-  function toRange(location) {
-    const result = [[
-      Number(location.start.line) - 1,
-      Number(location.start.column) - 1
-    ]];
-
-    result[1] = [
-      location.end.line ? Number(location.end.line) - 1 : result[0][0],
-      location.end.column ? Number(location.end.column) - 1 : result[0][1]
-    ];
-
-    return result;
+function provideLinter() {
+  if (!engine) {
+    engine = require('unified-engine-atom');
   }
 
-  /**
-   * Transform a reason for warning from remark into
-   * pretty HTML.
-   *
-   * @param {string} reason - Messsage in plain-text.
-   * @return {string} - Messsage in HTML.
-   */
-  function toHTML(reason) {
-    return reason.replace(CODE_EXPRESSION, '<code>$1</code>');
-  }
-
-  /**
-   * Transform VFile messages
-   * nested-tuple.
-   *
-   * @see https://github.com/wooorm/vfile#vfilemessage
-   *
-   * @param {VFileMessage} message - Virtual file error.
-   * @return {Object} - Linter error.
-   */
-  function transform(message) {
-    const reason = toHTML(message.reason);
-
-    return {
-      type: 'Error',
-      html: `<span class="badge badge-flexible">${message.ruleId}</span> ${reason}`,
-      filePath: this.getPath(),
-      range: toRange(message.location)
-    };
-  }
-
-  /**
-   * Handle on-the-fly or on-save (depending on the
-   * global atom-linter settings) events. Yeah!
-   *
-   * Loads `remark` on first invocation.
-   *
-   * @see https://github.com/atom-community/linter/wiki/Linter-API#messages
-   *
-   * @param {AtomTextEditor} editor - Access to editor.
-   * @return {Promise.<Message, Error>} - Promise
-   *  resolved with a list of linter-errors or an error.
-   */
-  function onchange(editor) {
-    const filePath = editor.getPath();
-
-    if (!filePath) {
-      return Promise.resolve([]);
-    }
-
-    return new Promise((resolve, reject) => {
-      if (!remark) {
-        remark = require('remark');
-        lint = require('remark-lint');
-      }
-
-      const config = new Configuration({ detectRC: true });
-
-      config.getConfiguration(filePath, (err, conf) => {
-        let plugins;
-
-        if (err) {
-          return resolve([{
-            type: 'Error',
-            text: err.message,
-            filePath,
-            range: [[0, 0], [0, 0]]
-          }]);
-        }
-
-        plugins = conf.plugins || {};
-        plugins = plugins['remark-lint'] || plugins.lint || {};
-
-        plugins.external = (plugins.external || []).map(name =>
-          loadPlugin(name, {
-            prefix: 'remark-lint',
-            cwd: filePath,
-            global: true
-          })
-        );
-
-        /* Load processor for current path */
-
-        return remark()
-          .use(lint, plugins)
-          .process(editor.getText(), conf.settings, (err2, file) => {
-            if (err2) {
-              reject(err2);
-            }
-
-            resolve(file.messages.map(transform, editor));
-          });
-      });
-    });
+  if (!processor) {
+    processor = require('remark');
   }
 
   return {
-    grammarScopes: ['source.gfm', 'source.pfm', 'text.md'],
+    grammarScopes: scopes,
     name: 'remark-lint',
     scope: 'file',
     lintOnFly: true,
-    lint: onchange
+    lint
   };
 }
 
-/**
- * Run package activation tasks.
- */
 function activate() {
   require('atom-package-deps').install('linter-markdown');
+
+  subscriptions = new CompositeDisposable();
+
+  subscriptions.add(atom.config.observe('linter-markdown.scopes', value => {
+    scopes = value;
+  }));
+  subscriptions.add(atom.config.observe('linter-markdown.detectIgnore', value => {
+    detectIgnore = value;
+  }));
+
+  config.on();
+}
+
+function deactivate() {
+  subscriptions.dispose();
+
+  config.off();
 }
 
 /*
@@ -160,6 +81,6 @@ function activate() {
  */
 module.exports = {
   activate,
-  config: {},
-  provideLinter: linter
+  deactivate,
+  provideLinter
 };

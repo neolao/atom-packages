@@ -96,17 +96,25 @@ class PlantumlPreviewView extends ScrollView
             when '.png'
               nativeimage ?= require 'native-image'
               clipboard ?= require 'clipboard'
-              buffer = fs.readFileSync(filename)
-              image = nativeimage.createFromBuffer(buffer)
-              clipboard.writeImage(image)
+              try
+                buffer = fs.readFileSync(filename)
+                image = nativeimage.createFromBuffer(buffer)
+                clipboard.writeImage(image)
+              catch err
+                atom.notifications.addError "plantuml-preview: Copy Failed", detail: "Error attempting to copy: #{filename}\nSee console for details.", dismissable: true
+                console.log err
             when '.svg'
-              buffer = fs.readFileSync(filename, @editor.getEncoding())
-              if atom.config.get 'plantuml-preview.beautifyXml'
-                beautify_html ?= require('js-beautify').html
-                buffer = beautify_html buffer
-              atom.clipboard.write(buffer)
+              try
+                buffer = fs.readFileSync(filename, @editor.getEncoding())
+                if atom.config.get 'plantuml-preview.beautifyXml'
+                  beautify_html ?= require('js-beautify').html
+                  buffer = beautify_html buffer
+                atom.clipboard.write(buffer)
+              catch err
+                atom.notifications.addError "plantuml-preview: Copy Failed", detail: "Error attempting to copy: #{filename}\nSee console for details.", dismissable: true
+                console.log err
             else
-              atom.notifications.addError "plantuml-preview: Unsupported File Format", detail: "#{ext} is not currently supported by 'Copy Diagram'."
+              atom.notifications.addError "plantuml-preview: Unsupported File Format", detail: "#{ext} is not currently supported by 'Copy Diagram'.", dismissable: true
         'plantuml-preview:open-file': (event) =>
           filename = $(event.target).closest('.open-file').attr('file')
           atom.workspace.open filename
@@ -288,43 +296,50 @@ class PlantumlPreviewView extends ScrollView
       @container.show
       return
 
-    args = [
-      '-jar',
-      jarLocation,
-      '-charset',
-      @editor.getEncoding()
-    ]
+    args = []
+    javaAdditional = atom.config.get('plantuml-preview.javaAdditional')
+    if javaAdditional != ''
+      args.push javaAdditional
+    args.push '-jar', jarLocation
+    jarAdditional = atom.config.get('plantuml-preview.jarAdditional')
+    if jarAdditional != ''
+      args.push jarAdditional
+    args.push '-charset', @editor.getEncoding()
     if format == 'svg'
       args.push '-tsvg'
     if dotLocation != ''
-        args.push '-graphvizdot', dotLocation
+      args.push '-graphvizdot', dotLocation
     args.push '-output', directory, filePath
 
     outputlog = []
     errorlog = []
 
     exitHandler = (files) =>
-      if atom.config.get('plantuml-preview.beautifyXml') and (format == 'svg')
-        beautify_html ?= require('js-beautify').html
-        for file in imgFiles
-          buffer = fs.readFileSync(file, @editor.getEncoding())
-          buffer = beautify_html buffer
-          fs.writeFileSync(file, buffer, {encoding: @editor.getEncoding()})
+      for file in files
+        if fs.isFileSync file
+          if atom.config.get('plantuml-preview.beautifyXml') and (format == 'svg')
+            beautify_html ?= require('js-beautify').html
+            for file in imgFiles
+              buffer = fs.readFileSync(file, @editor.getEncoding())
+              buffer = beautify_html buffer
+              fs.writeFileSync(file, buffer, {encoding: @editor.getEncoding()})
+        else
+          console.log("File not found: #{file}")
       @addImages(files, Date.now())
       if errorlog.length > 0
         str = errorlog.join('')
         if str.match ///jarfile///i
           settingsError str, 'PlantUML Jar', jarLocation
         else
-          atom.notifications.addError "plantuml-preview: stderr (logged to console)", detail: str
+          atom.notifications.addError "plantuml-preview: stderr (logged to console)", detail: str, dismissable: true
           console.log "plantuml-preview: stderr\n#{str}"
       if outputlog.length > 0
         str = outputlog.join('')
-        atom.notifications.addInfo "plantuml-preview: stdout (logged to console)", detail: str
+        atom.notifications.addInfo "plantuml-preview: stdout (logged to console)", detail: str, dismissable: true
         console.log "plantuml-preview: stdout\n#{str}"
+
     exit = (code) ->
       exitHandler imgFiles
-
     stdout = (output) ->
       outputlog.push output
     stderr = (output) ->
@@ -334,4 +349,5 @@ class PlantumlPreviewView extends ScrollView
       settingsError "#{command} not found.", 'Java Executable', command
 
     @removeImages()
+    console.log("#{command} #{args.join ' '}")
     new BufferedProcess({command, args, stdout, stderr, exit}).onWillThrowError errorHandler

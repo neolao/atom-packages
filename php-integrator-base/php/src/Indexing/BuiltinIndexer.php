@@ -7,7 +7,10 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 use ReflectionFunction;
+use ReflectionParameter;
 use ReflectionFunctionAbstract;
+
+use PhpIntegrator\TypeAnalyzer;
 
 /**
  * Handles indexation of built-in classes, global constants and global functions.
@@ -20,6 +23,11 @@ class BuiltinIndexer
      * @var StorageInterface
      */
     protected $storage;
+
+    /**
+     * @var TypeAnalyzer
+     */
+    protected $typeAnalyzer;
 
     /**
      * @var array
@@ -37,11 +45,17 @@ class BuiltinIndexer
     protected $loggingStream;
 
     /**
+     * @var array
+     */
+    protected $documentationData;
+
+    /**
      * @param StorageInterface $storage
      */
-    public function __construct(StorageInterface $storage)
+    public function __construct(StorageInterface $storage, TypeAnalyzer $typeAnalyzer)
     {
         $this->storage = $storage;
+        $this->typeAnalyzer = $typeAnalyzer;
     }
 
     /**
@@ -115,24 +129,33 @@ class BuiltinIndexer
             // NOTE: Be very careful if you want to pass back the value, there are also escaped paths, newlines
             // (PHP_EOL), etc. in there.
             foreach ($constantList as $name => $value) {
-                $this->indexConstant($name);
+                $this->indexConstant($name, $value);
             }
         }
     }
 
     /**
      * @param string $name
+     * @param mixed  $value
      *
      * @return int
      */
-    protected function indexConstant($name)
+    protected function indexConstant($name, $value)
     {
+        $encodingOptions = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
+        // Requires PHP >= 5.6.
+        if (defined('JSON_PRESERVE_ZERO_FRACTION')) {
+            $encodingOptions |= JSON_PRESERVE_ZERO_FRACTION;
+        }
+
         return $this->storage->insert(IndexStorageItemEnum::CONSTANTS, [
             'name'               => $name,
             'fqcn'               => $name,
             'file_id'            => null,
             'start_line'         => null,
             'end_line'           => null,
+            'default_value'      => json_encode($value, $encodingOptions),
             'is_builtin'         => 1,
             'is_deprecated'      => 0,
             'has_docblock'       => 0,
@@ -156,7 +179,7 @@ class BuiltinIndexer
                     $function = new ReflectionFunction($functionName);
                 } catch (\Exception $e) {
                     $this->logMessage(
-                        '  - WARNING: Could not examine built-in function ' . $function->getName() . ' with Reflection'
+                        '  - WARNING: Could not examine built-in function ' . $functionName . ' with Reflection'
                     );
 
                     continue;
@@ -197,7 +220,7 @@ class BuiltinIndexer
             return;
         }
 
-        $functionId = $this->storage->insert(IndexStorageItemEnum::FUNCTIONS, [
+        $functionIndexData = [
             'name'                    => $function->getName(),
             'fqcn'                    => null,
             'file_id'                 => null,
@@ -217,10 +240,18 @@ class BuiltinIndexer
             'throws_serialized'       => serialize([]),
             'parameters_serialized'   => serialize([]),
             'return_types_serialized' => serialize($returnTypes)
-        ]);
+        ];
+
+        $functionIndexData = array_merge(
+            $functionIndexData,
+            $this->getFunctionLikeDataFromDocumentation($function)
+        );
+
+        $functionId = $this->storage->insert(IndexStorageItemEnum::FUNCTIONS, $functionIndexData);
 
         $parameters = [];
 
+        /** @var ReflectionParameter $parameter */
         foreach ($function->getParameters() as $parameter) {
             $isVariadic = false;
 
@@ -269,6 +300,11 @@ class BuiltinIndexer
                 continue;
             }
 
+            $parameterData = array_merge(
+                $parameterData,
+                $this->getFunctionLikeParameterDataFromDocumentation($parameter)
+            );
+
             $this->storage->insert(IndexStorageItemEnum::FUNCTIONS_PARAMETERS, $parameterData);
 
             $parameters[] = $parameterData;
@@ -280,6 +316,161 @@ class BuiltinIndexer
         ]);
 
         return $functionId;
+    }
+
+    /**
+     * Reflection only provides limited information about functions and methods as PHP does not internally use PHP's
+     * type hinting and its docblocks. The actual documentation on php.net, however, much better reflects the types
+     * and descriptions. Complete the data we receive from reflection with data from the documentation.
+     *
+     * @param ReflectionFunctionAbstract $function
+     *
+     * @return array
+     */
+    protected function getFunctionLikeDataFromDocumentation(ReflectionFunctionAbstract $function)
+    {
+        $documentationName = $function->getName();
+
+        if ($function instanceof ReflectionMethod) {
+            $documentationName = $function->getDeclaringClass()->getName() . '::' . $documentationName;
+        }
+
+        $documentation = $this->getDocumentationEntry($documentationName);
+
+        $data = [
+            'short_description'  => isset($documentation['desc'])      ? $this->getNormalizedDocumentation($documentation['desc']) : null,
+            'long_description'   => isset($documentation['long_desc']) ? $this->getNormalizedDocumentation($documentation['long_desc']) : null,
+            'return_description' => isset($documentation['ret_desc'])  ? $this->getNormalizedDocumentation($documentation['ret_desc']) : null
+        ];
+
+        if (isset($documentation['params'][0])) {
+            $extendedInfo = $documentation['params'][0];
+
+            if (isset($extendedInfo['ret_type'])) {
+                $fqcn = $extendedInfo['ret_type'];
+
+                if (!$this->typeAnalyzer->isSpecialType($fqcn)) {
+                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn, true);
+                }
+
+                $returnTypes = [
+                    [
+                        'type' => $extendedInfo['ret_type'],
+                        'fqcn' => $fqcn
+                    ]
+                ];
+
+                $data['return_types_serialized'] = serialize($returnTypes);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param ReflectionParameter $parameter
+     */
+    protected function getFunctionLikeParameterDataFromDocumentation(ReflectionParameter $parameter)
+    {
+        $function = $parameter->getDeclaringFunction();
+
+        $documentationName = $function->getName();
+
+        if ($function instanceof ReflectionMethod) {
+            $documentationName = $function->getDeclaringClass()->getName() . '::' . $documentationName;
+        }
+
+        $documentation = $this->getDocumentationEntry($documentationName);
+
+        if (!isset($documentation['params'][0]['list'])) {
+            return [];
+        }
+
+        $extendedInfo = $documentation['params'][0]['list'];
+
+        $documentationParameterName = '$' . $parameter->name;
+
+        // Requires PHP >= 5.6.
+        if (method_exists($parameter, 'isVariadic')) {
+            if ($parameter->isVariadic()) {
+                $documentationParameterName = '$...';
+            }
+        }
+
+        foreach ($extendedInfo as $parameterInfo) {
+            if ($parameterInfo['var'] === $documentationParameterName) {
+                $fqcn = $parameterInfo['type'];
+
+                if (!$this->typeAnalyzer->isSpecialType($fqcn)) {
+                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn, true);
+                }
+
+                $types = [
+                    [
+                        'type' => $parameterInfo['type'],
+                        'fqcn' => $fqcn
+                    ]
+                ];
+
+                $data = [
+                    'types_serialized' => serialize($types),
+                    'description'      => $this->getNormalizedDocumentation($parameterInfo['desc'])
+                ];
+
+                return $data;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param string $documentation
+     *
+     * @return string
+     */
+    protected function getNormalizedDocumentation($documentation)
+    {
+        return str_replace('\\n', "\n", $documentation);
+    }
+
+    /**
+     * Retrieves the documentation data for the specified entry.
+     *
+     * @param string $entryName
+     *
+     * @return array
+     */
+    protected function getDocumentationEntry($entryName)
+    {
+        $documentationData = $this->getDocumentationData();
+        $entryName = mb_strtolower($entryName);
+
+        // Some items are simply references to other keys in the array, follow them.
+        $passedList = [];
+
+        while (true) {
+            if (!isset($documentationData[$entryName])) {
+                return [];
+            }
+
+            $documentation = $documentationData[$entryName];
+
+            if (!is_string($documentation)) {
+                break;
+            }
+
+            $entryName = $documentation;
+
+            // Avoid circular references that would result in an infinite loop (i.e. session_set_save_handler).
+            if (isset($passedList[$entryName])) {
+                return [];
+            }
+
+            $passedList[$entryName] = true;
+        }
+
+        return $documentation;
     }
 
     /**
@@ -390,7 +581,7 @@ class BuiltinIndexer
         }
 
         foreach ($element->getConstants() as $constantName => $constantValue) {
-            $this->indexClassConstant($constantName, $structureId);
+            $this->indexClassConstant($constantName, $constantValue, $structureId);
         }
     }
 
@@ -454,11 +645,22 @@ class BuiltinIndexer
 
         $accessModifierMap = $this->getAccessModifierMap();
 
+        $defaultProperties = $property->getDeclaringClass()->getDefaultProperties();
+
+        $name = $property->getName();
+
+        $defaultValue = isset($defaultProperties[$name]) ? $defaultProperties[$name] : null;
+
+        if ($defaultValue === '') {
+            $defaultValue = "''";
+        }
+
         $this->storage->insert(IndexStorageItemEnum::PROPERTIES, [
-            'name'               => $property->getName(),
+            'name'               => $name,
             'file_id'            => null,
             'start_line'         => null,
             'end_line'           => null,
+            'default_value'      => $defaultValue,
             'is_deprecated'      => 0,
             'is_magic'           => 0,
             'is_static'          => $property->isStatic(),
@@ -474,11 +676,12 @@ class BuiltinIndexer
 
     /**
      * @param string $name
+     * @param mixed  $value
      * @param int    $structureId
      */
-    protected function indexClassConstant($name, $structureId)
+    protected function indexClassConstant($name, $value, $structureId)
     {
-        $constantId = $this->indexConstant($name);
+        $constantId = $this->indexConstant($name, $value);
 
         $this->storage->update(IndexStorageItemEnum::CONSTANTS, $constantId, [
             'structure_id' => $structureId
@@ -529,7 +732,19 @@ class BuiltinIndexer
 
         $shortName = $element->getShortName();
 
-        return isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $shortName;
+        return isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $element->getName();
+    }
+
+    /**
+     * @return array
+     */
+    protected function getDocumentationData()
+    {
+        if (!$this->documentationData) {
+            $this->documentationData = json_decode(file_get_contents(__DIR__ . '/Resource/documentation-data.json'), true);
+        }
+
+        return $this->documentationData;
     }
 
     /**

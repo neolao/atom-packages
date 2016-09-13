@@ -1,7 +1,7 @@
 {
   "main": "./index.coffee",
   "name": "pretty-json",
-  "version": "1.4.4",
+  "version": "1.6.0",
   "description": "Format JSON",
   "keywords": [
     "JSON",
@@ -32,16 +32,16 @@
     "url": "https://github.com/federomero/pretty-json/issues"
   },
   "homepage": "https://github.com/federomero/pretty-json#readme",
-  "_id": "pretty-json@1.4.4",
-  "_shasum": "1433fac5a5a39bc61b4c54286aca23e2af09dfd1",
-  "_resolved": "file:../d-116613-50663-147yh2o/package.tgz",
-  "_from": "../d-116613-50663-147yh2o/package.tgz",
+  "_id": "pretty-json@1.6.0",
+  "_shasum": "ce22f12dcaa9b306e27806ef33f95536ab7d7cd3",
+  "_resolved": "file:../d-11679-6376-1wsjkoj/package.tgz",
+  "_from": "../d-11679-6376-1wsjkoj/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
       {
         "name": "bignumber.js",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "path": "node_modules/bignumber.js/bignumber.js"
       },
       {

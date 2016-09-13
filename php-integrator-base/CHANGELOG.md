@@ -1,3 +1,127 @@
+## 1.2.6
+### Bugs fixed
+* Rename the package and repository.
+
+## 1.2.5
+### Bugs fixed
+* Thanks to a quick response by [danielbrodin](https://github.com/danielbrodin), all functionality related to project management should now once again be working.
+
+## 1.2.4
+### Bugs fixed
+* Add workarounds for project-manager 3.0.0. Unfortunately, some functionalities are currently broken because of the backwards-incompatible upgrade. See also [this ticket](https://github.com/danielbrodin/atom-project-manager/issues/252) for more information.
+  * Setting up new projects is currently impossible via the package, you can however still manually set up projects by adding PHP settings to their root object via the `projects.cson` file:
+  ```
+    php:
+        enabled: true
+        php_integrator:
+            enabled: true
+            phpVersion: 5.6
+            excludedPaths: []
+            fileExtensions: [
+                "php"
+            ]
+  ```
+
+## 1.2.3
+### Bugs fixed
+* Fix built-in classes with FQCN's with more than one part, such as from the MongoDB extension, not properly being indexed.
+
+## 1.2.2
+### Bugs fixed
+* Fixed an error related to `JSON_PRESERVE_ZERO_FRACTION`, which needs PHP >= 5.6.
+
+## 1.2.1
+### Bugs fixed
+* Fixed `exclude` warnings (thanks to [@UziTech](https://github.com/UziTech)).
+
+## 1.2.0
+### Features and enhancements
+* Project support has (finally) arrived in a basic form. Unfortunately this change **needs user intervention** and will possibly break the workflow of some users:
+  1. Install the [atom-project-manager](https://github.com/danielbrodin/atom-project-manager) package [1].
+  2. Ensure that your projects are saved using `atom-project-manager`.
+  3. Click `Packages → PHP Integrator → Set Up Current Project` (or use the command palette).
+* Built-in functions and methods will now have (mostly) proper documentation and return types.
+  * This is achieved by keeping an internal list of stubs of the online PHP documentation fetched using [php-doc-parser](https://github.com/martinsik/php-doc-parser).
+  * Note that this will never be perfect as, even though the online documentation is much more complete than reflection, it is also not always entirely correct. For example, `DateTime::createFromFormat` can actually return `DateTime|false`, but accordiing to its online documentation signature it always returns a `DateTime`).
+  * Regardless of the previous item, it will still remain a major improvement over the old reflection-only approach. Various built-in functions and methods will now properly show documentation and have proper return types, easing the pain of having to work with PHP's built-in functionality.
+* Project and folder indexing performance has improved.
+* `define()` statements will now be indexed much like global constants.
+* Specifying the file extensions to index is now supported via project settings.
+* Excluding directories from indexing is now supported via project settings, see also [the wiki](https://github.com/Gert-dev/php-integrator-base/wiki/Excluding-Folders-From-Indexing) for more information.
+* For those interested, the wiki now [has an article](https://github.com/Gert-dev/php-integrator-base/wiki/Proper-Documentation-And-Type-Hinting) with information about how analysis of your code happens regarding docblocks and type hinting. Reading it may help you improve your code as well as code assistance from this package.
+* The remaining parts of the analyzer that were implemented in CoffeeScript have been moved to PHP. This means the base package is now only reliant on PHP itself for processing. This may positively affect performance, but more importantly allows extracting and using the analyzer in its entirety outside Atom as well (i.e. for other editors or projects).
+* Previously, ternary expressions could only be properly analyzed if they had the same return type:
+
+```php
+$a1 = new A();
+$a2 = new A();
+
+$a3 = some_condition() ? $a1 : $a2;
+
+// $a3 is now an 'A' because both conditions yield the same type.
+```
+
+This restriction has now been lifted. Using ternary operators with conditions resulting in different types will now simply yield multiple return types:
+
+```php
+$a = new A();
+$b = new B();
+
+$c = some_condition() ? $a : $b;
+
+// $c is now of type A|B.
+```
+
+* The default value for classlike properties and constants is now used for type deduction. This will improve type guessing in several situations. For example, when generating a docblock for `$foo`:
+
+```php
+// Before:
+
+    /**
+     * @var mixed
+     */
+    protected $foo = 'test';
+
+// After:
+
+    /**
+     * @var string
+     */
+    protected $foo = 'test';
+
+```
+
+### Bugs fixed
+* The return type of global functions was being ignored if they had multiple return types.
+* In rare cases, caching would complain that it could not create the `accessing_shared_cache.lock` file.
+* When force indexing, the cache was not properly invalidated, sometimes leading to the wrong data being fetched.
+* Retrieving locally available variables wasn't always using the most up to date version of the editor's contents.
+* Fix an empty error message and notification sometimes being shown in Atom because the PHP side was incorrectly parsing docblocks containing Unicode characters.
+* When retrieving available variables or deducing types, character offsets were not correctly being translated to byte offsets, sometimes leading to incorrect results.
+
+### Changes for developers
+* `getInvocationInfo` is now also available separately as PHP command.
+* Constants and properties will now also return their default values, if present.
+* `determineCurrentClassName` was not causing a promise rejection when fetching the class list failed internally.
+* A new command `truncate` now does what a force reindex does, but also ensures the cache is properly invalidated.
+* `getInvocationInfoAt` will now return an `offset` rather than a `bufferPosition` to be consistent with the other commands.
+* `getResultingTypesAt` is now simply a convenience call to `deduceTypes` as its underlying code has been completely moved to PHP.
+* `deduceTypes` gained a new parameter `ignoreLastElement`, which does the same as the identically-named parameter for `getResultingTypesAt` does.
+
+### Notes
+[1] Why `atom-project-manager`? The truth is that I would have preferred not to select any specific third-party package for project support so users can use the package they prefer. Users familiar with the project discussions will remember that I have long postponed this change for this reason. Unfortunately, as nothing seems to change and project support is feeling more and more like a missing feature, I decided to go ahead and link to the most popular project management package currently out there. `atom-project-manager` also supports other generic project settings in its CSON file, which leaves room for other Atom packages to also save settings to the same file in harmony with this one. In the future, someone could even develop a GUI for managing project settings.
+
+## 1.1.2
+### Bugs fixed
+* Fixed grouped use statements never being seen as unused.
+* Fixed grouped use statements being marked as unknown classes.
+* Fixed grouped use statements being ignored for type resolution when indexing.
+* Files that do not have UTF-8 encoding will be converted before they are indexed.
+
+## 1.1.1
+### Bugs fixed
+* Fixed the various `codeCoverageIgnore` tags from PHPUnit being seen as invalid tags (thanks to [@hultberg](https://github.com/hultberg)).
+
 ## 1.1.0
 ### Features and enhancements
 * Caching performance has been improved.

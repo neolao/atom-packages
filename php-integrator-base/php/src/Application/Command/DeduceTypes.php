@@ -54,6 +54,11 @@ class DeduceTypes extends AbstractCommand
     protected $docParser;
 
     /**
+     * @var TypeQueryingVisitor
+     */
+    protected $typeQueryingVisitor;
+
+    /**
      * @inheritDoc
      */
     protected function attachOptions(OptionCollection $optionCollection)
@@ -63,6 +68,7 @@ class DeduceTypes extends AbstractCommand
         $optionCollection->add('charoffset?', 'If set, the input offset will be treated as a character offset instead of a byte offset.');
         $optionCollection->add('part+', 'A part of the expression as string. Specify this as many times as you have parts.')->isa('string');
         $optionCollection->add('offset:', 'The character byte offset into the code to use for the determination.')->isa('number');
+        $optionCollection->add('ignore-last-element?', 'If set, when determining the parts automatically, the last part of the expression will be ignored (i.e. because it may not be complete).');
     }
 
     /**
@@ -74,11 +80,9 @@ class DeduceTypes extends AbstractCommand
             throw new UnexpectedValueException('Either a --file file must be supplied or --stdin must be passed!');
         } elseif (!isset($arguments['offset'])) {
             throw new UnexpectedValueException('An --offset must be supplied into the source code!');
-        } elseif (!isset($arguments['part'])) {
-            throw new UnexpectedValueException('You must specify at least one part using --part!');
         }
 
-        $code = $this->getSourceCode(
+        $code = $this->getSourceCodeHelper()->getSourceCode(
             isset($arguments['file']) ? $arguments['file']->value : null,
             isset($arguments['stdin']) && $arguments['stdin']->value
         );
@@ -86,13 +90,25 @@ class DeduceTypes extends AbstractCommand
         $offset = $arguments['offset']->value;
 
         if (isset($arguments['charoffset']) && $arguments['charoffset']->value == true) {
-            $offset = $this->getCharacterOffsetFromByteOffset($offset, $code);
+            $offset = $this->getSourceCodeHelper()->getByteOffsetFromCharacterOffset($offset, $code);
+        }
+
+        $parts = [];
+
+        if (isset($arguments['part'])) {
+            $parts = $arguments['part']->value;
+        } else {
+            $parts = $this->getSourceCodeHelper()->retrieveSanitizedCallStackAt(substr($code, 0, $offset));
+
+            if (!empty($parts) && isset($arguments['ignore-last-element']) && $arguments['ignore-last-element']) {
+                array_pop($parts);
+            }
         }
 
         $result = $this->deduceTypes(
            isset($arguments['file']) ? $arguments['file']->value : null,
            $code,
-           $arguments['part']->value,
+           $parts,
            $offset
         );
 
@@ -136,6 +152,10 @@ class DeduceTypes extends AbstractCommand
 
         $propertyAccessNeedsDollarSign = false;
         $firstElement = array_shift($expressionParts);
+
+        if (!$firstElement) {
+            return [];
+        }
 
         $classRegexPart = "?:\\\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\\\[a-zA-Z_][a-zA-Z0-9_]*)*";
 
@@ -183,22 +203,19 @@ class DeduceTypes extends AbstractCommand
             $types = $this->deduceTypes($file, $code, [$matches[1]], $offset);
         } elseif (preg_match('/^(.*?)\(\)$/', $firstElement, $matches) === 1) {
             // Global PHP function.
-
             // TODO: No need to fetch all global functions here.
             $globalFunctions = $this->getGlobalFunctionsCommand()->getGlobalFunctions();
 
             if (isset($globalFunctions[$matches[1]])) {
                 $returnTypes = $globalFunctions[$matches[1]]['returnTypes'];
 
-                if (count($returnTypes) === 1) {
-                    $types = $this->fetchResolvedTypesFromTypeArrays($returnTypes);
-                }
+                $types = $this->fetchResolvedTypesFromTypeArrays($returnTypes);
             }
         } elseif (preg_match("/((${classRegexPart}))/", $firstElement, $matches) === 1) {
             // Static class name.
             $propertyAccessNeedsDollarSign = true;
 
-            $line = $this->calculateLineByOffset($code, $offset);
+            $line = $this->getSourceCodeHelper()->calculateLineByOffset($code, $offset);
 
             $types = [$this->getResolveTypeCommand()->resolveType($matches[1], $file, $line)];
         }
@@ -263,11 +280,6 @@ class DeduceTypes extends AbstractCommand
     }
 
     /**
-     * @var TypeQueryingVisitor
-     */
-    protected $typeQueryingVisitor;
-
-    /**
      * @param string $code
      * @param int    $offset
      *
@@ -309,7 +321,7 @@ class DeduceTypes extends AbstractCommand
         $variableName = mb_substr($name, 1);
 
         $variableTypeInfoMap = $this->typeQueryingVisitor->getVariableTypeInfoMap();
-        $offsetLine = $this->calculateLineByOffset($code, $offset);
+        $offsetLine = $this->getSourceCodeHelper()->calculateLineByOffset($code, $offset);
 
         return $this->getResolvedTypes($variableTypeInfoMap, $variableName, $file, $offsetLine, $code);
     }
@@ -340,9 +352,7 @@ class DeduceTypes extends AbstractCommand
                     $node->getAttribute('startFilePos')
                 );
 
-                if ($firstOperandType === $secondOperandType) {
-                    return $firstOperandType;
-                }
+                return array_unique(array_merge($firstOperandType, $secondOperandType));
             } else {
                 return $this->deduceTypesFromNode(
                     $file,
@@ -658,7 +668,7 @@ class DeduceTypes extends AbstractCommand
      */
     protected function getCurrentClassAt($file, $source, $offset)
     {
-        $line = $this->calculateLineByOffset($source, $offset);
+        $line = $this->getSourceCodeHelper()->calculateLineByOffset($source, $offset);
 
         return $this->getCurrentClassAtLine($file, $source, $line);
     }
@@ -684,37 +694,12 @@ class DeduceTypes extends AbstractCommand
     }
 
     /**
-     * @inheritDoc
-     */
-    public function setIndexDatabase(IndexDatabase $indexDatabase)
-    {
-        if ($this->classListCommand) {
-            $this->getClassListCommand()->setIndexDatabase($indexDatabase);
-        }
-
-        if ($this->classInfoCommand) {
-            $this->getClassInfoCommand()->setIndexDatabase($indexDatabase);
-        }
-
-        if ($this->resolveTypeCommand) {
-            $this->getResolveTypeCommand()->setIndexDatabase($indexDatabase);
-        }
-
-        if ($this->globalFunctionsCommand) {
-            $this->getGlobalFunctionsCommand()->setIndexDatabase($indexDatabase);
-        }
-
-        parent::setIndexDatabase($indexDatabase);
-    }
-
-    /**
      * @return ClassList
      */
     protected function getClassListCommand()
     {
         if (!$this->classListCommand) {
-            $this->classListCommand = new ClassList($this->getParser(), $this->cache);
-            $this->classListCommand->setIndexDatabase($this->indexDatabase);
+            $this->classListCommand = new ClassList($this->getParser(), $this->cache, $this->getIndexDatabase());
         }
 
         return $this->classListCommand;
@@ -726,8 +711,7 @@ class DeduceTypes extends AbstractCommand
     protected function getClassInfoCommand()
     {
         if (!$this->classInfoCommand) {
-            $this->classInfoCommand = new ClassInfo($this->getParser(), $this->cache);
-            $this->classInfoCommand->setIndexDatabase($this->indexDatabase);
+            $this->classInfoCommand = new ClassInfo($this->getParser(), $this->cache, $this->getIndexDatabase());
         }
 
         return $this->classInfoCommand;
@@ -739,8 +723,7 @@ class DeduceTypes extends AbstractCommand
     protected function getGlobalFunctionsCommand()
     {
         if (!$this->globalFunctionsCommand) {
-            $this->globalFunctionsCommand = new GlobalFunctions($this->getParser(), $this->cache);
-            $this->globalFunctionsCommand->setIndexDatabase($this->indexDatabase);
+            $this->globalFunctionsCommand = new GlobalFunctions($this->getParser(), $this->cache, $this->getIndexDatabase());
         }
 
         return $this->globalFunctionsCommand;
@@ -752,8 +735,7 @@ class DeduceTypes extends AbstractCommand
     protected function getResolveTypeCommand()
     {
         if (!$this->resolveTypeCommand) {
-            $this->resolveTypeCommand = new ResolveType($this->getParser(), $this->cache);
-            $this->resolveTypeCommand->setIndexDatabase($this->indexDatabase);
+            $this->resolveTypeCommand = new ResolveType($this->getParser(), $this->cache, $this->getIndexDatabase());
         }
 
         return $this->resolveTypeCommand;

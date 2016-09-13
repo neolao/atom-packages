@@ -68,7 +68,7 @@ class GlobalFunctionProvider extends AbstractProvider
         @timeoutHandle = setTimeout ( =>
             @timeoutHandle = null
             @refreshCache()
-        ), 5000
+        ), @config.get('largeListRefreshTimeout')
 
     ###*
      * Refreshes the internal cache. Returns a promise that resolves with the cache once it has been refreshed.
@@ -142,17 +142,25 @@ class GlobalFunctionProvider extends AbstractProvider
     addSuggestions: (functions, prefix, insertParameterList = true) ->
         suggestions = []
 
-        for name, func of functions
+        for fqcn, func of functions
+            shortDescription = ''
+
+            if func.shortDescription? and func.shortDescription.length > 0
+                shortDescription = func.shortDescription
+
+            else if func.isBuiltin
+                shortDescription = 'Built-in PHP function.'
+
             # NOTE: The description must not be empty for the 'More' button to show up.
             suggestions.push
                 text               : func.name
                 type               : 'function'
                 snippet            : if insertParameterList then @getFunctionSnippet(func.name, func) else null
-                displayText        : func.name
+                displayText        : func.name + @getFunctionParameterList(func)
                 replacementPrefix  : prefix
                 leftLabel          : @getTypeSpecificationFromTypeArray(func.returnTypes)
-                rightLabelHTML     : @getSuggestionRightLabel(name, func)
-                description        : if func.isBuiltin then 'Built-in PHP function.' else func.shortDescription
+                rightLabelHTML     : @getSuggestionRightLabel(func)
+                description        : shortDescription
                 descriptionMoreURL : if func.isBuiltin then @config.get('php_documentation_base_urls').functions + func.name else null
                 className          : 'php-integrator-autocomplete-plus-suggestion' + if func.isDeprecated then ' php-integrator-autocomplete-plus-strike' else ''
 

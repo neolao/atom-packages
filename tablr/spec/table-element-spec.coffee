@@ -73,10 +73,6 @@ describe 'tableElement', ->
     window.requestAnimationFrame = requestAnimationFrameSafe
 
   beforeEach ->
-    TableElement.registerViewProvider()
-    TableSelectionElement.registerViewProvider()
-    TableElement.registerCommands()
-
     jasmineContent = document.body.querySelector('#jasmine-content')
 
     spyOn(window, "setInterval").andCallFake window.fakeSetInterval
@@ -1593,6 +1589,25 @@ describe 'tableElement', ->
       atom.commands.dispatch(tableElement, 'tablr:move-column-right')
 
       expect(tableEditor.moveColumnRight).toHaveBeenCalled()
+
+  describe 'tablr:move-right-in-selection', ->
+    describe 'when there is no selection and the cursor is on the last cell', ->
+      beforeEach ->
+        spyOn(tableEditor, 'moveRightInSelection')
+        spyOn(tableEditor, 'insertRowAfter').andCallThrough()
+
+        tableElement.moveToBottom()
+        tableElement.moveToRight()
+
+        tableElement.moveRightInSelection()
+
+      it 'does not moves the cursor', ->
+        expect(tableEditor.moveRightInSelection).not.toHaveBeenCalled()
+
+      it 'inserts a new row', ->
+        expect(tableEditor.insertRowAfter).toHaveBeenCalled()
+        expect(tableEditor.getCursorPosition()).toEqual([100,0])
+
 
   describe 'tablr:apply-sort', ->
     it 'calls tableEditor::applySort', ->

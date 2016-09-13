@@ -25,6 +25,7 @@ class Config
             disableBuiltinAutocompletion   : true
             insertNewlinesForUseStatements : false
             automaticallyAddUseStatements  : true
+            largeListRefreshTimeout        : 5000
 
             # See also http://www.phpdoc.org/docs/latest/index.html .
             phpdoc_base_url : {
@@ -34,7 +35,7 @@ class Config
 
             # See also https://secure.php.net/urlhowto.php .
             php_documentation_base_urls : {
-                classes   : 'https://secure.php.net/'
+                classes   : 'https://secure.php.net/class.'
                 functions : 'https://secure.php.net/function.'
                 keywords  : 'https://secure.php.net/manual/en/reserved.php'
             }

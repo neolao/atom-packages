@@ -63,7 +63,9 @@ class Application
             '--localize-type'       => 'LocalizeType',
             '--semantic-lint'       => 'SemanticLint',
             '--available-variables' => 'AvailableVariables',
-            '--deduce-types'        => 'DeduceTypes'
+            '--deduce-types'        => 'DeduceTypes',
+            '--invocation-info'     => 'InvocationInfo',
+            '--truncate'            => 'Truncate'
         ];
 
         if (isset($commands[$command])) {
@@ -107,13 +109,17 @@ class Application
     protected function getFilesystemCache($project)
     {
         if (!$this->filesystemCache instanceof FilesystemCache) {
-            $this->filesystemCache = new FilesystemCache(
-                sys_get_temp_dir() .
+            $cachePath = sys_get_temp_dir() .
                 '/php-integrator-base/' .
                 $project . '/' .
                 Application\Command\AbstractCommand::DATABASE_VERSION .
-                '/'
-            );
+                '/';
+
+            if (!file_exists($cachePath)) {
+                mkdir($cachePath, 0777, true);
+            }
+
+            $this->filesystemCache = new FilesystemCache($cachePath);
         }
 
         return $this->filesystemCache;

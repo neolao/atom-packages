@@ -49,6 +49,16 @@ module.exports =
       description: 'Path to and including Java executable. If default, Java found on System Path will be used.'
       type: 'string'
       default: 'java'
+    javaAdditional:
+      title: 'Additional Java Arguments'
+      description: 'Such as -DPLANTUML_LIMIT_SIZE=8192 or -Xmx1024m'
+      type: 'string'
+      default: ''
+    jarAdditional:
+      title: 'Additional PlantUML Arguments'
+      description: 'Arguments are added immediately after -jar. Arguments specified in settings may override.'
+      type: 'string'
+      default: ''
     jarLocation:
       title: 'PlantUML Jar'
       description: 'Path to and including PlantUML Jar.'

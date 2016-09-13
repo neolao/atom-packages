@@ -8,14 +8,13 @@ use PhpIntegrator\Indexing\IndexDatabase;
 
 class AvailableVariablesTest extends IndexedTest
 {
-    protected function getCommand($file)
+    protected function getCommand($file, $mayFail = false)
     {
         $path = $this->getTestFilePath($file);
 
-        $indexDatabase = $this->getDatabaseForTestFile($path);
+        $indexDatabase = $this->getDatabaseForTestFile($path, $mayFail);
 
-        $command = new AvailableVariables($this->getParser());
-        $command->setIndexDatabase($indexDatabase);
+        $command = new AvailableVariables($this->getParser(), null, $indexDatabase);
 
         return $command;
     }
@@ -25,9 +24,9 @@ class AvailableVariablesTest extends IndexedTest
         return __DIR__ . '/AvailableVariablesTest/' . $name;
     }
 
-    protected function getAvailableVariables($file)
+    protected function getAvailableVariables($file, $mayIndexingFail = false)
     {
-        $command = $this->getCommand($file);
+        $command = $this->getCommand($file, $mayIndexingFail);
 
         $path = $this->getTestFilePath($file);
 
@@ -47,7 +46,7 @@ class AvailableVariablesTest extends IndexedTest
 
     public function testReturnsOnlyVariablesRelevantToTheGlobalScope()
     {
-        $output = $this->getAvailableVariables('GlobalScope.php');
+        $output = $this->getAvailableVariables('GlobalScope.php.test');
 
         $this->assertEquals([
             '$var3' => ['name' => '$var3', 'type' => null],
@@ -58,7 +57,7 @@ class AvailableVariablesTest extends IndexedTest
 
     public function testReturnsOnlyVariablesRelevantToTheCurrentFunction()
     {
-        $output = $this->getAvailableVariables('FunctionScope.php');
+        $output = $this->getAvailableVariables('FunctionScope.php.test');
 
         $this->assertEquals([
             '$closure' => ['name' => '$closure', 'type' => null],
@@ -69,7 +68,7 @@ class AvailableVariablesTest extends IndexedTest
 
     public function testReturnsOnlyVariablesRelevantToTheCurrentMethod()
     {
-        $output = $this->getAvailableVariables('ClassMethodScope.php');
+        $output = $this->getAvailableVariables('ClassMethodScope.php.test');
 
         $this->assertEquals([
             '$this'    => ['name' => '$this',    'type' => null],
@@ -81,7 +80,7 @@ class AvailableVariablesTest extends IndexedTest
 
     public function testReturnsOnlyVariablesRelevantToTheCurrentClosure()
     {
-        $output = $this->getAvailableVariables('ClosureScope.php');
+        $output = $this->getAvailableVariables('ClosureScope.php.test');
 
         $this->assertEquals([
             '$this'         => ['name' => '$this',         'type' => null],
@@ -93,7 +92,7 @@ class AvailableVariablesTest extends IndexedTest
 
     public function testCorrectlyIgnoresVariousStatements()
     {
-        $file = 'VariousStatements.php';
+        $file = 'VariousStatements.php.test';
         $fullPath = $this->getTestFilePath($file);
 
         $command = $this->getCommand($file);
@@ -154,16 +153,5 @@ class AvailableVariablesTest extends IndexedTest
         $doMarkerTest(28, ['$m']);
         // $doMarkerTest(29, []); // TODO: Can't be solved for now, see also the implementation code.
         $doMarkerTest(30, ['$n']);
-    }
-
-    /**
-     * @expectedException \UnexpectedValueException
-     */
-    public function testThrowsExceptionOnParsingFailed()
-    {
-        $command = new AvailableVariables($this->getParser());
-        $command->setIndexDatabase(new IndexDatabase(':memory:', 1));
-
-        $output = $this->getAvailableVariables('MissingFile.php', 0);
     }
 }

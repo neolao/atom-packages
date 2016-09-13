@@ -1,3 +1,14 @@
+## 2.5.1
+
+* Fix create project config regression bug
+
+## 2.5.0
+
+* Add footnote support, works better with [language-markdown][ed5837b4]
+* Support overwriting existing image when copy image
+
+  [ed5837b4]: https://atom.io/packages/language-markdown "language-markdown package"
+
 ## 2.4.0
 
 * Add alpha order list support with `enter` continue list

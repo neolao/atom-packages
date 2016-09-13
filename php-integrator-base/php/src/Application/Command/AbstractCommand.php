@@ -3,7 +3,7 @@
 namespace PhpIntegrator\Application\Command;
 
 use ArrayAccess;
-use LogicException;
+use RuntimeException;
 use UnexpectedValueException;
 
 use Doctrine\Common\Cache\Cache;
@@ -11,6 +11,7 @@ use Doctrine\Common\Cache\Cache;
 use GetOptionKit\OptionParser;
 use GetOptionKit\OptionCollection;
 
+use PhpIntegrator\SourceCodeHelper;
 use PhpIntegrator\IndexDataAdapter;
 
 use PhpIntegrator\Indexing\IndexDatabase;
@@ -28,7 +29,7 @@ abstract class AbstractCommand implements CommandInterface
      *
      * @var int
      */
-    const DATABASE_VERSION = 22;
+    const DATABASE_VERSION = 25;
 
     /**
      * @var IndexDatabase
@@ -66,12 +67,20 @@ abstract class AbstractCommand implements CommandInterface
     protected $indexDataAdapterProvider;
 
     /**
-     * @param Cache|null $cache
+     * @var SourceCodeHelper
      */
-    public function __construct(Parser $parser, Cache $cache = null)
+    protected $sourceCodeHelper;
+
+    /**
+     * @param Parser             $parser
+     * @param Cache|null         $cache
+     * @param IndexDatabase|null $indexDatabase
+     */
+    public function __construct(Parser $parser, Cache $cache = null, IndexDatabase $indexDatabase = null)
     {
         $this->parser = $parser;
         $this->cache = $cache ? (new CacheIdPrefixDecorator($cache, $this->getCachePrefix())) : null;
+        $this->indexDatabase = $indexDatabase;
     }
 
     /**
@@ -101,10 +110,8 @@ abstract class AbstractCommand implements CommandInterface
 
         // Ensure we differentiate caches between databases.
         if ($this->cache) {
-            $this->cache->setCachePrefix(md5($this->databaseFile));
+            $this->cache->setCachePrefix($this->cache->getCachePrefix() . md5($this->databaseFile));
         }
-
-        $this->setIndexDatabase($this->createIndexDatabase($this->databaseFile));
 
         try {
             return $this->process($processedArguments);
@@ -114,28 +121,15 @@ abstract class AbstractCommand implements CommandInterface
     }
 
     /**
-     * Creates an index database instance for the database on the specified path.
-     *
-     * @param string $filePath
-     *
      * @return IndexDatabase
      */
-    protected function createIndexDatabase($filePath)
+    protected function getIndexDatabase()
     {
-        return new IndexDatabase($filePath, static::DATABASE_VERSION);
-    }
+        if (!$this->indexDatabase) {
+            $this->indexDatabase = new IndexDatabase($this->databaseFile, static::DATABASE_VERSION);
+        }
 
-    /**
-     * Sets the indexDatabase to use.
-     *
-     * @param IndexDatabase $indexDatabase
-     *
-     * @return $this
-     */
-    public function setIndexDatabase(IndexDatabase $indexDatabase)
-    {
-        $this->indexDatabase = $indexDatabase;
-        return $this;
+        return $this->indexDatabase;
     }
 
     /**
@@ -162,58 +156,6 @@ abstract class AbstractCommand implements CommandInterface
     abstract protected function process(ArrayAccess $arguments);
 
     /**
-     * @param string|null $file
-     * @param bool        $isStdin
-     *
-     * @throws LogicException
-     * @throws UnexpectedValueException
-     */
-    protected function getSourceCode($file, $isStdin)
-    {
-        $code = null;
-
-        if ($isStdin) {
-            // NOTE: This call is blocking if there is no input!
-            return file_get_contents('php://stdin');
-        } else {
-            if (!$file) {
-                throw new UnexpectedValueException('The specified file does not exist!');
-            }
-
-            return @file_get_contents($file);
-        }
-
-        throw new LogicException('Should never be reached.');
-    }
-
-    /**
-     * Calculates the 1-indexed line the specified byte offset is located at.
-     *
-     * @param string $source
-     * @param int    $offset
-     *
-     * @return int
-     */
-    protected function calculateLineByOffset($source, $offset)
-    {
-        return substr_count($source, "\n", 0, $offset) + 1;
-    }
-
-    /**
-     * Retrieves the character offset from the specified byte offset in the specified string. The result will always be
-     * smaller than or equal to the passed in value, depending on the amount of multi-byte characters encountered.
-     *
-     * @param string $string
-     * @param int    $byteOffset
-     *
-     * @return int
-     */
-    protected function getCharacterOffsetFromByteOffset($byteOffset, $string)
-    {
-        return mb_strlen(mb_strcut($string, 0, $byteOffset));
-    }
-
-    /**
      * @return string
      */
     protected function getCachePrefix()
@@ -234,6 +176,18 @@ abstract class AbstractCommand implements CommandInterface
     }
 
     /**
+     * @return SourceCodeHelper
+     */
+    protected function getSourceCodeHelper()
+    {
+        if (!$this->sourceCodeHelper) {
+            $this->sourceCodeHelper = new SourceCodeHelper();
+        }
+
+        return $this->sourceCodeHelper;
+    }
+
+    /**
      * @return IndexDataAdapter\ProviderInterface
      */
     protected function getIndexDataAdapterProvider()
@@ -241,11 +195,11 @@ abstract class AbstractCommand implements CommandInterface
         if (!$this->indexDataAdapterProvider) {
             if ($this->cache) {
                 $this->indexDataAdapterProvider = new IndexDataAdapter\ProviderCachingProxy(
-                    $this->indexDatabase,
+                    $this->getIndexDatabase(),
                     $this->cache
                 );
             } else {
-                $this->indexDataAdapterProvider = $this->indexDatabase;
+                $this->indexDataAdapterProvider = $this->getIndexDatabase();
             }
         }
 
@@ -258,14 +212,29 @@ abstract class AbstractCommand implements CommandInterface
      * @param bool  $success
      * @param mixed $data
      *
+     * @throws RuntimeException When the encoding fails, which should never happen.
+     *
      * @return string
      */
     protected function outputJson($success, $data)
     {
-        return json_encode([
+        $output = json_encode([
             'success' => $success,
             'result'  => $data
         ]);
+
+        if (!$output) {
+            $errorMessage = json_last_error_msg() ?: 'Unknown';
+
+            throw new RuntimeException(
+                'The encoded JSON output was empty, something must have gone wrong! The error message was: ' .
+                '"' .
+                $errorMessage .
+                '"'
+            );
+        }
+
+        return $output;
     }
 
     /**

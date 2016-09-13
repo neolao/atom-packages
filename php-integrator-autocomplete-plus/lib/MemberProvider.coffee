@@ -154,7 +154,7 @@ class MemberProvider extends AbstractProvider
                     type              : 'keyword'
                     replacementPrefix : prefix
                     leftLabel         : 'string'
-                    rightLabelHTML    : @getSuggestionRightLabel('class', {declaringStructure: {name: classInfo.name}})
+                    rightLabelHTML    : @getSuggestionRightLabel({declaringStructure: {name: classInfo.name}})
                     description       : 'PHP static class keyword that evaluates to the FCQN.'
                     className         : 'php-integrator-autocomplete-plus-suggestion'
 
@@ -166,14 +166,19 @@ class MemberProvider extends AbstractProvider
                     text = (if type == 'property' and hasDoubleDotSeparator then '$' else '') + member.name
                     typesToDisplay = if type == 'method' then member.returnTypes else member.types
 
+                    displayText = text
+
+                    if 'parameters' of member
+                        displayText += @getFunctionParameterList(member)
+
                     suggestions.push
                         text              : text
                         type              : type
                         snippet           : if type == 'method' and insertParameterList then @getFunctionSnippet(member.name, member) else null
-                        displayText       : text
+                        displayText       : displayText
                         replacementPrefix : prefix
                         leftLabel         : @getTypeSpecificationFromTypeArray(typesToDisplay)
-                        rightLabelHTML    : @getSuggestionRightLabel(name, member)
+                        rightLabelHTML    : @getSuggestionRightLabel(member)
                         description       : if member.shortDescription then member.shortDescription else ''
                         className         : 'php-integrator-autocomplete-plus-suggestion' + if member.isDeprecated then ' php-integrator-autocomplete-plus-strike' else ''
 

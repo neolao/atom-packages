@@ -11,15 +11,29 @@ BuildStatusView = null
 module.exports =
   # Internal: The default configuration properties for the package.
   config:
-    useTravisCiPro:
-        type: 'boolean'
-        default: false
-    personalAccessToken:
-        type: 'string'
-        default: '<Your personal GitHub access token>'
     travisCiRemoteName:
-        type: 'string'
-        default: 'origin'
+      type: 'string'
+      default: 'origin'
+      title: 'Travis CI Remote Name'
+      description: 'Enter the name of the remote used for Travis integration'
+      order: 1
+    travisCiAltRemotes:
+      type: 'string'
+      default: ''
+      title: 'Remote Overrides'
+      description: 'Enter repository-specific remotes as a JSON string to override the default in the format:<br/>`{"repository":"remote"}`'
+      order: 2
+    useTravisCiPro:
+      type: 'boolean'
+      default: false
+      title: 'Use Travis CI Pro'
+      order: 3
+    personalAccessToken:
+      type: 'string'
+      default: ''
+      title: 'Personal Access Token'
+      description: 'Your personal [GitHub access token](https://github.com/settings/tokens) (*required for Travis CI Pro*)'
+      order: 4
 
   # Internal: The build matrix bottom panel view.
   buildMatrixView: null
@@ -31,6 +45,8 @@ module.exports =
   #
   # Returns nothing.
   activate: ->
+    @updateSettings
+
     @projectChangeSubscription = atom.project.onDidChangePaths =>
       @checkTravisRepos().then => @init(@statusBar)
 
@@ -69,8 +85,9 @@ module.exports =
   # Returns true if the repository has a GitHub remote, else false
   hasGitHubRepo: (repos) ->
     return false if repos.length is 0
-    name = atom.config.get('travis-ci-status.travisCiRemoteName')
+
     for repo in repos
+      name = @getFinalRemote(repo)
       return true if /(.)*github\.com/i.test(repo.getConfigValue("remote.#{name}.url"))
 
     false
@@ -81,12 +98,28 @@ module.exports =
   # exist.
   getNameWithOwner: ->
     repo = atom.project.getRepositories()[0]
-    name = atom.config.get('travis-ci-status.travisCiRemoteName')
+    name = @getFinalRemote(repo)
     url  = repo.getConfigValue("remote.#{name}.url")
 
     return null unless url?
 
     /([^\/:]+)\/([^\/]+)$/.exec(url.replace(/\.git$/, ''))[0]
+
+  getFinalRemote: (repo) ->
+    if not repo?
+      repo = atom.project.getRepositories()[0]
+
+    url = repo.getOriginURL()
+    gitPath = /([^\/:]+)\/([^\/]+)$/.exec(url.replace(/\.git$/, ''))[0]
+
+    name = atom.config.get('travis-ci-status.travisCiRemoteName')
+    override = atom.config.get('travis-ci-status.travisCiAltRemotes')
+    override = JSON.parse(override)
+
+    if override.hasOwnProperty(gitPath)
+      name = override[gitPath]
+
+    name
 
   # Internal: Check there is a .travis.yml configuration file.
   # Bool result is passed in callback.
@@ -119,8 +152,9 @@ module.exports =
     BuildMatrixView ?= require './build-matrix-view'
 
     nwo = @getNameWithOwner()
+    gfr = @getFinalRemote()
     @buildMatrixView = new BuildMatrixView(nwo)
-    @buildStatusView = new BuildStatusView(nwo, @buildMatrixView, statusBar)
+    @buildStatusView = new BuildStatusView(nwo, @buildMatrixView, statusBar, gfr)
 
   # Internal: Open the project on Travis CI in the default browser.
   #

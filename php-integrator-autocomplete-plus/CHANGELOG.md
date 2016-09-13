@@ -1,3 +1,35 @@
+## 1.1.5
+### Bugs fixed
+* Rename the package and repository.
+
+## 1.1.4
+### Bugs fixed
+* Fix not being able to navigate to the PHP documentation for built-in classes with longer FQCN's, such as classes from MongoDB.
+* Fix built-in classes sometimes navigating to the wrong page, e.g. `DateTime` was navigating to the overview page instead of the class documentation page.
+
+## 1.1.3
+### Bugs fixed
+* Fix the parameter list itself also being inserted for class methods calls.
+
+## 1.1.2
+### Bugs fixed
+* Fix incorrect styling on the parameter list for functions and methods. Unfortunately this meant removing the styling for the parameter list, see also [this ticket](https://github.com/atom/autocomplete-plus/issues/764).
+
+## 1.1.1
+### Bugs fixed
+* Fix constants being added to the suggestions twice, resulting in some information such as deprecation information getting lost.
+
+## 1.1.0
+### Features and improvements
+* Make the timeout before refreshing global data adjustable via the settings panel.
+
+### Bugs fixed
+* Trait suggestions will now be shown after the `use` keyword occurs in a class.
+
+## 1.0.4
+### Bugs fixed
+* Fixed `@inheritDoc` being missing from docblock tag suggestions (thanks to [squio](https://github.com/squio)).
+
 ## 1.0.3
 ### Bugs fixed
 * Fixed error with member autocompletion when there was no current class.

@@ -26,11 +26,6 @@ module.exports =
     proxy: null
 
     ###*
-     * The parser object.
-    ###
-    parser: null
-
-    ###*
      * Keeps track of files that are being indexed.
     ###
     indexMap: {}
@@ -46,6 +41,21 @@ module.exports =
     statusBarManager: null
 
     ###*
+     * The project manager service.
+    ###
+    projectManagerService: null
+
+    ###*
+     * The currently active project, if any.
+    ###
+    loadedProject: null
+
+    ###*
+     * The currently active project, if any.
+    ###
+    activeProject: null
+
+    ###*
      * Whether project indexing is currently happening.
     ###
     isProjectIndexBusy: false
@@ -56,11 +66,24 @@ module.exports =
     disposables: null
 
     ###*
+     * Default
+    ###
+    defaultProjectSettings:
+        enabled: true
+        php_integrator:
+            enabled: true
+            phpVersion: 5.6
+            excludedPaths: []
+            fileExtensions: ['php']
+
+    ###*
      * Tests the user's configuration.
+     *
+     * @param {boolean} testServices
      *
      * @return {boolean}
     ###
-    testConfig: () ->
+    testConfig: (testServices = true) ->
         ConfigTester = require './ConfigTester'
 
         configTester = new ConfigTester(@configuration)
@@ -77,17 +100,67 @@ module.exports =
 
             return false
 
+        if testServices and not @projectManagerService
+            errorMessage =
+                "There is no project manager service available. Install the atom-project-manager package for project
+                support to work in its full extent."
+
+            atom.notifications.addError('Incorrect setup!', {'detail': errorMessage})
+
+            return false
+
         return true
 
     ###*
      * Registers any commands that are available to the user.
     ###
     registerCommands: () ->
+        atom.commands.add 'atom-workspace', "php-integrator-base:set-up-current-project": =>
+            return if not @projectManagerService
+            return if not @activeProject
+
+            project = @activeProject
+
+            projectPhpSettings = if project.getProps().php? then project.getProps().php else {}
+
+            if projectPhpSettings.php_integrator?
+                atom.notifications.addError 'Already initialized', {
+                    'detail' : 'The currently active project was already initialized. To prevent existing ' +
+                        'settings from getting lost, the request has been aborted.'
+                }
+
+                return
+
+            if not projectPhpSettings.enabled
+                projectPhpSettings.enabled = true
+
+            if not projectPhpSettings.php_integrator?
+                projectPhpSettings.php_integrator = @defaultProjectSettings.php_integrator
+
+
+            existingProps = @activeProject.getProps()
+            existingProps.php = projectPhpSettings
+            @projectManagerService.saveProject(existingProps)
+
+            atom.notifications.addSuccess 'Success', {
+                'detail' : 'Your current project has been set up as PHP project. Indexing will now commence.'
+            }
+
+            @loadProject(project)
+
         atom.commands.add 'atom-workspace', "php-integrator-base:index-project": =>
-            return @attemptProjectIndex()
+            return if not @loadedProject
+
+            project = @loadedProject
+
+            return @attemptProjectIndex(project)
 
         atom.commands.add 'atom-workspace', "php-integrator-base:force-index-project": =>
-            return @attemptForceProjectIndex()
+            return if not @loadedProject
+
+            project = @loadedProject
+
+            return @attemptForceProjectIndex(project)
 
         atom.commands.add 'atom-workspace', "php-integrator-base:configuration": =>
             return unless @testConfig()
@@ -97,41 +170,13 @@ module.exports =
             }
 
     ###*
-     * Registers listeners for config changes.
-    ###
-    registerConfigListeners: () ->
-        @configuration.onDidChange 'phpCommand', () =>
-            @attemptProjectIndex()
-
-    ###*
-     * Indexes a list of directories.
-     *
-     * @param {Array}    directories
-     * @param {Callback} progressStreamCallback
-     *
-     * @return {Promise}
-    ###
-    performDirectoriesIndex: (directories, progressStreamCallback) ->
-        pathArrays = []
-
-        for i, project of directories
-            pathArrays.push(project.path)
-
-        md5 = require 'md5'
-
-        indexDatabaseName = md5(pathArrays.join(''))
-
-        @proxy.setProjectName(indexDatabaseName)
-        @proxy.setIndexDatabaseName(indexDatabaseName)
-
-        return @service.reindex(pathArrays, null, progressStreamCallback)
-
-    ###*
      * Indexes the project aynschronously.
      *
+     * @param {Object} project
+     *
      * @return {Promise}
     ###
-    performProjectIndex: () ->
+    performProjectIndex: (project) ->
         timerName = @packageName + " - Project indexing"
 
         console.time(timerName);
@@ -161,16 +206,22 @@ module.exports =
                     @statusBarManager.setProgress(progress)
                     @statusBarManager.setLabel("Indexing... (" + progress.toFixed(2) + " %)")
 
-        directories = @fetchProjectDirectories()
-
-        return @performDirectoriesIndex(directories, progressStreamCallback).then(successHandler, failureHandler)
+        return @service.reindex(
+            project.getProps().paths,
+            null,
+            progressStreamCallback,
+            @getAbsoluteExcludedPaths(project),
+            @getFileExtensionsToIndex(project)
+        ).then(successHandler, failureHandler)
 
     ###*
      * Performs a project index, but only if one is not currently already happening.
      *
+     * @param {Object} project
+     *
      * @return {Promise|null}
     ###
-    attemptProjectIndex: () ->
+    attemptProjectIndex: (project) ->
         return null if @isProjectIndexBusy
 
         @isProjectIndexBusy = true
@@ -181,61 +232,71 @@ module.exports =
         successHandler = handler
         failureHandler = handler
 
-        return @performProjectIndex().then(successHandler, failureHandler)
+        return @performProjectIndex(project).then(successHandler, failureHandler)
 
     ###*
      * Forcibly indexes the project in its entirety by removing the existing indexing database first.
      *
+     * @param {Object} project
+     *
      * @return {Promise|null}
     ###
-    forceProjectIndex: () ->
-        fs = require 'fs'
+    forceProjectIndex: (project) ->
+        handler = () =>
+            @attemptProjectIndex(project)
 
-        try
-            fs.unlinkSync(@proxy.getIndexDatabasePath())
+        successHandler = handler
+        failureHandler = handler
 
-        catch error
-            # If the file doesn't exist, just bail out.
-
-        return @attemptProjectIndex()
+        @service.truncate().then(successHandler, failureHandler)
 
     ###*
      * Forcibly indexes the project in its entirety by removing the existing indexing database first, but only if a
      * project indexing operation is not already busy.
      *
+     * @param {Object} project
+     *
      * @return {Promise|null}
     ###
-    attemptForceProjectIndex: () ->
+    attemptForceProjectIndex: (project) ->
         return null if @isProjectIndexBusy
 
-        return @forceProjectIndex()
+        return @forceProjectIndex(project)
 
     ###*
      * Indexes a file aynschronously.
      *
+     * @param {Object}      project
      * @param {String}      fileName The file to index.
      * @param {String|null} source   The source code of the file to index.
      *
      * @return {Promise}
     ###
-    performFileIndex: (fileName, source = null) ->
+    performFileIndex: (project, fileName, source = null) ->
         successHandler = () =>
             return
 
         failureHandler = () =>
             return
 
-        return @service.reindex(fileName, source).then(successHandler, failureHandler)
+        return @service.reindex(
+            fileName,
+            source,
+            null,
+            @getAbsoluteExcludedPaths(project),
+            @getFileExtensionsToIndex(project)
+        ).then(successHandler, failureHandler)
 
     ###*
      * Performs a file index, but only if the file is not currently already being indexed (otherwise silently returns).
      *
+     * @param {Object}      project
      * @param {String}      fileName The file to index.
      * @param {String|null} source   The source code of the file to index.
      *
      * @return {Promise|null}
     ###
-    attemptFileIndex: (fileName, source = null) ->
+    attemptFileIndex: (project, fileName, source = null) ->
         return null if @isProjectIndexBusy
 
         if fileName not of @indexMap
@@ -260,27 +321,12 @@ module.exports =
 
                 @indexMap[fileName].nextIndexSource = null
 
-                @attemptFileIndex(fileName, nextIndexSource)
+                @attemptFileIndex(project, fileName, nextIndexSource)
 
         successHandler = handler
         failureHandler = handler
 
-        return @performFileIndex(fileName, source).then(successHandler, failureHandler)
-
-    ###*
-     * Fetches a list of current project directories (root folders).
-     *
-     * @return {Array}
-    ###
-    fetchProjectDirectories: () ->
-        directories = atom.project.getDirectories()
-
-        # In very rare situations, Atom gives us atom://config as project path. Not sure if this is a bug or intended
-        # behavior.
-        directories = directories.filter (directory) ->
-            return directory.path.indexOf('atom://') != 0
-
-        return directories
+        return @performFileIndex(project, fileName, source).then(successHandler, failureHandler)
 
     ###*
      * Attaches items to the status bar.
@@ -304,33 +350,99 @@ module.exports =
             @statusBarManager = null
 
     ###*
-     * Synchronizes internally with changes to the current project folders.
+     * Retrieves a list of absolute paths to exclude from indexing.
+     *
+     * @param {Object} project
+     *
+     * @return {Array}
     ###
-    syncWithAtomProjectFolders: () ->
-        projectDirectories = @fetchProjectDirectories()
+    getAbsoluteExcludedPaths: (project) ->
+        projectPaths = project.getProps().paths
+        excludedPaths = project.getProps().php?.php_integrator?.excludedPaths
 
-        if projectDirectories.length > 0
-            @attemptProjectIndex()
+        if not excludedPaths?
+            excludedPaths = []
 
-            successHandler = (repository) =>
-                return if not repository?
-                return if not repository.async?
+        path = require 'path'
 
-                # Will trigger on things such as git checkout.
-                repository.async.onDidChangeStatuses () =>
-                    @attemptProjectIndex()
+        absoluteExcludedPaths = []
 
-            failureHandler = () =>
-                return
+        for excludedPath in excludedPaths
+            if path.isAbsolute(excludedPath)
+                absoluteExcludedPaths.push(excludedPath)
 
-            for projectDirectory in projectDirectories
-                atom.project.repositoryForDirectory(projectDirectory).then(successHandler, failureHandler)
+            else
+                matches = excludedPath.match(/^\{(\d+)\}(\/.*)$/)
+
+                if matches?
+                    index = matches[1]
+
+                    # Relative paths starting with {n} are relative to the project path at index {n}, e.g. "{0}/test".
+                    if index > projectPaths.length
+                        throw new Error("Requested project path index " + index + ", but the project does not have that many paths!")
+
+                    absoluteExcludedPaths.push(projectPaths[index] + matches[2])
+
+                else
+                    absoluteExcludedPaths.push(path.normalize(excludedPath))
+
+        return absoluteExcludedPaths
+
+    ###*
+     * Retrieves a list of file extensions to include in indexing.
+     *
+     * @param {Object} project
+     *
+     * @return {Array}
+    ###
+    getFileExtensionsToIndex: (project) ->
+        projectPaths = project.getProps().paths
+        fileExtensions = project.getProps().php?.php_integrator?.fileExtensions
+
+        if not fileExtensions?
+            fileExtensions = []
+
+        return fileExtensions
+
+    ###*
+     * @param {Object} project
+    ###
+    loadProject: (project) ->
+        @loadedProject = null
+
+        return if project.getProps().php?.enabled != true
+        return if project.getProps().php?.php_integrator?.enabled != true
+        return if project.getProps().paths.length == 0
+
+        @loadedProject = project
+
+        @proxy.setProjectName(project.getProps().title)
+        @proxy.setIndexDatabaseName(project.getProps().title)
+
+        @attemptProjectIndex(project)
+
+        successHandler = (repository) =>
+            return if not repository?
+            return if not repository.async?
+
+            # Will trigger on things such as git checkout.
+            repository.async.onDidChangeStatuses () =>
+                @attemptProjectIndex(project)
+
+        failureHandler = () =>
+            return
+
+        {Directory} = require 'atom'
+
+        for projectDirectory in project.getProps().paths
+            projectDirectoryObject = new Directory(projectDirectory)
+
+            atom.project.repositoryForDirectory(projectDirectoryObject).then(successHandler, failureHandler)
 
     ###*
      * Activates the package.
     ###
     activate: ->
-        Parser                = require './Parser'
         Service               = require './Service'
         AtomConfig            = require './AtomConfig'
         CachingProxy          = require './CachingProxy'
@@ -345,25 +457,15 @@ module.exports =
         # See also atom-autocomplete-php pull request #197 - Disabled for now because it does not allow the user to
         # reactivate or try again.
         # return unless @testConfig()
-        @testConfig()
+        @testConfig(false)
 
         @proxy = new CachingProxy(@configuration)
 
         emitter = new Emitter()
-        @parser = new Parser()
 
-        @service = new Service(@proxy, @parser, emitter)
+        @service = new Service(@proxy, emitter)
 
         @registerCommands()
-        @registerConfigListeners()
-
-        # In rare cases, the package is loaded faster than the project gets a chance to load. At that point, no project
-        # directory is returned. The onDidChangePaths listener below will also catch that case.
-        @syncWithAtomProjectFolders()
-
-        @disposables.add atom.project.onDidChangePaths (projectPaths) =>
-            # NOTE: This listener is also invoked at shutdown with an empty array as argument.
-            @syncWithAtomProjectFolders()
 
         @disposables.add atom.workspace.observeTextEditors (editor) =>
             # Wait a while for the editor to stabilize so we don't reindex multiple times after an editor opens just
@@ -386,10 +488,15 @@ module.exports =
         path = editor.getPath()
 
         return if not path
+        return if not @loadedProject
 
-        for projectDirectory in @fetchProjectDirectories()
-            if projectDirectory.contains(path)
-                @attemptFileIndex(path, editor.getBuffer().getText())
+        {Directory} = require 'atom'
+
+        for projectDirectory in @loadedProject.props.paths
+            projectDirectoryObject = new Directory(projectDirectory)
+
+            if projectDirectoryObject.contains(path)
+                @attemptFileIndex(@loadedProject, path, editor.getBuffer().getText())
                 return
 
     ###*
@@ -402,19 +509,35 @@ module.exports =
 
     ###*
      * Sets the status bar service, which is consumed by this package.
+     *
+     * @param {Object} service
     ###
     setStatusBarService: (service) ->
         @attachStatusBarItems(service)
 
         # This method is usually invoked after the indexing has already started, hence we can't unconditionally hide it
-        # here or it will never be made visible again. However, we also don't want it to be visible for new Atom windows
-        # that don't contain a project.
-        if atom.project.getDirectories().length == 0
+        # here or it will never be made visible again.
+        if not @isProjectIndexBusy
             @statusBarManager.hide()
 
         {Disposable} = require 'atom'
 
         return new Disposable => @detachStatusBarItems()
+
+    ###*
+     * Sets the project manager service.
+     *
+     * @param {Object} service
+    ###
+    setProjectManagerService: (service) ->
+        @projectManagerService = service
+
+        service.getProject (project) =>
+            @activeProject = project
+
+            return if not project?
+
+            @loadProject(project)
 
     ###*
      * Retrieves the service exposed by this package.

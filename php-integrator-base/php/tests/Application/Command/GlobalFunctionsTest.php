@@ -8,12 +8,11 @@ class GlobalFunctionsTest extends IndexedTest
 {
     public function testGlobalFunctions()
     {
-        $path = __DIR__ . '/GlobalFunctionsTest/' . 'GlobalFunctions.php';
+        $path = __DIR__ . '/GlobalFunctionsTest/' . 'GlobalFunctions.php.test';
 
         $indexDatabase = $this->getDatabaseForTestFile($path);
 
-        $command = new GlobalFunctions($this->getParser());
-        $command->setIndexDatabase($indexDatabase);
+        $command = new GlobalFunctions($this->getParser(), null, $indexDatabase);
 
         $output = $command->getGlobalFunctions();
 

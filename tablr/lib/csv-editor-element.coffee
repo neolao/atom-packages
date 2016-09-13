@@ -1,10 +1,9 @@
 {CompositeDisposable} = require 'atom'
 {SpacePenDSL, EventsDelegation, registerOrUpdateElement} = require 'atom-utils'
-CSVEditor = require './csv-editor'
-CSVEditorFormElement = require './csv-editor-form-element'
-CSVPreviewElement = require './csv-preview-element'
-CSVProgressElement = require './csv-progress-element'
-TableEditor = require './table-editor'
+
+[CSVEditorFormElement, CSVPreviewElement, CSVProgressElement, CSVEditor] = []
+
+TableEditor = null
 
 module.exports =
 class CSVEditorElement extends HTMLElement
@@ -39,7 +38,7 @@ class CSVEditorElement extends HTMLElement
       else if @tableElement?
         @createFormView()
       else
-        @updatePreview(@model.options)
+        @updatePreview(@collectOptions())
 
     loadingSubscription = null
     @subscriptions.add @model.onWillOpen =>
@@ -63,6 +62,8 @@ class CSVEditorElement extends HTMLElement
       @form.alert(err.message)
 
     @subscriptions.add @model.onDidOpen ({editor}) =>
+      TableEditor ?= require './table-editor'
+
       return unless editor instanceof TableEditor
 
       @hideProgress()
@@ -73,9 +74,9 @@ class CSVEditorElement extends HTMLElement
       @formSubscriptions.dispose()
       @formSubscriptions = null
 
-    @updatePreview(@model.options)
-
-    @model.applyChoice()
+    requestAnimationFrame =>
+      @updatePreview(@collectOptions())
+      @model.applyChoice()
 
   displayTableEditor: (editor) ->
     @removeFormView()
@@ -92,12 +93,15 @@ class CSVEditorElement extends HTMLElement
   createFormView: ->
     return if @form?
 
+    CSVEditorFormElement ?= require './csv-editor-form-element'
+    CSVPreviewElement ?= require './csv-preview-element'
+
     @removeTableEditor()
 
     @formContainer = document.createElement('div')
     @formContainer.className = 'settings-view'
 
-    @form = document.createElement 'atom-csv-editor-form'
+    @form = new CSVEditorFormElement
     @formSubscriptions = new CompositeDisposable
 
     @formSubscriptions.add @subscribeTo @form.openTextEditorButton,
@@ -140,6 +144,8 @@ class CSVEditorElement extends HTMLElement
     @displayProgress() unless @progress?
 
   displayProgress: ->
+    CSVProgressElement ?= require './csv-progress-element'
+
     @progress = new CSVProgressElement
     @appendChild(@progress)
 
@@ -157,12 +163,6 @@ class CSVEditorElement extends HTMLElement
 module.exports =
 CSVEditorElement =
 registerOrUpdateElement 'atom-csv-editor', CSVEditorElement.prototype
-
-CSVEditorElement.registerViewProvider = ->
-  atom.views.addViewProvider CSVEditor, (model) ->
-    element = new CSVEditorElement
-    element.setModel(model)
-    element
 
 atom.commands.add 'atom-csv-editor',
   'core:save-as': (e) ->

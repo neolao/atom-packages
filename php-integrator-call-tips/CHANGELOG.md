@@ -1,3 +1,9 @@
+## 1.1.1
+* Rename the package and repository.
+
+## 1.1.0 (base 1.2.0)
+* Fix no call tips being shown after the new keyword for classes that have an implicit constructor.
+
 ## 1.0.1
 * Fix the version specifier not being compatible with newer versions of the base service.
 

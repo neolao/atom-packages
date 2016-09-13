@@ -13,11 +13,6 @@ class Service
     proxy: null
 
     ###*
-     * The parser to use to query the source code.
-    ###
-    parser: null
-
-    ###*
      * The emitter to use to emit indexing events.
     ###
     indexingEventEmitter: null
@@ -26,10 +21,9 @@ class Service
      * Constructor.
      *
      * @param {CachingProxy} proxy
-     * @param {Parser}       parser
      * @param {Emitter}      indexingEventEmitter
     ###
-    constructor: (@proxy, @parser, @indexingEventEmitter) ->
+    constructor: (@proxy, @indexingEventEmitter) ->
 
     ###*
      * Clears the autocompletion cache. Most fetching operations such as fetching constants, autocompletion, fetching
@@ -152,15 +146,44 @@ class Service
     ###*
      * Deduces the resulting types of an expression based on its parts.
      *
-     * @param {Array}       parts  One or more strings that are part of the expression, e.g. ['$this', 'foo()'].
-     * @param {String}      file   The path to the file to examine.
-     * @param {String|null} source The source code to search. May be null if a file is passed instead.
-     * @param {Number}      offset The character offset into the file to examine.
+     * @param {Array|null}  parts             One or more strings that are part of the expression, e.g.
+     *                                        ['$this', 'foo()']. If null, the expression will automatically be deduced
+     *                                        based on the offset.
+     * @param {String}      file              The path to the file to examine.
+     * @param {String|null} source            The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset            The character offset into the file to examine.
+     * @param {bool}        ignoreLastElement Whether to remove the last element or not, this is useful when the user
+     *                                        is still writing code, e.g. "$this->foo()->b" would normally return the
+     *                                        type (class) of 'b', as it is the last element, but as the user is still
+     *                                        writing code, you may instead be interested in the type of 'foo()'
+     *                                       instead.
      *
      * @return {Promise}
     ###
-    deduceTypes: (parts, file, source, offset) ->
-        return @proxy.deduceTypes(parts, file, source, offset)
+    deduceTypes: (parts, file, source, offset, ignoreLastElement) ->
+        return @proxy.deduceTypes(parts, file, source, offset, ignoreLastElement)
+
+    ###*
+     * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
+     * used to fetch information about the function or method call the cursor is in.
+     *
+     * @param {String|null} file   The path to the file to examine. May be null if the source parameter is passed.
+     * @param {String|null} source The source code to search. May be null if a file is passed instead.
+     * @param {Number}      offset The character offset into the file to examine.
+     *
+     * @return {Promise} With elements 'callStack' (array) as well as 'argumentIndex' which denotes the argument in the
+     *                   parameter list the position is located at. Returns 'null' if not in a method or function call.
+    ###
+    getInvocationInfo: (file, source, offset) ->
+        return @proxy.getInvocationInfo(file, source, offset)
+
+    ###*
+     * Truncates the database.
+     *
+     * @return {Promise}
+    ###
+    truncate: () ->
+        return @proxy.truncate()
 
     ###*
      * Convenience alias for {@see deduceTypes}.
@@ -186,10 +209,12 @@ class Service
      * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
      *                                              passed instead.
      * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
+     * @param {Array}        excludedPaths          A list of paths to exclude from indexing.
+     * @param {Array}        fileExtensionsToIndex  A list of file extensions (without leading dot) to index.
      *
      * @return {Promise}
     ###
-    reindex: (path, source, progressStreamCallback) ->
+    reindex: (path, source, progressStreamCallback, excludedPaths, fileExtensionsToIndex) ->
         return new Promise (resolve, reject) =>
             successHandler = (output) =>
                 @indexingEventEmitter.emit('php-integrator-base:indexing-finished', {
@@ -207,7 +232,13 @@ class Service
 
                 reject(error)
 
-            return @proxy.reindex(path, source, progressStreamCallback).then(successHandler, failureHandler)
+            return @proxy.reindex(
+                path,
+                source,
+                progressStreamCallback,
+                excludedPaths,
+                fileExtensionsToIndex
+            ).then(successHandler, failureHandler)
 
     ###*
      * Attaches a callback to indexing finished event. The returned disposable can be used to detach your event handler.
@@ -245,12 +276,17 @@ class Service
                 reject()
                 return
 
-            return @getClassListForFile(path).then (classesInFile) =>
+            successHandler = (classesInFile) =>
                 for name,classInfo of classesInFile
                     if bufferPosition.row >= classInfo.startLine and bufferPosition.row <= classInfo.endLine
                         resolve(name)
 
                 resolve(null)
+
+            failureHandler = () =>
+                reject()
+
+            return @getClassListForFile(path).then(successHandler, failureHandler)
 
     ###*
      * Convenience function that resolves types using {@see resolveType}, automatically determining the correct
@@ -320,22 +356,11 @@ class Service
      *          foo returns.
     ###
     getResultingTypesAt: (editor, bufferPosition, ignoreLastElement) ->
-        callStack = @parser.retrieveSanitizedCallStackAt(editor, bufferPosition)
-
-        if ignoreLastElement
-            callStack.pop()
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
         bufferText = editor.getBuffer().getText()
 
-        if not callStack or callStack.length == 0
-            promise = new Promise (resolve, reject) ->
-                resolve([])
-
-            return promise
-
-        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
-
-        return @deduceTypes(callStack, editor.getPath(), bufferText, offset)
+        return @deduceTypes(null, editor.getPath(), bufferText, offset, true)
 
     ###*
      * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
@@ -351,10 +376,11 @@ class Service
      *          ['$this', 'test'].
     ###
     getInvocationInfoAt: (editor, bufferPosition) ->
-        return new Promise (resolve, reject) =>
-            result = @parser.getInvocationInfoAt(editor, bufferPosition)
+        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
-            resolve(result)
+        bufferText = editor.getBuffer().getText()
+
+        return @getInvocationInfo(editor.getPath(), bufferText, offset)
 
     ###*
      * Creates a popover with the specified constructor arguments.

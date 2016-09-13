@@ -69,7 +69,7 @@ class GlobalConstantProvider extends AbstractProvider
         @timeoutHandle = setTimeout ( =>
             @timeoutHandle = null
             @refreshCache()
-        ), 5000
+        ), @config.get('largeListRefreshTimeout')
 
     ###*
      * Refreshes the internal cache. Returns a promise that resolves with the cache once it has been refreshed.
@@ -139,19 +139,14 @@ class GlobalConstantProvider extends AbstractProvider
     addSuggestions: (constants, prefix) ->
         suggestions = []
 
-        for name, constant of constants
+        for fqcn, constant of constants
             suggestions.push
-                text        : constant.name,
-                type        : 'constant',
-                description : if constant.isBuiltin then 'Built-in PHP constant.' else 'Global PHP constant.'
-
-            suggestions.push
-                text               : constant.name
+                text               : constant.fqcn
                 type               : 'constant'
-                displayText        : constant.name
+                displayText        : constant.fqcn
                 replacementPrefix  : prefix
                 leftLabel          : @getTypeSpecificationFromTypeArray(constant.types)
-                description        : if constant.isBuiltin then 'Built-in PHP function.' else constant.shortDescription
+                description        : if constant.isBuiltin then 'Built-in PHP constant.' else constant.shortDescription
                 className          : 'php-integrator-autocomplete-plus-suggestion' + if constant.isDeprecated then ' php-integrator-autocomplete-plus-strike' else ''
 
         return suggestions

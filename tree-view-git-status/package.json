@@ -1,7 +1,7 @@
 {
   "name": "tree-view-git-status",
   "main": "./lib/main",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Show the Git repository status in the Atom tree-view",
   "repository": {
     "type": "git",
@@ -23,16 +23,16 @@
     "scm",
     "productivity"
   ],
-  "readme": "# Tree View Git Status package\n\n[![Version](https://img.shields.io/apm/v/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Downloads](https://img.shields.io/apm/dm/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Status Linux & OSX](https://img.shields.io/travis/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Linux%20%26%20OSX)](https://travis-ci.org/subesokun/atom-tree-view-git-status)\n[![Status Windows](https://img.shields.io/appveyor/ci/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Windows)](https://ci.appveyor.com/project/subesokun/atom-tree-view-git-status)\n[![Dependency Status](https://img.shields.io/david/subesokun/atom-tree-view-git-status.svg?style=flat-square)](https://david-dm.org/subesokun/atom-tree-view-git-status)\n\nShow the Git repository status in the Atom tree-view.\n\n**CAVEAT: This package is only compatible with Atom 1.7 and above** \n\n### Screenshots\n\n![Screenshot](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot.png?raw=true)\n\n![Screenshot Settings](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-settings.png?raw=true)\n\n### Installation\n\n```\napm install tree-view-git-status\n```\n\n### Features\n\n* Show the Git branch name and commits ahead/behind labels for each project folder.\n* Plays nice together with the Atom [project-view](https://github.com/subesokun/atom-project-view) package.\n\n### License\n\nMIT\n",
+  "readme": "# Tree View Git Status package\n\n[![Version](https://img.shields.io/apm/v/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Downloads](https://img.shields.io/apm/dm/tree-view-git-status.svg?style=flat-square)](https://atom.io/packages/tree-view-git-status)\n[![Status Linux & OSX](https://img.shields.io/travis/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Linux%20%26%20OSX)](https://travis-ci.org/subesokun/atom-tree-view-git-status)\n[![Status Windows](https://img.shields.io/appveyor/ci/subesokun/atom-tree-view-git-status.svg?style=flat-square&label=Windows)](https://ci.appveyor.com/project/subesokun/atom-tree-view-git-status)\n[![Dependency Status](https://img.shields.io/david/subesokun/atom-tree-view-git-status.svg?style=flat-square)](https://david-dm.org/subesokun/atom-tree-view-git-status)\n\nShow the Git repository status in the Atom tree-view.\n\n\n### Screenshots\n\n![Screenshot](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot.png?raw=true)\n\n![Screenshot Settings](https://github.com/subesokun/atom-tree-view-git-status/blob/master/screenshot-settings.png?raw=true)\n\n### Installation\n\n```\napm install tree-view-git-status\n```\n\n### Features\n\n* Show the Git branch name and commits ahead/behind labels for each project folder.\n* Plays nice together with the Atom [project-view](https://github.com/subesokun/atom-project-view) package.\n\n### License\n\nMIT\n",
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/subesokun/atom-tree-view-git-status/issues"
   },
   "homepage": "https://github.com/subesokun/atom-tree-view-git-status#readme",
-  "_id": "tree-view-git-status@1.0.2",
-  "_shasum": "3c624d9ed72b249af81c6be0e511a2ac6eb06002",
-  "_resolved": "file:../d-116618-72715-13srcyn/package.tgz",
-  "_from": "../d-116618-72715-13srcyn/package.tgz",
+  "_id": "tree-view-git-status@1.1.0",
+  "_shasum": "ef4a811025f91efcfcf9456349f360073d1ade24",
+  "_resolved": "file:../d-11678-97571-s41fm5/package.tgz",
+  "_from": "../d-11678-97571-s41fm5/package.tgz",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -84,6 +84,7 @@
     ],
     "extensions": {
       ".coffee": [
+        "lib/gitrepositoryasync.coffee",
         "lib/main.coffee",
         "lib/repositories.coffee",
         "lib/treeviewui.coffee",

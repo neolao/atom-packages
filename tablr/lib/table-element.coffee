@@ -602,7 +602,21 @@ class TableElement extends HTMLElement
     @afterCursorMove()
 
   moveRightInSelection: ->
-    @tableEditor.moveRightInSelection()
+    cursor = @tableEditor.getLastCursor()
+    lastCell = [
+      @tableEditor.getLastRowIndex()
+      @tableEditor.getLastColumnIndex()
+    ]
+
+    if cursor.getPosition().isEqual(lastCell) and not cursor.selection.spanMoreThanOneCell()
+      @insertRowAfter()
+      @tableEditor.setCursorAtScreenPosition([
+        @tableEditor.getLastRowIndex()
+        0
+      ])
+    else
+      @tableEditor.moveRightInSelection()
+
     @afterCursorMove()
 
   moveUpInSelection: ->
@@ -700,6 +714,8 @@ class TableElement extends HTMLElement
 
   displayEllipsis: ->
     delete @ellipsisTimeout
+
+    return if @isDestroyed() or not @tableEditor?
 
     cellPosition = @tableEditor.getCursorPosition()
     cellElement = @getScreenCellAtPosition(cellPosition)
@@ -1553,13 +1569,6 @@ class TableElement extends HTMLElement
 module.exports =
 TableElement =
 registerOrUpdateElement 'tablr-editor', TableElement.prototype
-
-TableElement.registerViewProvider = ->
-  atom.views.addViewProvider TableEditor, (model) ->
-    element = new TableElement
-    element.setModel(model)
-    element
-
 
 #     ######  ##     ## ########
 #    ##    ## ###   ### ##     ##

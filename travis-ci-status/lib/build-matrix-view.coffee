@@ -57,6 +57,18 @@ class BuildMatrixView extends View
     details = @nwo.split '/'
     atom.travis.repos(details[0], details[1]).builds(buildId).get(@buildMatrix)
 
+  # Internal: Update the repository build matrix status.
+  #
+  # Returns nothing.
+  info: (status) =>
+    switch status
+      when 'not-found'
+        display = 'was not found on Travis!'
+      when 'inactive'
+        display = 'is not enabled on Travis!'
+
+    @title.text('Repository ' + @nwo + ' ' + display)
+
   # Internal: Callback for the Travis CI build status, updates the build matrix.
   #
   # err  - The error object if there was an error, else null.

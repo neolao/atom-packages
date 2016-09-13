@@ -18,7 +18,7 @@ class Provider extends AbstractProvider
         getInvocationInfoHandler = (invocationInfo) =>
             return if not invocationInfo?
 
-            callStack = invocationInfo.callStack
+            callStack = invocationInfo.callStack.slice()
 
             method = null
             itemName = callStack.pop()
@@ -30,14 +30,22 @@ class Provider extends AbstractProvider
                     callStack.push(itemName)
                     itemName = '__construct'
 
-                offset = editor.getBuffer().characterIndexForPosition(invocationInfo.bufferPosition)
+                offset = @service.getCharacterOffsetFromByteOffset(invocationInfo.offset, editor.getBuffer().getText())
 
                 deduceTypesSuccessHandler = (types) =>
                     successHandler = (classInfoArray) =>
                         for classInfo in classInfoArray
+                            callTipText = null
+
                             if itemName of classInfo.methods
                                 callTipText = @getFunctionCallTip(classInfo.methods[itemName], invocationInfo.argumentIndex)
 
+                            else if itemName == '__construct'
+                                # Not all classes have an explicit constructor, if none is specified, a public one
+                                # exists, so pretend there are no parameters.
+                                callTipText = @getFunctionCallTip({parameters : []}, 0)
+
+                            if callTipText?
                                 @removeCallTip()
                                 @showCallTip(editor, newBufferPosition, callTipText)
 

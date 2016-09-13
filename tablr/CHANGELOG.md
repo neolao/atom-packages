@@ -1,3 +1,50 @@
+<a name="v1.5.3"></a>
+# v1.5.3 (2016-09-12)
+
+## :bug: Bug Fixes
+
+- Fix default setting not always applied on file open ([7a0b9d35](https://github.com/abe33/atom-tablr/commit/7a0b9d3521ea09b58fe3e7a149e49808c1bace0e), [#67](https://github.com/abe33/atom-tablr/issues/67))
+
+<a name="v1.5.2"></a>
+# v1.5.2 (2016-09-08)
+
+## :bug: Bug Fixes
+
+- Fix pending state on CSV editor when confirming opening a table editor ([24becf4f](https://github.com/abe33/atom-tablr/commit/24becf4fe15e7b4b1fb381a37552d61b86d67c8a), [#65](https://github.com/abe33/atom-tablr/issues/65))
+- Fix error in displayEllipsis if there's no table editor ([d97add73](https://github.com/abe33/atom-tablr/commit/d97add732d6ef2f99261f774cdbf7b6323461884), [#63](https://github.com/abe33/atom-tablr/issues/63))
+
+<a name="v1.5.1"></a>
+# v1.5.1 (2016-09-02)
+
+## :bug: Bug Fixes
+
+- Fix issue if tablr.supportedCsvExtensions gets null ([2c673f2c](https://github.com/abe33/atom-tablr/commit/2c673f2cef48bb88eeb86062ceb7b68ae4fb84f0), [#64](https://github.com/abe33/atom-tablr/issues/64))
+
+<a name="v1.5.0"></a>
+# v1.5.0 (2016-08-26)
+
+## :racehorse: Performances
+
+- Move deserializers and view providers in package.json ([d4ab79c4](https://github.com/abe33/atom-tablr/commit/d4ab79c40551d22c0b422f33b353d516150eadb2))
+
+## :arrow_up: Dependencies Update
+
+- Bump engine version to >= 1.7.0 ([62c18329](https://github.com/abe33/atom-tablr/commit/62c18329e27f443ebac0427f33462f49e708efb9))
+
+<a name="v1.4.1"></a>
+# v1.4.1 (2016-08-25)
+
+## :racehorse: Performances
+
+- Implement a deserialize placeholder for faster startup ([ba2464a4](https://github.com/abe33/atom-tablr/commit/ba2464a4441e3dd64148afb8db1eefb5308f5ff3))
+
+<a name="v1.4.0"></a>
+# v1.4.0 (2016-08-23)
+
+## :sparkles: Features
+
+- Add a row when tabbing on the last cell of a table ([c09ba8f9](https://github.com/abe33/atom-tablr/commit/c09ba8f9afe1d8c703e8c10bb50d98c088567bf5), [#62](https://github.com/abe33/atom-tablr/issues/62))
+
 <a name="v1.3.2"></a>
 # v1.3.2 (2016-07-06)
 

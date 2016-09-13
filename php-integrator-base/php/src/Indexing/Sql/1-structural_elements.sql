@@ -222,7 +222,7 @@ CREATE TABLE functions(
 CREATE TABLE functions_parameters(
     id                 integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 
-    function_id        integer unsigned,
+    function_id        integer unsigned NOT NULL,
 
     name               varchar(255) NOT NULL,
 
@@ -251,6 +251,8 @@ CREATE TABLE properties(
     file_id               integer,
     start_line            integer unsigned,
     end_line              integer unsigned,
+
+    default_value         varchar(255),
 
     is_deprecated         tinyint(1) NOT NULL DEFAULT 0,
     is_magic              tinyint(1) NOT NULL DEFAULT 0,
@@ -288,6 +290,8 @@ CREATE TABLE constants(
     file_id               integer,
     start_line            integer unsigned,
     end_line              integer unsigned,
+
+    default_value         varchar(255) NOT NULL,
 
     is_builtin            tinyint(1) NOT NULL DEFAULT 0,
     is_deprecated         tinyint(1) NOT NULL DEFAULT 0,

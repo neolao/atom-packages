@@ -2,6 +2,8 @@
 
 namespace PhpIntegrator\Indexing;
 
+use PhpIntegrator\SourceCodeHelper;
+
 /**
  * Handles project and folder indexing.
  */
@@ -28,6 +30,11 @@ class ProjectIndexer
     protected $scanner;
 
     /**
+     * @var SourceCodeHelper
+     */
+    protected $sourceCodeHelper;
+
+    /**
      * @var resource|null
      */
     protected $loggingStream;
@@ -42,17 +49,20 @@ class ProjectIndexer
      * @param BuiltinIndexer   $builtinIndexer
      * @param FileIndexer      $fileIndexer
      * @param Scanner          $scanner
+     * @param SourceCodeHelper $sourceCodeHelper
      */
     public function __construct(
         StorageInterface $storage,
         BuiltinIndexer $builtinIndexer,
         FileIndexer $fileIndexer,
-        Scanner $scanner
+        Scanner $scanner,
+        SourceCodeHelper $sourceCodeHelper
     ) {
         $this->storage = $storage;
         $this->builtinIndexer = $builtinIndexer;
         $this->fileIndexer = $fileIndexer;
         $this->scanner = $scanner;
+        $this->sourceCodeHelper = $sourceCodeHelper;
     }
 
     /**
@@ -133,9 +143,12 @@ class ProjectIndexer
     /**
      * Indexes the specified project.
      *
-     * @param string $directory
+     * @param string[] $items
+     * @param string[] $extensionsToIndex
+     * @param string[] $excludedPaths
+     * @param array    $sourceOverrideMap
      */
-    public function index($directory)
+    public function index(array $items, array $extensionsToIndex, array $excludedPaths = [], $sourceOverrideMap = [])
     {
         $this->indexBuiltinItemsIfNecessary();
 
@@ -143,7 +156,8 @@ class ProjectIndexer
         $this->pruneRemovedFiles();
 
         $this->logMessage('Scanning for files that need (re)indexing...');
-        $files = $this->scanner->scan($directory);
+        $files = $this->scanForFilesToIndex($items, $extensionsToIndex);
+        $files = $this->getFilteredFilesToIndex($files, $excludedPaths);
 
         $this->logMessage('Indexing outline...');
 
@@ -151,10 +165,14 @@ class ProjectIndexer
 
         $this->sendProgress(0, $totalItems);
 
+        $this->storage->beginTransaction();
+
         foreach ($files as $i => $filePath) {
             echo $this->logMessage('  - Indexing ' . $filePath);
 
-            $code = @file_get_contents($filePath);
+            $code = isset($sourceOverrideMap[$filePath]) ?
+                $sourceOverrideMap[$filePath] :
+                $this->sourceCodeHelper->getSourceCode($filePath, false);
 
             try {
                 $this->fileIndexer->index($filePath, $code);
@@ -164,6 +182,61 @@ class ProjectIndexer
 
             $this->sendProgress($i+1, $totalItems);
         }
+
+        $this->storage->commitTransaction();
+    }
+
+    /**
+     * @param string[] $paths
+     * @param string[] $extensionsToIndex
+     *
+     * @return string[]
+     */
+    protected function scanForFilesToIndex(array $paths, array $extensionsToIndex)
+    {
+        $files = [];
+
+        foreach ($paths as $path) {
+            if (is_dir($path)) {
+                $filesInDirectory = $this->scanner->scan($path, $extensionsToIndex);
+
+                $files = array_merge($files, $filesInDirectory);
+            } elseif (is_file($path)) {
+                $files[] = $path;
+            } else {
+                throw new IndexingFailedException('The specified file or directory "' . $path . '" does not exist!');
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * @param string[] $files
+     * @param string[] $excludedDirectories
+     *
+     * @return string[]
+     */
+    protected function getFilteredFilesToIndex(array $files, array $excludedDirectories)
+    {
+        $filteredItems = [];
+
+        foreach ($files as $file) {
+            $skipFile = false;
+
+            foreach ($excludedDirectories as $excludedDirectory) {
+                if (mb_strpos($file, $excludedDirectory) === 0) {
+                    $skipFile = true;
+                    break;
+                }
+            }
+
+            if (!$skipFile) {
+                $filteredItems[] = $file;
+            }
+        }
+
+        return $filteredItems;
     }
 
     /**

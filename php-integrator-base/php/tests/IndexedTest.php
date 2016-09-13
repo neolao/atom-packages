@@ -7,6 +7,7 @@ use ReflectionClass;
 use PhpIntegrator\Application\Command;
 
 use PhpIntegrator\Indexing\IndexDatabase;
+use PhpIntegrator\Indexing\IndexStorageItemEnum;
 
 /**
  * Abstract base class for tests that need to test functionality that requires an indexing database to be set up with
@@ -30,22 +31,24 @@ abstract class IndexedTest extends \PHPUnit_Framework_TestCase
     {
         $indexDatabase = new IndexDatabase(':memory:', 1);
 
-        $reindexCommand = new Command\Reindex($this->getParser());
-        $reindexCommand->setIndexDatabase($indexDatabase);
+        // Indexing these on every test majorly slows down testing. Instead, we simply don't rely on PHP's built-in
+        // structural elements during testing.
+        $indexDatabase->insert(IndexStorageItemEnum::SETTINGS, [
+            'name'  => 'has_indexed_builtin',
+            'value' => 1
+        ]);
 
-        $reindexOutput = $reindexCommand->reindex(
+        $reindexCommand = new Command\Reindex($this->getParser(), null, $indexDatabase);
+
+        $success = $reindexCommand->reindex(
             [$testPath],
             false,
             false,
             false
         );
 
-        $reindexOutput = json_decode($reindexOutput, true);
-
-        $this->assertNotNull($reindexOutput);
-
         if (!$mayFail) {
-            $this->assertTrue($reindexOutput['success']);
+            $this->assertTrue($success);
         }
 
         return $indexDatabase;

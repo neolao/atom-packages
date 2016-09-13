@@ -7,13 +7,13 @@ use Exception;
 use UnexpectedValueException;
 
 use PhpIntegrator\DocParser;
-use PhpIntegrator\TypeResolver;
 use PhpIntegrator\TypeAnalyzer;
+use PhpIntegrator\TypeResolver;
 
-use PhpParser\Lexer;
+use PhpIntegrator\Application\Command\DeduceTypes;
+
 use PhpParser\Error;
 use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PhpParser\NodeTraverser;
 
 /**
@@ -47,6 +47,11 @@ class FileIndexer
     protected $typeAnalyzer;
 
     /**
+     * @var DeduceTypes
+     */
+    protected $deduceTypes;
+
+    /**
      * @var Parser
      */
     protected $parser;
@@ -65,17 +70,20 @@ class FileIndexer
      * @param StorageInterface $storage
      * @param TypeAnalyzer     $typeAnalyzer
      * @param DocParser        $docParser
+     * @param DeduceTypes      $deduceTypes
      * @param Parser           $parser
      */
     public function __construct(
         StorageInterface $storage,
         TypeAnalyzer $typeAnalyzer,
         DocParser $docParser,
+        DeduceTypes $deduceTypes,
         Parser $parser
     ) {
         $this->storage = $storage;
         $this->typeAnalyzer = $typeAnalyzer;
         $this->docParser = $docParser;
+        $this->deduceTypes = $deduceTypes;
         $this->parser = $parser;
     }
 
@@ -84,6 +92,8 @@ class FileIndexer
      *
      * @param string $filePath
      * @param string $code
+     *
+     * @throws IndexingFailedException
      */
     public function index($filePath, $code)
     {
@@ -157,6 +167,10 @@ class FileIndexer
 
          foreach ($outlineIndexingVisitor->getGlobalConstants() as $constant) {
              $this->indexConstant($constant, $fileId, null, $useStatementFetchingVisitor);
+         }
+
+         foreach ($outlineIndexingVisitor->getGlobalDefines() as $define) {
+             $this->indexConstant($define, $fileId, null, $useStatementFetchingVisitor);
          }
 
          foreach ($useStatementFetchingVisitor->getNamespaces() as $namespace) {
@@ -366,8 +380,24 @@ class FileIndexer
         $line,
         Visitor\UseStatementFetchingVisitor $useStatementFetchingVisitor
     ) {
-        $types = [];
         $typeList = $this->typeAnalyzer->getTypesForTypeSpecification($typeSpecification);
+
+        return $this->getTypeDataForTypeList($typeList, $line, $useStatementFetchingVisitor);
+    }
+
+    /**
+     * @param string[]                            $typeList
+     * @param int                                 $line
+     * @param Visitor\UseStatementFetchingVisitor $useStatementFetchingVisitor
+     *
+     * @return array[]
+     */
+    protected function getTypeDataForTypeList(
+        array $typeList,
+        $line,
+        Visitor\UseStatementFetchingVisitor $useStatementFetchingVisitor
+    ) {
+        $types = [];
 
         foreach ($typeList as $type) {
             $fqcn = $type;
@@ -425,6 +455,19 @@ class FileIndexer
                 $rawData['startLine'],
                 $useStatementFetchingVisitor
             );
+        } elseif ($rawData['defaultValue']) {
+            try {
+                $typeList = $this->deduceTypes->deduceTypes(
+                    'ignored',
+                    $rawData['defaultValue'],
+                    [$rawData['defaultValue']],
+                    0
+                );
+
+                $types = $this->getTypeDataForTypeList($typeList, $rawData['startLine'], $useStatementFetchingVisitor);
+            } catch (UnexpectedValueException $e) {
+                $types = [];
+            }
         }
 
         $constantId = $this->storage->insert(IndexStorageItemEnum::CONSTANTS, [
@@ -433,6 +476,7 @@ class FileIndexer
             'file_id'               => $fileId,
             'start_line'            => $rawData['startLine'],
             'end_line'              => $rawData['endLine'],
+            'default_value'         => $rawData['defaultValue'],
             'is_builtin'            => 0,
             'is_deprecated'         => $documentation['deprecated'] ? 1 : 0,
             'has_docblock'          => empty($rawData['docComment']) ? 0 : 1,
@@ -493,6 +537,19 @@ class FileIndexer
                     'fqcn' => isset($rawData['fullReturnType']) ? $rawData['fullReturnType'] : $rawData['returnType']
                 ]
             ];
+        } elseif ($rawData['defaultValue']) {
+            try {
+                $typeList = $this->deduceTypes->deduceTypes(
+                    'ignored',
+                    $rawData['defaultValue'],
+                    [$rawData['defaultValue']],
+                    0
+                );
+
+                $types = $this->getTypeDataForTypeList($typeList, $rawData['startLine'], $useStatementFetchingVisitor);
+            } catch (UnexpectedValueException $e) {
+                $types = [];
+            }
         }
 
         $propertyId = $this->storage->insert(IndexStorageItemEnum::PROPERTIES, [
@@ -500,6 +557,7 @@ class FileIndexer
             'file_id'               => $fileId,
             'start_line'            => $rawData['startLine'],
             'end_line'              => $rawData['endLine'],
+            'default_value'         => $rawData['defaultValue'],
             'is_deprecated'         => $documentation['deprecated'] ? 1 : 0,
             'is_magic'              => 0,
             'is_static'             => $rawData['isStatic'] ? 1 : 0,
@@ -542,6 +600,7 @@ class FileIndexer
             'file_id'               => $fileId,
             'start_line'            => $rawData['startLine'],
             'end_line'              => $rawData['endLine'],
+            'default_value'         => null,
             'is_deprecated'         => 0,
             'is_magic'              => 1,
             'is_static'             => $rawData['isStatic'] ? 1 : 0,
@@ -684,6 +743,8 @@ class FileIndexer
         ]);
 
         foreach ($parameters as $parameter) {
+            $parameter['function_id'] = $functionId;
+
             $this->storage->insert(IndexStorageItemEnum::FUNCTIONS_PARAMETERS, $parameter);
         }
     }
@@ -788,6 +849,8 @@ class FileIndexer
         ]);
 
         foreach ($parameters as $parameter) {
+            $parameter['function_id'] = $functionId;
+
             $this->storage->insert(IndexStorageItemEnum::FUNCTIONS_PARAMETERS, $parameter);
         }
     }

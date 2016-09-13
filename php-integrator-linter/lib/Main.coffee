@@ -48,6 +48,15 @@ module.exports =
             default     : true
             order       : 5
 
+        showMissingDocs:
+            title       : 'Show missing documentation'
+            description : '''
+                Warns about any structural element that is currently missing documentation.
+            '''
+            type        : 'boolean'
+            default     : true
+            order       : 6
+
         validateDocblockCorrectness:
             title       : 'Validate docblock correctness'
             description : '''
@@ -57,12 +66,7 @@ module.exports =
             '''
             type        : 'boolean'
             default     : true
-            order       : 6
-
-    ###*
-     * The name of the package.
-    ###
-    packageName: 'php-integrator-linter'
+            order       : 7
 
     ###*
      * The name of the package.

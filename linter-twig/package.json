@@ -1,0 +1,77 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+        "type": "local"
+      },
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-35167-eun84"
+    ]
+  ],
+  "_from": "../d-116813-35167-1xx37sg/package.tgz",
+  "_id": "linter-twig@0.1.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/linter-twig",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-116813-35167-1xx37sg/package.tgz",
+  "_shasum": "53f12303e06a270a11612310bd8d3449e92d7965",
+  "_shrinkwrap": null,
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-35167-1xx37sg/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-35167-eun84",
+  "bugs": {
+    "url": "https://github.com/lexcast/linter-twig/issues"
+  },
+  "dependencies": {
+    "atom-linter": "^3.2.0",
+    "atom-package-deps": "^3.0.5"
+  },
+  "description": "Atom linter for Twig templates",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "homepage": "https://github.com/lexcast/linter-twig#readme",
+  "keywords": [
+    "linter",
+    "twig"
+  ],
+  "license": "MIT",
+  "main": "./lib/main.coffee",
+  "name": "linter-twig",
+  "optionalDependencies": {},
+  "package-deps": [
+    "linter"
+  ],
+  "providedServices": {
+    "linter": {
+      "versions": {
+        "1.0.0": "provideLinter"
+      }
+    }
+  },
+  "readme": "# Twig Linter\n\nBefore installing this package, you need  [asm89/twig-lint](https://github.com/asm89/twig-lint). Download it typing in your console:\n\n```\ncomposer global require \"asm89/twig-lint\" \"@dev\"\n```\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lexcast/linter-twig.git"
+  },
+  "version": "0.1.1"
+}
