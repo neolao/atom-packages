@@ -1,3 +1,12 @@
+### 2.41.0
+  - Add references in README to `language-graphql-lb` that supports `.graphql` and `.gql` files.
+  
+### 2.40.0
+  - Add support for `/* GraphQL */` to be used as a prefix to templates literals enclosing GraphQL. See the README for more info.
+
+### 2.39.0
+  - Add internal support for GraphQL templates so as to better support it.
+
 ### 2.38.0
   - Change ES decorator support that conforms to the new spec and also better supports ASI syntax.
 

@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37362-liqazt"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17183-1deu8de"
     ]
   ],
-  "_from": "../d-116813-37362-8b145x/package.tgz",
-  "_id": "project-manager@3.2.0",
+  "_from": "../d-116822-17183-t4bwh4/package.tgz",
+  "_id": "project-manager@3.2.3",
   "_inCache": true,
   "_installable": true,
   "_location": "/project-manager",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116813-37362-8b145x/package.tgz",
-  "_shasum": "35eaead3363c9d2898b47c690aa639b2366cb3fb",
+  "_resolved": "file:../d-116822-17183-t4bwh4/package.tgz",
+  "_shasum": "e887f8b35528c9816edb90e48b48bb6e35d47451",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37362-8b145x/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37362-liqazt",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17183-t4bwh4/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17183-1deu8de",
   "bugs": {
     "url": "https://github.com/danielbrodin/atom-project-manager/issues"
   },
@@ -126,5 +126,5 @@
     "type": "git",
     "url": "git+https://github.com/danielbrodin/atom-project-manager.git"
   },
-  "version": "3.2.0"
+  "version": "3.2.3"
 }

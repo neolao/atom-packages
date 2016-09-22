@@ -175,6 +175,10 @@ describe "utils", ->
       expect(utils.isInlineLink(fixture)).toBe(false)
       fixture = "[text][]"
       expect(utils.isInlineLink(fixture)).toBe(false)
+      fixture = "[![](image.png)][id]"
+      expect(utils.isInlineLink(fixture)).toBe(false)
+      fixture = "[![image title](image.png)][id]"
+      expect(utils.isInlineLink(fixture)).toBe(false)
 
     it "check is text valid inline link", ->
       fixture = "[text]()"
@@ -279,9 +283,16 @@ describe "utils", ->
         id: "id", text: "Jekyll", url: "http://jekyll.com", title: "Jekyll Website"
         definitionRange: {start: {row: 3, column: 0}, end: {row: 3, column: 40}}
 
+    it "parse orphan reference link text", ->
+      fixture = "[Jekyll][jekyll]"
+      expect(utils.parseReferenceLink(fixture, editor)).toEqual
+        id: "jekyll", text: "Jekyll", url: "", title: "", definitionRange: null
+
   describe ".isReferenceDefinition", ->
     it "check is text invalid reference definition", ->
       fixture = "[text] http"
+      expect(utils.isReferenceDefinition(fixture)).toBe(false)
+      fixture = "[^text]: http"
       expect(utils.isReferenceDefinition(fixture)).toBe(false)
 
     it "check is text valid reference definition", ->
@@ -319,6 +330,12 @@ describe "utils", ->
       expect(utils.parseReferenceDefinition(fixture, editor)).toEqual
         id: "id", text: "Jekyll", url: "http://jekyll.com", title: "Jekyll Website"
         linkRange: {start: {row: 5, column: 48}, end: {row: 5, column: 60}}
+
+    it "parse orphan reference definition text", ->
+      fixture = "[jekyll]: http://jekyll.com \"Jekyll Website\""
+      expect(utils.parseReferenceDefinition(fixture, editor)).toEqual
+        id: "jekyll", text: "", url: "http://jekyll.com", title: "Jekyll Website",
+        linkRange: null
 
   describe ".isFootnote", ->
     it "check is text invalid footnote", ->

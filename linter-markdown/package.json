@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11688-2951-52ty1x"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17156-tcbpo3"
     ]
   ],
-  "_from": "../d-11688-2951-8x304i/package.tgz",
-  "_id": "linter-markdown@3.0.1",
+  "_from": "../d-116822-17156-gnpljx/package.tgz",
+  "_id": "linter-markdown@3.0.2",
   "_inCache": true,
   "_installable": true,
   "_location": "/linter-markdown",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-11688-2951-8x304i/package.tgz",
-  "_shasum": "13553c1366159f3e07a2d7ac0d67d9b4aba47302",
+  "_resolved": "file:../d-116822-17156-gnpljx/package.tgz",
+  "_shasum": "ab05504fa56f1347e0145da92cc3b1bff8f5e5a3",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2951-8x304i/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11688-2951-52ty1x",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17156-gnpljx/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17156-tcbpo3",
   "bugs": {
     "url": "https://github.com/AtomLinter/linter-markdown/issues"
   },
@@ -81,8 +81,8 @@
   },
   "description": "Lint markdown on the fly, using remark-lint",
   "devDependencies": {
-    "eslint": "^3.4.0",
-    "eslint-config-airbnb-base": "^7.0.0",
+    "eslint": "^3.5.0",
+    "eslint-config-airbnb-base": "^7.1.0",
     "eslint-plugin-import": "^1.14.0",
     "remark-cli": "^2.0.0"
   },
@@ -119,6 +119,9 @@
   "main": "lib/index.js",
   "name": "linter-markdown",
   "optionalDependencies": {},
+  "package-deps": [
+    "linter"
+  ],
   "providedServices": {
     "linter": {
       "versions": {
@@ -136,5 +139,5 @@
     "lint": "remark README.md LICENSE.md && eslint lib spec",
     "test": "apm test"
   },
-  "version": "3.0.1"
+  "version": "3.0.2"
 }

@@ -250,7 +250,7 @@ URL_AND_TITLE = ///
   ///.source
 
 # [image|text]
-IMG_OR_TEXT = /// (!\[.*?\]\(.+?\) | .+?) ///.source
+IMG_OR_TEXT = /// (!\[.*?\]\(.+?\) | [^\[]+?) ///.source
 # at head or not ![, workaround of no neg-lookbehind in JS
 OPEN_TAG = /// (?:^|[^!])(?=\[) ///.source
 # link id don't contains [ or ]
@@ -344,8 +344,10 @@ parseReferenceLink = (input, editor) ->
   link = REFERENCE_LINK_REGEX.exec(input)
   text = link[2] || link[1]
   id   = link[3] || link[1]
+
+  # find definition and definitionRange if editor is given
   def  = undefined
-  editor.buffer.scan REFERENCE_DEF_REGEX_OF(id), (match) -> def = match
+  editor && editor.buffer.scan REFERENCE_DEF_REGEX_OF(id), (match) -> def = match
 
   if def
     id: id, text: text, url: def.match[2], title: def.match[3] || "",
@@ -353,12 +355,17 @@ parseReferenceLink = (input, editor) ->
   else
     id: id, text: text, url: "", title: "", definitionRange: null
 
-isReferenceDefinition = (input) -> REFERENCE_DEF_REGEX.test(input)
+isReferenceDefinition = (input) ->
+  def = REFERENCE_DEF_REGEX.exec(input)
+  !!def && def[1][0] != "^" # not a footnote
+
 parseReferenceDefinition = (input, editor) ->
   def  = REFERENCE_DEF_REGEX.exec(input)
   id   = def[1]
+
+  # find link and linkRange if editor is given
   link = undefined
-  editor.buffer.scan REFERENCE_LINK_REGEX_OF(id), (match) -> link = match
+  editor && editor.buffer.scan REFERENCE_LINK_REGEX_OF(id), (match) -> link = match
 
   if link
     id: id, text: link.match[2] || link.match[1], url: def[2],
@@ -559,39 +566,82 @@ getScopeDescriptor = (cursor, scopeSelector) ->
   else if scopes.length > 0
     return scopes[0]
 
-# Atom has a bug returning the correct buffer range when cursor is
-# at the end of scope, refer https://github.com/atom/atom/issues/7961
-#
-# This provides a temporary fix for the bug.
 getBufferRangeForScope = (editor, cursor, scopeSelector) ->
   pos = cursor.getBufferPosition()
 
-  range = editor.displayBuffer.bufferRangeForScopeAtPosition(scopeSelector, pos)
+  range = editor.bufferRangeForScopeAtPosition(scopeSelector, pos)
   return range if range
 
-  # HACK if range is undefined, move the cursor position one char forward, and
-  # try to get the buffer range for scope again
-  pos = [pos.row, Math.max(0, pos.column - 1)]
-  editor.displayBuffer.bufferRangeForScopeAtPosition(scopeSelector, pos)
+  # Atom Bug 1: not returning the correct buffer range when cursor is at the end of a link with scope,
+  # refer https://github.com/atom/atom/issues/7961
+  #
+  # HACK move the cursor position one char backward, and try to get the buffer range for scope again
+  unless cursor.isAtBeginningOfLine()
+    range = editor.bufferRangeForScopeAtPosition(scopeSelector, [pos.row, pos.column - 1])
+    return range if range
+
+  # Atom Bug 2: not returning the correct buffer range when cursor is at the head of a list link with scope,
+  # refer https://github.com/atom/atom/issues/12714
+  #
+  # HACK move the cursor position one char forward, and try to get the buffer range for scope again
+  unless cursor.isAtEndOfLine()
+    range = editor.bufferRangeForScopeAtPosition(scopeSelector, [pos.row, pos.column + 1])
+    return range if range
 
 # Get the text buffer range if selection is not empty, or get the
 # buffer range if it is inside a scope selector, or the current word.
 #
-# selection is optional, when not provided, use the last selection
-# opts nearestWord select nearest word, true by default
+# selection: optional, when not provided or empty, use the last selection
+# opts["selectBy"]:
+#  - nope: do not use any select by
+#  - nearestWord: try select nearest word, default
+#  - currentLine: try select current line
 getTextBufferRange = (editor, scopeSelector, selection, opts = {}) ->
+  if typeof(selection) == "object"
+    opts = selection
+    selection = undefined
+
   selection ?= editor.getLastSelection()
   cursor = selection.cursor
+  selectBy = opts["selectBy"] || "nearestWord"
 
   if selection.getText()
     selection.getBufferRange()
   else if scope = getScopeDescriptor(cursor, scopeSelector)
     getBufferRangeForScope(editor, cursor, scope)
-  else if opts["nearestWord"] != false
+  else if selectBy == "nearestWord"
     wordRegex = cursor.wordRegExp(includeNonWordCharacters: false)
     cursor.getCurrentWordBufferRange(wordRegex: wordRegex)
+  else if selectBy == "currentLine"
+    cursor.getCurrentLineBufferRange()
   else
     selection.getBufferRange()
+
+# Find a possible link tag in the range from editor, return the found link data or nil
+#
+# Data format: { text: "", url: "", title: "", id: null, linkRange: null, definitionRange: null }
+#
+# NOTE: If id is not null, and any of linkRange/definitionRange is null, it means the link is an orphan
+findLinkInRange = (editor, range) ->
+  selection = editor.getTextInRange(range)
+  return if selection == ""
+
+  return text: "", url: selection, title: "" if isUrl(selection)
+  return parseInlineLink(selection) if isInlineLink(selection)
+
+  if isReferenceLink(selection)
+    link = parseReferenceLink(selection, editor)
+    link.linkRange = range
+    return link
+  else if isReferenceDefinition(selection)
+    # HACK correct the definition range, Atom's link scope does not include
+    # definition's title, so normalize to be the range start row
+    selection = editor.lineTextForBufferRow(range.start.row)
+    range = editor.bufferRangeForBufferRow(range.start.row)
+
+    link = parseReferenceDefinition(selection, editor)
+    link.definitionRange = range
+    return link
 
 # ==================================================
 # Exports
@@ -645,3 +695,4 @@ module.exports =
   isImageFile: isImageFile
 
   getTextBufferRange: getTextBufferRange
+  findLinkInRange: findLinkInRange
