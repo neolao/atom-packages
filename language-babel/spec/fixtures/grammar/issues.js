@@ -1,5 +1,257 @@
 // SYNTAX TEST "source.js.jsx"
 
+
+// ISSUE 278
+
+if (foo instanceof (Date)) return;
+// <- keyword.control.conditional.js
+ // <- keyword.control.conditional.js
+// ^               ^    ^^          meta.brace.round.js
+//  ^^^                             variable.other.readwrite.js
+//      ^^^^^^^^^^                  keyword.operator.js
+//                  ^^^^            support.class.builtin.js
+//                         ^^^^^^   keyword.control.flow.js
+//                               ^  punctuation.terminator.statement.js
+delete(x)
+// <- keyword.operator.js
+ // <- keyword.operator.js
+//^^^^      keyword.operator.js
+//    ^ ^   meta.brace.round.js
+//     ^    variable.other.readwrite.js
+void (0)
+// <- keyword.operator.js
+ // <- keyword.operator.js
+//^^      keyword.operator.js
+//   ^ ^  meta.brace.round.js
+//    ^   constant.numeric.js
+function test() {
+// <- meta.function.js storage.type.function.js
+ // <- meta.function.js storage.type.function.js
+//^^^^^^ ^^^^^^ ^  meta.function.js
+//^^^^^^           storage.type.function.js
+//       ^^^^      entity.name.function.js
+//           ^     punctuation.definition.parameters.begin.js
+//            ^    punctuation.definition.parameters.end.js
+//              ^  meta.brace.curly.js
+  if (foo instanceof (Date)) return;
+//^^ ^^^^ ^^^^^^^^^^ ^^^^^^^ ^^^^^^^  meta.function.js
+//^^                                  keyword.control.conditional.js
+//   ^               ^    ^^          meta.brace.round.js
+//    ^^^                             variable.other.readwrite.js
+//        ^^^^^^^^^^                  keyword.operator.js
+//                    ^^^^            support.class.builtin.js
+//                           ^^^^^^   keyword.control.flow.js
+//                                 ^  punctuation.terminator.statement.js
+  delete(x)
+//^^^^^^^^^   meta.function.js
+//^^^^^^      keyword.operator.js
+//      ^ ^   meta.brace.round.js
+//       ^    variable.other.readwrite.js
+  void (0)
+//^^^^ ^^^  meta.function.js
+//^^^^      keyword.operator.js
+//     ^ ^  meta.brace.round.js
+//      ^   constant.numeric.js
+}
+// <- meta.function.js meta.brace.curly.js
+class a {
+// <- meta.class.js storage.type.class.js
+ // <- meta.class.js storage.type.class.js
+//^^^      meta.class.js
+//^^^      storage.type.class.js
+//    ^    entity.name.class.js
+//      ^  punctuation.section.class.begin.js
+  if(a) {}
+//^^^^^ ^^  meta.class.body.js
+//^^^^^ ^^  meta.function.method.js
+//^^        entity.name.function.method.js
+//  ^       punctuation.definition.parameters.begin.js
+//   ^      meta.function.parameters.js
+//   ^      variable.other.readwrite.js
+//    ^     punctuation.definition.parameters.end.js
+//      ^^  meta.brace.curly.js
+  delete() {}
+//^^^^^^^^ ^^  meta.class.body.js
+//^^^^^^^^ ^^  meta.function.method.js
+//^^^^^^       entity.name.function.method.js
+//      ^      punctuation.definition.parameters.begin.js
+//       ^     punctuation.definition.parameters.end.js
+//         ^^  meta.brace.curly.js
+}
+// <- punctuation.section.class.end.js
+let a= {
+// <- storage.type.js
+ // <- storage.type.js
+//^       storage.type.js
+//  ^     variable.other.readwrite.js
+//   ^    keyword.operator.assignment.js
+//     ^  meta.brace.curly.js
+  if(a) {}
+//^^^^^ ^^  meta.function.method.js
+//^^        entity.name.function.method.js
+//  ^       punctuation.definition.parameters.begin.js
+//   ^      meta.function.parameters.js
+//   ^      variable.other.readwrite.js
+//    ^     punctuation.definition.parameters.end.js
+//      ^^  meta.brace.curly.js
+}
+// <- meta.brace.curly.js
+
+// ISSUE 275
+
+const async = require('aync')
+// <- storage.type.js
+ // <- storage.type.js
+//^^^                          storage.type.js
+//    ^^^^^                    variable.other.readwrite.js
+//          ^                  keyword.operator.assignment.js
+//            ^^^^^^^^^^^^^^^  meta.function-call.with-arguments.js
+//            ^^^^^^^          entity.name.function.js
+//                   ^      ^  meta.brace.round.js
+//                    ^^^^^^   string.quoted.single.js
+//                    ^        punctuation.definition.string.begin.js
+//                         ^   punctuation.definition.string.end.js
+
+// ISSUES 271 & 272
+
+ _.CONST;CONST.CONST;Class.method;_;__;___CONST___;
+ // <- variable.other.object.js
+//^           ^           ^                          keyword.operator.accessor.js
+// ^^^^^ ^^^^^ ^^^^^                   ^^^^^^^^^^^   variable.other.constant.js
+//      ^           ^            ^ ^  ^           ^  punctuation.terminator.statement.js
+//                   ^^^^^^^^^^^^                    meta.property.class.js
+//                   ^^^^^                           variable.other.class.js
+//                         ^^^^^^                    variable.other.property.static.js
+//                                ^ ^^               variable.other.readwrite.js
+
+
+// ISSUE 262
+
+const someComponent = (onClick) => <div onClick={onClick}>Blah</div>
+// <- storage.type.js
+ // <- storage.type.js
+//^^^                                                                 storage.type.js
+//    ^^^^^^^^^^^^^ ^ ^^^^^^^^^ ^^                                    meta.function.arrow.js
+//    ^^^^^^^^^^^^^                                                   entity.name.function.js
+//                  ^                                                 keyword.operator.assignment.js
+//                    ^                                               punctuation.definition.parameters.begin.js
+//                     ^^^^^^^                   ^^^^^^^              variable.other.readwrite.js
+//                            ^                                       punctuation.definition.parameters.end.js
+//                              ^^                                    storage.type.function.arrow.js
+//                                 ^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  meta.tag.jsx
+//                                 ^                     ^    ^^   ^  punctuation.definition.tag.jsx
+//                                  ^^^                               entity.name.tag.open.jsx
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^      JSXAttrs
+//                                      ^^^^^^^                       entity.other.attribute-name.jsx
+//                                             ^                      keyword.operator.assignment.jsx
+//                                              ^^^^^^^^^             meta.embedded.expression.js
+//                                              ^                     punctuation.section.embedded.begin.jsx
+//                                                      ^             punctuation.section.embedded.end.jsx
+//                                                       ^            JSXStartTagEnd
+//                                                        ^^^^        JSXNested
+//                                                            ^^      JSXEndTagStart
+//                                                              ^^^   entity.name.tag.close.jsx
+
+// ISSUE 261
+
+var arrayOfFunctions = [
+  function (callback) {
+//^^^^^^^^ ^^^^^^^^^^ ^  meta.function.js
+//^^^^^^^^               storage.type.function.js
+//         ^             punctuation.definition.parameters.begin.js
+//          ^^^^^^^^     variable.other.readwrite.js
+//                  ^    punctuation.definition.parameters.end.js
+//                    ^  meta.brace.curly.js
+    var num = 0;
+//  ^^^ ^^^ ^ ^^  meta.function.js
+//  ^^^           storage.type.js
+//      ^^^       variable.other.readwrite.js
+//          ^     keyword.operator.assignment.js
+//            ^   constant.numeric.js
+//             ^  punctuation.terminator.statement.js
+    if (num <= 0) {
+//  ^^ ^^^^ ^^ ^^ ^  meta.function.js
+//  ^^               keyword.control.conditional.js
+//     ^        ^    meta.brace.round.js
+//      ^^^          variable.other.readwrite.js
+//          ^^       keyword.operator.relational.js
+//             ^     constant.numeric.js
+//                ^  meta.brace.curly.js
+      return callback(null);
+//    ^^^^^^ ^^^^^^^^^^^^^^^  meta.function.js
+//    ^^^^^^                  keyword.control.flow.js
+//           ^^^^^^^^^^^^^^   meta.function-call.with-arguments.js
+//           ^^^^^^^^         entity.name.function.js
+//                   ^    ^   meta.brace.round.js
+//                    ^^^^    constant.language.null.js
+//                         ^  punctuation.terminator.statement.js
+    }
+//  ^  meta.function.js
+//  ^  meta.brace.curly.js
+    return callback(num);
+//  ^^^^^^ ^^^^^^^^^^^^^^  meta.function.js
+//  ^^^^^^                 keyword.control.flow.js
+//         ^^^^^^^^^^^^^   meta.function-call.with-arguments.js
+//         ^^^^^^^^        entity.name.function.js
+//                 ^   ^   meta.brace.round.js
+//                  ^^^    variable.other.readwrite.js
+//                      ^  punctuation.terminator.statement.js
+  },
+//^   meta.function.js
+//^   meta.brace.curly.js
+// ^  meta.delimiter.comma.js
+  function () { if (true) return 1;}
+//^^^^^^^^ ^^ ^ ^^ ^^^^^^ ^^^^^^ ^^^  meta.function.js
+//^^^^^^^^                            storage.type.function.js
+//         ^                          punctuation.definition.parameters.begin.js
+//          ^                         punctuation.definition.parameters.end.js
+//            ^                    ^  meta.brace.curly.js
+//              ^^                    keyword.control.conditional.js
+//                 ^    ^             meta.brace.round.js
+//                  ^^^^              constant.language.boolean.true.js
+//                        ^^^^^^      keyword.control.flow.js
+//                               ^    constant.numeric.js
+//                                ^   punctuation.terminator.statement.js
+];
+
+// ISSUE #257
+let obj = [
+  {
+    [
+      {
+        async bar() {}
+//      ^^^^^ ^^^^^     meta.function.method.js
+//      ^^^^^           storage.type.js
+//            ^^^       entity.name.function.method.js
+//               ^      punctuation.definition.parameters.begin.js
+//                ^     punctuation.definition.parameters.end.js
+//                  ^^  meta.brace.curly.js
+      }
+    ]
+  }
+]
+
+// ISSUE #256
+let obj = {
+  nested: {
+    async bar() {
+//  ^^^^^ ^^^^^    meta.function.method.js
+//  ^^^^^          storage.type.js
+//        ^^^      entity.name.function.method.js
+//           ^     punctuation.definition.parameters.begin.js
+//            ^    punctuation.definition.parameters.end.js
+//              ^  meta.brace.curly.js
+      await 1;
+    }
+  }
+}
+
+// ISSUE #255
+let a=1
+ / 2
+ // <- keyword.operator.arithmetic.js
+// ^  constant.numeric.js
+
 // ISSUE #234
 
  // Comment one a new line with some prefixed white space
@@ -169,11 +421,12 @@ class A {
 //          ^^                                          punctuation.definition.comment.js
   method<T>(a: string): string { // This is a method
 //^^^^^^^^^^^^ ^^^^^^^^ ^^^^^^ ^ ^^ ^^^^ ^^ ^ ^^^^^^  meta.class.body.js
-//^^^^^^^^^^^^ ^^^^^^^^ ^^^^^^                        meta.function.method.js
+//^^^^^^^^^^^^ ^^^^^^^^ ^^^^^^ ^ ^^ ^^^^ ^^ ^ ^^^^^^  meta.function.method.js
 //^^^^^^                                              entity.name.function.method.js
-//      ^ ^                                           punctutation.flowtype
+//      ^ ^                                           punctuation.flowtype
 //       ^                                            support.type.class.flowtype
 //         ^                                          punctuation.definition.parameters.begin.js
+//          ^^ ^^^^^^                                 meta.function.parameters.js
 //          ^                                         variable.other.readwrite.js
 //           ^        ^                               punctuation.type.flowtype
 //             ^^^^^^   ^^^^^^                        support.type.builtin.primitive.flowtype

@@ -1,6 +1,35 @@
+### 2.46.0
+  - Minor grammar improvements/fixes. Issues #272, #273, #274, #275, #276, #277 and #278
+  - Change keyword shortcut commenting in styled-components to return empty string in interpolations.
+  
+### 2.45.0
+  - Support [styled-components](https://github.com/styled-components/styled-components) with own grammar rather than hacked language-css.
+  - Allow const uppercase variables to start with _ chars.
+
+### 2.44.1
+  - Fix issues with arrow functions caused by lost commit in 2.44.0!
+
+### 2.44.0
+  - Add styled components support.
+  - Fix Issue [#260](https://github.com/gandm/language-babel/issues/260)
+  - Fix Issue [#261](https://github.com/gandm/language-babel/issues/261)
+
+### 2.43.0
+  - Add ability to use a RegExp as a tagged template grammar extension.
+
+### 2.42.3
+  - Grammar object literals inside some arrays were incorrectly parsed as braced bodies [Fixes #257](https://github.com/gandm/language-babel/issues/257)
+
+### 2.42.2
+  - Fix grammar divide operator starting on a new line being treated as a RegExp. [Fixes #255](https://github.com/gandm/language-babel/issues/255)
+  - Fix grammar nested object literals not being handled correctly. [Fixes #256](https://github.com/gandm/language-babel/issues/256)
+
+### 2.42.0
+  - Add support for embedding other grammars to highlight template literals. Please refer to [the README](https://github.com/gandm/language-babel#javascript-tagged-template-literal-grammar-extensions)
+
 ### 2.41.0
   - Add references in README to `language-graphql-lb` that supports `.graphql` and `.gql` files.
-  
+
 ### 2.40.0
   - Add support for `/* GraphQL */` to be used as a prefix to templates literals enclosing GraphQL. See the README for more info.
 

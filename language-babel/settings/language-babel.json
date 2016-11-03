@@ -8,6 +8,12 @@
       "nonWordCharacters": "/\\()\"':,.;<>~!@#%^&*|+=[]{}`?-…"
     }
   },
+  ".source.inside-js.css.styled": {
+  "editor": {
+    "commentStart": "${''/* ",
+    "commentEnd": "*/}"
+  }
+  },
   ".meta.tag.jsx": {
     "editor": {
       "commentStart": "{/* ",

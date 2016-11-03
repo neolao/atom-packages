@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37355-71vv9q"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116918-57451-iuey7m"
     ]
   ],
-  "_from": "../d-116813-37355-1xm28a8/package.tgz",
-  "_id": "plantuml-preview@0.12.0",
+  "_from": "../d-116918-57451-1wwkf2b/package.tgz",
+  "_id": "plantuml-preview@0.12.1",
   "_inCache": true,
   "_installable": true,
   "_location": "/plantuml-preview",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116813-37355-1xm28a8/package.tgz",
-  "_shasum": "4d31eebf36834405cacd04516981564446478071",
+  "_resolved": "file:../d-116918-57451-1wwkf2b/package.tgz",
+  "_shasum": "37b673c5bdb445f92dff1d890f8902eb74176d45",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37355-1xm28a8/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37355-71vv9q",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57451-1wwkf2b/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116918-57451-iuey7m",
   "activationCommands": {
     "atom-workspace": "plantuml-preview:toggle"
   },
@@ -47,7 +47,7 @@
     "fs-plus": "^2.0.0",
     "js-beautify": "^1.5.10"
   },
-  "description": "Package for PlantUML integration. Feature rich, configuration heavy.",
+  "description": "Package for using PlantUML to create rendered uml diagrams and display. Toggle with shortcut. Updates on save. Handles multipage sequence diagrams. Feature rich, configuration heavy.",
   "devDependencies": {},
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
@@ -68,5 +68,5 @@
     "type": "git",
     "url": "git+https://github.com/peele/plantuml-preview.git"
   },
-  "version": "0.12.0"
+  "version": "0.12.1"
 }

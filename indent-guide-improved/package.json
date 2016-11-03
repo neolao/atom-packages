@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11688-2930-snaa7y"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116103-38300-1imkkb5"
     ]
   ],
-  "_from": "../d-11688-2930-1v8gfib/package.tgz",
-  "_id": "indent-guide-improved@1.4.10",
+  "_from": "../d-116103-38300-1590t8d/package.tgz",
+  "_id": "indent-guide-improved@1.4.11",
   "_inCache": true,
   "_installable": true,
   "_location": "/indent-guide-improved",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-11688-2930-1v8gfib/package.tgz",
-  "_shasum": "9e83bafbb916af26be5a247e9e66e60ddea752bf",
+  "_resolved": "file:../d-116103-38300-1590t8d/package.tgz",
+  "_shasum": "a95d3383772901acd99b64a6fda9f706fe44e3bc",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11688-2930-1v8gfib/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11688-2930-snaa7y",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38300-1590t8d/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116103-38300-1imkkb5",
   "author": {
     "name": "Akihiro HARAI"
   },
@@ -48,7 +48,7 @@
   "description": "This draws indent guide more correctly and understandably.",
   "devDependencies": {},
   "engines": {
-    "atom": ">=1.8.0"
+    "atom": ">=1.11.0"
   },
   "homepage": "https://github.com/harai/indent-guide-improved#readme",
   "keywords": [
@@ -66,5 +66,5 @@
     "type": "git",
     "url": "git+https://github.com/harai/indent-guide-improved.git"
   },
-  "version": "1.4.10"
+  "version": "1.4.11"
 }
