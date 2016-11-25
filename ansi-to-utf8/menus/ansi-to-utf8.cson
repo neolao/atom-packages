@@ -1,0 +1,18 @@
+# See https://atom.io/docs/latest/creating-a-package#menus for more details
+# 'context-menu':
+#   '.overlayer':
+#       'Enable ansi-to-utf8': 'ansi-to-utf8:toggle'
+
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'AnsiToUtf8'
+      'submenu': [
+        { 'label': 'ANSI (Windows 1252)',              'command': 'ansi-to-utf8:win1252'    }
+        { 'label': '--------------------------------', 'command': ''                        }
+        { 'label': 'UTF-8',                            'command': 'ansi-to-utf8:utf-8'      }
+      ]
+    ]
+  }
+]

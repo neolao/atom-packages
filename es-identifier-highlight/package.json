@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116103-38279-1k64pzz"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161022-71720-1i9yyt0"
     ]
   ],
-  "_from": "../d-116103-38279-1txkgo6/package.tgz",
-  "_id": "es-identifier-highlight@0.4.0",
+  "_from": "../d-1161022-71720-15it74r/package.tgz",
+  "_id": "es-identifier-highlight@0.4.3",
   "_inCache": true,
   "_installable": true,
   "_location": "/es-identifier-highlight",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116103-38279-1txkgo6/package.tgz",
-  "_shasum": "ca8c81e4a1a46749db58a4e35206a2c5a0b7e254",
+  "_resolved": "file:../d-1161022-71720-15it74r/package.tgz",
+  "_shasum": "1985e4198781ba764473e6004c38d7465a8ed1c6",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116103-38279-1txkgo6/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116103-38279-1k64pzz",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71720-15it74r/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161022-71720-1i9yyt0",
   "bugs": {
     "url": "https://github.com/heilhead/es-identifier-highlight/issues"
   },
@@ -65,11 +65,11 @@
   "main": "./lib/bootstrap.js",
   "name": "es-identifier-highlight",
   "optionalDependencies": {},
-  "readme": "# ES Identifier Highlight\n[![Build Status](https://travis-ci.org/heilhead/es-identifier-highlight.svg?branch=master)](https://travis-ci.org/heilhead/es-identifier-highlight)\n[![Code Climate](https://codeclimate.com/github/heilhead/es-identifier-highlight/badges/gpa.svg)](https://codeclimate.com/github/heilhead/es-identifier-highlight)\n\nAtom plugin for JS/ES6/JSX identifier highlighting. Heavily inspired by WebStorm's code highlight and inspection.\n\n![A screenshot](http://i.imgur.com/18avdoZ.gif)\n\n### Current Features\n* Uses [babylon](https://github.com/babel/babylon) which brings support for all [babel](https://github.com/babel/babel) features\n* Proper scope inspection\n* Global variables detection\n* Shows variable definition\n* Shows properties, class methods and literals usages\n* ES6 support\n* JSX support\n* Hashbang/shell script support\n* Light theme support (see Settings)\n* Jumping between symbol instances (shift+alt+left and shift+alt+right)\n* Jump to declaration (shift+alt+up)\n* Rename symbol (alt+r alt+r)\n\n### Issues\nCurrently code is parsed in strict mode, meaning that if there's an error in the code, it won't be parsed and highlighted. I'm not convinced that parsing should to be done in loose mode and would advise to use [eslint](https://atom.io/packages/linter-eslint) instead to spot and fix errors.\n\nPlease report any issues.\n\n### Contributions\nPull requests are welcome!\n\n### License\nMIT\n",
+  "readme": "# ES Identifier Highlight\n[![Build Status](https://travis-ci.org/heilhead/es-identifier-highlight.svg?branch=master)](https://travis-ci.org/heilhead/es-identifier-highlight)\n[![Code Climate](https://codeclimate.com/github/heilhead/es-identifier-highlight/badges/gpa.svg)](https://codeclimate.com/github/heilhead/es-identifier-highlight)\n\nAtom plugin for JS/ES6/JSX identifier highlighting. Heavily inspired by WebStorm's code highlight and inspection.\n\n![A screenshot](http://i.imgur.com/18avdoZ.gif)\n\n### Current Features\n* Uses [babylon](https://github.com/babel/babylon) which brings support for (almost) all of [babel](https://github.com/babel/babel) features\n* Proper scope inspection\n* Global variables detection\n* Shows variable definition\n* Shows properties, class methods and literals usages\n* ES6 support\n* JSX support\n* Hashbang/shell script support\n* Light theme support (see Settings)\n* Jumping between symbol instances (shift+alt+left and shift+alt+right)\n* Jump to declaration (shift+alt+up)\n* Rename symbol (alt+r alt+r)\n\n### Issues\nCurrently code is parsed in strict mode, meaning that if there's an error in the code, it won't be parsed and highlighted. I'm not convinced that parsing should to be done in loose mode and would advise to use [eslint](https://atom.io/packages/linter-eslint) instead to spot and fix errors.\n\nPlease report any issues.\n\n### Contributions\nPull requests are welcome!\n\n### License\nMIT\n",
   "readmeFilename": "README.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/heilhead/es-identifier-highlight.git"
   },
-  "version": "0.4.0"
+  "version": "0.4.3"
 }

@@ -1,0 +1,74 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+        "spec": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+        "type": "local"
+      },
+      "/private/tmp/apm-install-dir-1161015-7298-a5x3i1"
+    ]
+  ],
+  "_from": "../d-1161015-7298-1g77pgm/package.tgz",
+  "_id": "convert-to-utf8@0.2.4",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/convert-to-utf8",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+    "spec": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161015-7298-1g77pgm/package.tgz",
+  "_shasum": "0d1fdaaa563ace1b8c0a58ec0444a97b124c7584",
+  "_shrinkwrap": null,
+  "_spec": "/private/tmp/d-1161015-7298-1g77pgm/package.tgz",
+  "_where": "/private/tmp/apm-install-dir-1161015-7298-a5x3i1",
+  "activationCommands": {
+    "atom-workspace": [
+      "convert-to-utf8:shift_jis",
+      "convert-to-utf8:euc-jp",
+      "convert-to-utf8:gbk",
+      "convert-to-utf8:big5",
+      "convert-to-utf8:big5-hkscs",
+      "convert-to-utf8:euc-kr",
+      "convert-to-utf8:utf-8"
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/dongri/convert-to-utf8/issues"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.0.3",
+    "iconv-lite": "0.4.8"
+  },
+  "description": "ConvertToUTF8 package for editing and saving files encoded in Shift_JIS, EUC-JP, CP932, GBK, BIG5, BIG5-HKSCS, EUC-KR etc",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=0.174.0 <2.0.0"
+  },
+  "homepage": "https://github.com/dongri/convert-to-utf8#readme",
+  "license": "MIT",
+  "main": "./lib/convert-to-utf8",
+  "name": "convert-to-utf8",
+  "optionalDependencies": {},
+  "readme": "# ConvertToUTF8\n\nConvertToUTF8 package for editing and saving files encoded in Shift_JIS, EUC-JP, CP932, GBK, BIG5, BIG5-HKSCS, EUC-KR etc.\n\n![A screenshot of your spankin' package](https://dl.dropboxusercontent.com/u/358152/github/convert-to-utf8/convert-to-utf8-1.png)\n\n![A screenshot of your spankin' package](https://dl.dropboxusercontent.com/u/358152/github/convert-to-utf8/convert-to-utf8-2.png)\n\n\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dongri/convert-to-utf8.git"
+  },
+  "version": "0.2.4"
+}

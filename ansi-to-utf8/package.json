@@ -1,0 +1,77 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+        "spec": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+        "type": "local"
+      },
+      "/private/tmp/apm-install-dir-1161015-7361-3xuwv2"
+    ]
+  ],
+  "_from": "../d-1161015-7361-ccwp0q/package.tgz",
+  "_id": "ansi-to-utf8@0.4.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/ansi-to-utf8",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+    "spec": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161015-7361-ccwp0q/package.tgz",
+  "_shasum": "0badb98d6384619c5b38b27735082715b0b7cb46",
+  "_shrinkwrap": null,
+  "_spec": "/private/tmp/d-1161015-7361-ccwp0q/package.tgz",
+  "_where": "/private/tmp/apm-install-dir-1161015-7361-3xuwv2",
+  "activationCommands": {
+    "atom-workspace": [
+      "ansi-to-utf8:win1252",
+      "ansi-to-utf8:utf-8"
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/rogeriopradoj/ansi-to-utf8/issues"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.1.0",
+    "iconv-lite": "0.4.13"
+  },
+  "description": "AnsiToUTF8 package for editing and saving files encoded in ANSI (win1252) etc",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "homepage": "https://github.com/rogeriopradoj/ansi-to-utf8#readme",
+  "keywords": [
+    "ansi",
+    "utf",
+    "utf8",
+    "utf-8",
+    "encoding",
+    "win1252"
+  ],
+  "license": "MIT",
+  "main": "./lib/ansi-to-utf8",
+  "name": "ansi-to-utf8",
+  "optionalDependencies": {},
+  "readme": "# AnsiToUtf8\n\nTotally based on https://github.com/dongri/convert-to-utf8.\n\nAnsiToUTF8 package for editing and saving files encoded in ANSI (win1252) etc.\n\n![A screenshot of your spankin' package](https://c1.staticflickr.com/9/8837/18564513601_0f8c37a057_b.jpg)\n\n![A screenshot of your spankin' package](https://c1.staticflickr.com/1/273/18374714378_89e16f3cab_b.jpg)\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogeriopradoj/ansi-to-utf8.git"
+  },
+  "version": "0.4.0"
+}

@@ -44,9 +44,10 @@ getRepoForCurrentFile = ->
       reject "no current file"
 
 module.exports = git =
-  cmd: (args, options={ env: process.env }) ->
+  cmd: (args, options={ env: process.env}, {color}={}) ->
     new Promise (resolve, reject) ->
       output = ''
+      args = ['-c', 'color.ui=always'].concat(args) if color
       process = new BufferedProcess
         command: atom.config.get('git-plus.gitPath') ? 'git'
         args: args
@@ -63,10 +64,7 @@ module.exports = git =
         notifier.addError 'Git Plus is unable to locate the git command. Please ensure process.env.PATH can access git.'
         reject "Couldn't find git"
 
-  getConfig: (setting, workingDirectory=null) ->
-    workingDirectory ?= Os.homedir()
-    git.cmd(['config', '--get', setting], cwd: workingDirectory).catch (error) ->
-      if error? and error isnt '' then notifier.addError error else ''
+  getConfig: (repo, setting) -> repo.getConfigValue setting, repo.getWorkingDirectory()
 
   reset: (repo) ->
     git.cmd(['reset', 'HEAD'], cwd: repo.getWorkingDirectory()).then () -> notifier.addSuccess 'All changes unstaged'
@@ -75,11 +73,12 @@ module.exports = git =
     git.cmd(['status', '--porcelain', '-z'], cwd: repo.getWorkingDirectory())
     .then (data) -> if data.length > 2 then data.split('\0')[...-1] else []
 
-  refresh: () ->
-    atom.project.getRepositories().forEach (repo) ->
-      if repo?
-        repo.refreshStatus()
-        git.cmd ['add', '--refresh', '--', '.'], cwd: repo.getWorkingDirectory()
+  refresh: (repo) ->
+    if repo
+      repo.refreshStatus?()
+      repo.refreshIndex?()
+    else
+      atom.project.getRepositories().forEach (repo) -> repo.refreshStatus() if repo?
 
   relativize: (path) ->
     git.getSubmodule(path)?.relativize(path) ? atom.project.getRepositories()[0]?.relativize(path) ? path

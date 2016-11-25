@@ -1,9 +1,14 @@
 {$$, SelectListView} = require 'atom-space-pen-views'
 
 git = require '../git'
+_pull = require '../models/_pull'
 notifier = require '../notifier'
 OutputViewManager = require '../output-view-manager'
 PullBranchListView = require './pull-branch-list-view'
+
+experimentalFeaturesEnabled = () ->
+  gitPlus = atom.config.get('git-plus')
+  gitPlus.alwaysPullFromUpstream and gitPlus.experimental
 
 module.exports =
 class ListView extends SelectListView
@@ -42,9 +47,12 @@ class ListView extends SelectListView
       @li name
 
   pull: (remoteName) ->
-    git.cmd(['branch', '-r'], cwd: @repo.getWorkingDirectory())
-    .then (data) =>
-      new PullBranchListView(@repo, data, remoteName, @extraArgs).result
+    if experimentalFeaturesEnabled()
+      _pull @repo, extraArgs: [@extraArgs]
+    else
+      git.cmd(['branch', '-r'], cwd: @repo.getWorkingDirectory())
+      .then (data) =>
+        new PullBranchListView(@repo, data, remoteName, @extraArgs).result
 
   confirmed: ({name}) ->
     if @mode is 'pull'
@@ -73,14 +81,14 @@ class ListView extends SelectListView
     args = args.concat([remote, @tag]).filter((arg) -> arg isnt '')
     message = "#{@mode[0].toUpperCase()+@mode.substring(1)}ing..."
     startMessage = notifier.addInfo message, dismissable: true
-    git.cmd(args, cwd: @repo.getWorkingDirectory())
+    git.cmd(args, cwd: @repo.getWorkingDirectory(), {color: true})
     .then (data) ->
       if data isnt ''
-        view.addLine(data).finish()
+        view.setContent(data).finish()
       startMessage.dismiss()
     .catch (data) =>
       if data isnt ''
-        view.addLine(data).finish()
+        view.setContent(data).finish()
       startMessage.dismiss()
 
   pushAndSetUpstream: (remote='') ->
@@ -88,12 +96,12 @@ class ListView extends SelectListView
     args = ['push', '-u', remote, 'HEAD'].filter((arg) -> arg isnt '')
     message = "Pushing..."
     startMessage = notifier.addInfo message, dismissable: true
-    git.cmd(args, cwd: @repo.getWorkingDirectory())
+    git.cmd(args, cwd: @repo.getWorkingDirectory(), {color: true})
     .then (data) ->
       if data isnt ''
-        view.addLine(data).finish()
+        view.setContent(data).finish()
       startMessage.dismiss()
     .catch (data) =>
       if data isnt ''
-        view.addLine(data).finish()
+        view.setContent(data).finish()
       startMessage.dismiss()

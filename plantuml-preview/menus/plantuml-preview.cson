@@ -1,4 +1,3 @@
-# See https://atom.io/docs/latest/hacking-atom-package-word-count#menus for more details
 'context-menu':
   'atom-text-editor': [
     {
@@ -30,16 +29,16 @@
       'command': 'plantuml-preview:copy-image'
     }
   ]
-  '.plantuml-preview .open-file': [
-    {
-      'label': 'Open Diagram'
-      'command': 'plantuml-preview:open-file'
-    }
-  ]
   '.plantuml-preview .copy-filename': [
     {
       'label': 'Copy Filename'
       'command': 'plantuml-preview:copy-filename'
+    }
+  ]
+  '.plantuml-preview .open-file': [
+    {
+      'label': 'Open Diagram'
+      'command': 'plantuml-preview:open-file'
     }
   ]
 'menu': [
