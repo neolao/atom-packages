@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116918-57469-ng9fmd"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161029-50619-11di0gg"
     ]
   ],
-  "_from": "../d-116918-57469-19tx335/package.tgz",
-  "_id": "tablr@1.5.5",
+  "_from": "../d-1161029-50619-11fkr72/package.tgz",
+  "_id": "tablr@1.8.0",
   "_inCache": true,
   "_installable": true,
   "_location": "/tablr",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116918-57469-19tx335/package.tgz",
-  "_shasum": "0d165a2a388bbb162a5e3bb7421148d057f95cf5",
+  "_resolved": "file:../d-1161029-50619-11fkr72/package.tgz",
+  "_shasum": "572056f96ed0ca476520535ca6643561af846816",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116918-57469-19tx335/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116918-57469-ng9fmd",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161029-50619-11fkr72/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161029-50619-11di0gg",
   "bugs": {
     "url": "https://github.com/abe33/atom-tablr/issues"
   },
@@ -184,7 +184,7 @@
           "default": "\""
         },
         "escape": {
-          "title": "Default Espace Character",
+          "title": "Default Escape Character",
           "description": "The default escape character for escaped quotes in quoted content.",
           "type": "string",
           "default": "\""
@@ -325,10 +325,11 @@
   },
   "devDependencies": {
     "fs-plus": "^2.8.1",
+    "standard": "^8.6.0",
     "temp": "~0.8.0"
   },
   "engines": {
-    "atom": ">=1.7.0"
+    "atom": ">=1.12.0"
   },
   "homepage": "https://github.com/abe33/atom-tablr#readme",
   "license": "MIT",
@@ -349,7 +350,34 @@
     "type": "git",
     "url": "git+https://github.com/abe33/atom-tablr.git"
   },
-  "version": "1.5.5",
+  "standard": {
+    "globals": [
+      "advanceClock",
+      "atom",
+      "beforeEach",
+      "afterEach",
+      "expect",
+      "describe",
+      "fdescribe",
+      "ffdescribe",
+      "fffdescribe",
+      "xdescribe",
+      "it",
+      "xit",
+      "fit",
+      "ffit",
+      "fffit",
+      "jasmine",
+      "runs",
+      "spyOn",
+      "waits",
+      "waitsFor",
+      "waitsForPromise",
+      "requestAnimationFrame",
+      "HTMLElement"
+    ]
+  },
+  "version": "1.8.0",
   "viewProviders": [
     "tablrViewProvider"
   ]

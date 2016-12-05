@@ -1,3 +1,46 @@
+<a name="v1.8.0"></a>
+# v1.8.0 (2016-11-29)
+
+## :sparkles: Features
+
+- Add an option to specify the editor grammar for a column ([ef43eedb](https://github.com/abe33/atom-tablr/commit/ef43eedbf33b080e59d02d997a57db0933c1b538))
+
+## :bug: Bug Fixes
+
+- Fix keyboard events not registered ([5dd9a90e](https://github.com/abe33/atom-tablr/commit/5dd9a90ec8b8b243e777b6b5f82aed67cf2a78c2))
+
+<a name="v1.7.0"></a>
+# v1.7.0 (2016-11-28)
+
+## :sparkles: Features
+
+- Expose CSVEditor in service ([18e40d49](https://github.com/abe33/atom-tablr/commit/18e40d49a0ad7424cdb6872b9a6a1e5214fbc9d3))
+
+## :bug: Bug Fixes
+
+- Add background on text-editor ([e1ef96cc](https://github.com/abe33/atom-tablr/commit/e1ef96ccbeb8e146ff6bb809ed7b460f99e080fb), [#74](https://github.com/abe33/atom-tablr/issues/74))
+
+
+<a name="v1.6.2"></a>
+# v1.6.2 (2016-11-21)
+
+## :bug: Bug Fixes
+
+- Fix error raised when closing a cell editor ([2831be2d](https://github.com/abe33/atom-tablr/commit/2831be2d34228f4367ab12d3a2b4726214897ccd))
+- Fix typo in configSchema ([b70eb6e8](https://github.com/abe33/atom-tablr/commit/b70eb6e88ebf250f31fc158128e1d3e48b860dd4))
+
+<a name="v1.6.1"></a>
+# v1.6.1 (2016-10-24)
+
+- :fire: remaining logs
+
+<a name="v1.6.0"></a>
+# v1.6.0 (2016-10-24)
+
+## :arrow_up: Dependencies Update
+
+- Bump atom engine version since the new version no longer rely on shadow DOM ([2661ac01](https://github.com/abe33/atom-tablr/commit/2661ac01bc97fbcab35119ed134c8c727b8198cb))
+
 <a name="v1.5.5"></a>
 # v1.5.5 (2016-10-04)
 
