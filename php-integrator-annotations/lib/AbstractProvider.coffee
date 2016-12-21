@@ -1,5 +1,3 @@
-SubAtom = require 'sub-atom'
-
 module.exports =
 
 ##*
@@ -8,18 +6,17 @@ module.exports =
 class AbstractProvider
     ###*
      * List of markers that are present for each file.
+     *
+     * @var {Object}
     ###
     markers: null
 
     ###*
-     * SubAtom objects for each file.
+     * A mapping of file names to a list of annotations that are inside the gutter.
+     *
+     * @var {Object}
     ###
-    subAtoms: null
-
-    ###*
-     * SubAtom object for the entire window.
-    ###
-    subAtom: null
+    annotations: null
 
     ###*
      * The service (that can be used to query the source code and contains utility methods).
@@ -29,7 +26,7 @@ class AbstractProvider
     constructor: () ->
         # Constructer here because otherwise the object is shared between instances.
         @markers  = {}
-        @subAtoms = {}
+        @annotations = {}
 
     ###*
      * Initializes this provider.
@@ -58,16 +55,9 @@ class AbstractProvider
      * Does the actual initialization.
     ###
     doActualInitialization: () ->
-        @subAtom = new SubAtom()
-
         atom.workspace.observeTextEditors (editor) =>
             if /text.html.php$/.test(editor.getGrammar().scopeName)
-                # NOTE: This is a very poor workaround, but at the moment I can't figure out any other way to do this
-                # properly. The problem is that the grammar needs time to perform the syntax highlighting. During that
-                # time, queries for scope descriptors will not return any useful information. However, the base package
-                # depends on them to find out whether a line contains comments or not. This mitigates (but will not
-                # completely solve) the issue. There seems to be no way to listen for the grammar to finish its parsing
-                # completely.
+                # Allow the active project to settle before registering for the first time.
                 setTimeout(() =>
                     @registerAnnotations(editor)
                     @registerEvents(editor)
@@ -98,7 +88,7 @@ class AbstractProvider
     ###*
      * Retrieves the text editor that is managing the file with the specified path.
      *
-     * @param {string} path
+     * @param {String} path
      *
      * @return {TextEditor|null}
     ###
@@ -124,7 +114,6 @@ class AbstractProvider
      * Deactives the provider.
     ###
     deactivate: () ->
-        @subAtom.dispose()
         @removeAnnotations()
 
     ###*
@@ -144,16 +133,68 @@ class AbstractProvider
 
         textEditorElement = atom.views.getView(editor)
 
-        @subAtom.add textEditorElement.shadowRoot.querySelector('.horizontal-scrollbar'), 'scroll', (event) =>
+        textEditorElement.shadowRoot.querySelector('.horizontal-scrollbar')?.addEventListener 'scroll', (event) =>
             @removePopover()
 
-        @subAtom.add textEditorElement.shadowRoot.querySelector('.vertical-scrollbar'), 'scroll', (event) =>
+        textEditorElement.shadowRoot.querySelector('.vertical-scrollbar')?.addEventListener 'scroll', (event) =>
             @removePopover()
+
+        gutterContainerElement = textEditorElement.shadowRoot.querySelector('.gutter-container')
+
+        mouseOverHandler = (event) =>
+            annotation = @getRelevantAnnotationForEvent(editor, event)
+
+            return if not annotation?
+
+            @handleMouseOver(event, editor, annotation.annotationInfo)
+
+        mouseOutHandler = (event) =>
+            annotation = @getRelevantAnnotationForEvent(editor, event)
+
+            return if not annotation?
+
+            @handleMouseOut(event, editor, annotation.annotationInfo)
+
+        mouseDownHandler = (event) =>
+            annotation = @getRelevantAnnotationForEvent(editor, event)
+
+            return if not annotation?
+
+            # Don't collapse or expand the fold in the gutter, if there is any.
+            event.stopPropagation()
+
+            @handleMouseClick(event, editor, annotation.annotationInfo)
+
+        gutterContainerElement?.addEventListener('mouseover', mouseOverHandler)
+        gutterContainerElement?.addEventListener('mouseout', mouseOutHandler)
+        gutterContainerElement?.addEventListener('mousedown', mouseDownHandler)
+
+
+    ###*
+     * @param {TextEditor} editor
+     * @param {Object} event
+     *
+     * @return {Object|null}
+    ###
+    getRelevantAnnotationForEvent: (editor, event) ->
+        if event.target.className.indexOf('icon-right') != -1
+            longTitle = editor.getLongTitle()
+
+            lineEventOccurredOn = parseInt(event.target.parentElement.dataset.bufferRow)
+
+            if longTitle of @annotations
+                for annotation in @annotations[longTitle]
+                    if annotation.line == lineEventOccurredOn
+                        return annotation
+
+        return null
 
     ###*
      * Registers the annotations.
      *
      * @param {TextEditor} editor The editor to search through.
+     *
+     * @return {Promise|null}
     ###
     registerAnnotations: (editor) ->
         throw new Error("This method is abstract and must be implemented!")
@@ -166,10 +207,7 @@ class AbstractProvider
      * @param {Object}     annotationInfo
     ###
     placeAnnotation: (editor, range, annotationInfo) ->
-        # NOTE: New markers are added on startup as initialization is done, so making them persistent will cause the
-        # 'storage' file of the project (in Atom's config folder) to grow forever (in a way it's a memory leak).
         marker = editor.markBufferRange(range, {
-            persistent : false
             invalidate : 'touch'
         })
 
@@ -191,7 +229,7 @@ class AbstractProvider
      * Registers annotation event handlers for the specified row.
      *
      * @param {TextEditor} editor
-     * @param {int}        row
+     * @param {Number}     row
      * @param {Object}     annotationInfo
     ###
     registerAnnotationEventHandlers: (editor, row, annotationInfo) ->
@@ -200,30 +238,21 @@ class AbstractProvider
 
         do (editor, gutterContainerElement, annotationInfo) =>
             longTitle = editor.getLongTitle()
-            selector = '.line-number' + '.' + annotationInfo.lineNumberClass + '[data-buffer-row=' + row + '] .icon-right'
 
-            subAtom = new SubAtom()
+            if longTitle not of @annotations
+                @annotations[longTitle] = []
 
-            subAtom.add gutterContainerElement, 'mouseover', selector, (event) =>
-                @handleMouseOver(event, editor, annotationInfo)
-
-            subAtom.add gutterContainerElement, 'mouseout', selector, (event) =>
-                @handleMouseOut(event, editor, annotationInfo)
-
-            subAtom.add gutterContainerElement, 'click', selector, (event) =>
-                @handleMouseClick(event, editor, annotationInfo)
-
-            if longTitle not of @subAtoms
-                @subAtoms[longTitle] = []
-
-            @subAtoms[longTitle].push(subAtom)
+            @annotations[longTitle].push({
+                line           : row
+                annotationInfo : annotationInfo
+            })
 
     ###*
      * Handles the mouse over event on an annotation.
      *
-     * @param {jQuery.Event} event
-     * @param {TextEditor}   editor
-     * @param {Object}       annotationInfo
+     * @param {Object}     event
+     * @param {TextEditor} editor
+     * @param {Object}     annotationInfo
     ###
     handleMouseOver: (event, editor, annotationInfo) ->
         if annotationInfo.tooltipText
@@ -236,9 +265,9 @@ class AbstractProvider
     ###*
      * Handles the mouse out event on an annotation.
      *
-     * @param {jQuery.Event} event
-     * @param {TextEditor}   editor
-     * @param {Object}       annotationInfo
+     * @param {Object}     event
+     * @param {TextEditor} editor
+     * @param {Object}     annotationInfo
     ###
     handleMouseOut: (event, editor, annotationInfo) ->
         @removePopover()
@@ -246,9 +275,9 @@ class AbstractProvider
     ###*
      * Handles the mouse click event on an annotation.
      *
-     * @param {jQuery.Event} event
-     * @param {TextEditor}   editor
-     * @param {Object}       annotationInfo
+     * @param {Object}     event
+     * @param {TextEditor} editor
+     * @param {Object}     annotationInfo
     ###
     handleMouseClick: (event, editor, annotationInfo) ->
 
@@ -261,27 +290,16 @@ class AbstractProvider
             @attachedPopover = null
 
     ###*
-     * Removes any annotations that were created for the specified editor.
-     *
-     * @param {TextEditor} editor
-    ###
-    removeAnnotationsFor: (editor) ->
-        @removeAnnotationsByKey(editor.getLongTitle())
-
-    ###*
      * Removes any annotations that were created with the specified key.
      *
-     * @param {string} key
+     * @param {String} key
     ###
     removeAnnotationsByKey: (key) ->
         for i,marker of @markers[key]
             marker.destroy()
 
-        for i,subAtom of @subAtoms[key]
-            subAtom.dispose()
-
         @markers[key] = []
-        @subAtoms[key] = []
+        @annotations[key] = []
 
     ###*
      * Removes any annotations (across all editors).
@@ -291,7 +309,7 @@ class AbstractProvider
             @removeAnnotationsByKey(key)
 
         @markers = {}
-        @subAtoms = {}
+        @annotations = {}
 
     ###*
      * Rescans the editor, updating all annotations.
@@ -299,5 +317,21 @@ class AbstractProvider
      * @param {TextEditor} editor The editor to search through.
     ###
     rescan: (editor) ->
-        @removeAnnotationsFor(editor)
-        @registerAnnotations(editor)
+        key = editor.getLongTitle()
+        renamedKey = 'tmp_' + key
+
+        # We rename the markers and remove them afterwards to prevent flicker if the location of the marker does not
+        # change.
+        if key of @annotations
+            @annotations[renamedKey] = @annotations[key]
+            @annotations[key] = []
+
+        if key of @markers
+            @markers[renamedKey] = @markers[key]
+            @markers[key] = []
+
+        result = @registerAnnotations(editor)
+
+        if result?
+            result.then () =>
+                @removeAnnotationsByKey(renamedKey)

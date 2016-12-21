@@ -2,57 +2,55 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37306-1i0qo44"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90076-lbagxt"
     ]
   ],
-  "_from": "../d-116813-37306-1hfeupl/package.tgz",
-  "_id": "php-integrator-annotations@1.0.3",
+  "_from": "../d-1161121-90076-ulbfm0/package.tgz",
+  "_id": "php-integrator-annotations@1.1.0",
   "_inCache": true,
   "_installable": true,
   "_location": "/php-integrator-annotations",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116813-37306-1hfeupl/package.tgz",
-  "_shasum": "aaf7c0eab6df672e4f0459a07fb63dfc07061911",
+  "_resolved": "file:../d-1161121-90076-ulbfm0/package.tgz",
+  "_shasum": "8ae7ed4d943e0b20f681c9946b8448ea36588fc9",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116813-37306-1hfeupl/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116813-37306-1i0qo44",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90076-ulbfm0/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90076-lbagxt",
   "bugs": {
     "url": "https://github.com/php-integrator/atom-annotations/issues"
   },
   "consumedServices": {
     "php-integrator.service": {
       "versions": {
-        "^1.0": "setService"
+        "^2.0": "setService"
       }
     }
   },
-  "dependencies": {
-    "sub-atom": "~1.0.0"
-  },
+  "dependencies": {},
   "description": "Shows annotations (e.g. for overriden methods interface implementations) in your PHP source code.",
   "devDependencies": {},
   "engines": {
-    "atom": ">=1.8.0 <2.0.0"
+    "atom": ">=1.10.0 <2.0.0"
   },
   "homepage": "https://github.com/php-integrator/atom-annotations#readme",
   "keywords": [
@@ -72,5 +70,5 @@
     "type": "git",
     "url": "git+https://github.com/php-integrator/atom-annotations.git"
   },
-  "version": "1.0.3"
+  "version": "1.1.0"
 }

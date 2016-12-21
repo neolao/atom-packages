@@ -15,7 +15,7 @@ class MemberProvider extends AbstractProvider
      * the extra curly brackets, but it's better to have some autocompletion in a few rare erroneous cases than no
      * autocompletion at all in the most used cases.
     ###
-    disableForSelector: '.source.php .comment, .source.php .string.quoted.single'
+    disableForScopeSelector: '.source.php .comment, .source.php .string.quoted.single'
 
     ###*
      * @inheritdoc
@@ -77,14 +77,6 @@ class MemberProvider extends AbstractProvider
                 # Constants are only available when statically accessed (actually not entirely correct, they will
                 # work in a non-static context as well, but it's not good practice).
                 return false if mustBeStatic and not element.isStatic
-
-                if objectBeingCompleted != '$this'
-                    # Explicitly checking for '$this' allows files that are being require-d inside classes to define
-                    # a type override annotation for $this and still be able to access private and protected members
-                    # there.
-                    return false if element.isPrivate and element.declaringClass.name != currentClassInfo?.name
-                    return false if element.isProtected and element.declaringClass.name != currentClassInfo?.name and element.declaringClass.name not in currentClassParents
-
                 return true
             , insertParameterList)
 
@@ -148,16 +140,6 @@ class MemberProvider extends AbstractProvider
         suggestions = []
 
         for classInfo in classInfoObjects
-            if hasDoubleDotSeparator
-                suggestions.push
-                    text              : 'class'
-                    type              : 'keyword'
-                    replacementPrefix : prefix
-                    leftLabel         : 'string'
-                    rightLabelHTML    : @getSuggestionRightLabel({declaringStructure: {name: classInfo.name}})
-                    description       : 'PHP static class keyword that evaluates to the FCQN.'
-                    className         : 'php-integrator-autocomplete-plus-suggestion'
-
             processList = (list, type) =>
                 for name, member of list
                     if filterCallback and not filterCallback(member)
@@ -171,16 +153,29 @@ class MemberProvider extends AbstractProvider
                     if 'parameters' of member
                         displayText += @getFunctionParameterList(member)
 
+                    leftLabel = ''
+
+                    if member.isPublic
+                        leftLabel += '<span class="icon icon-globe import">&nbsp;</span>'
+
+                    else if member.isProtected
+                        leftLabel += '<span class="icon icon-key">&nbsp;</span>'
+
+                    else if member.isPrivate
+                        leftLabel += '<span class="icon icon-lock selector">&nbsp;</span>'
+
+                    leftLabel += @getTypeSpecificationFromTypeArray(typesToDisplay)
+
                     suggestions.push
                         text              : text
                         type              : type
                         snippet           : if type == 'method' and insertParameterList then @getFunctionSnippet(member.name, member) else null
                         displayText       : displayText
                         replacementPrefix : prefix
-                        leftLabel         : @getTypeSpecificationFromTypeArray(typesToDisplay)
+                        leftLabelHTML     : leftLabel
                         rightLabelHTML    : @getSuggestionRightLabel(member)
                         description       : if member.shortDescription then member.shortDescription else ''
-                        className         : 'php-integrator-autocomplete-plus-suggestion' + if member.isDeprecated then ' php-integrator-autocomplete-plus-strike' else ''
+                        className         : 'php-integrator-autocomplete-plus-suggestion php-integrator-autocomplete-plus-has-additional-icons' + if member.isDeprecated then ' php-integrator-autocomplete-plus-strike' else ''
 
             processList(classInfo.methods, 'method')
             processList(classInfo.constants, 'constant')

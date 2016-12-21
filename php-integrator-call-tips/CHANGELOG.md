@@ -1,3 +1,9 @@
+## 1.2.0 (base 2.0.0)
+* Call tips should now always display above linter errors.
+* A single parameter signature should no longer break over multiple lines.
+* Call tips will no longer trigger inside comments, which should improve responsiveness whilst typing them.
+* The visual appearance of call tips has been improved. There is now a much clearer distinction between its various components (i.e. types, names and default values).
+
 ## 1.1.1
 * Rename the package and repository.
 

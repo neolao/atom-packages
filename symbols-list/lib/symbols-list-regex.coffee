@@ -39,17 +39,25 @@ module.exports =
             regex:
                 function: /^[^\S\n]*([\w]+:)\s*\([^\)]*\)\s*->/gmi
                 class: /^[\S\n]*class ([\w]+)/gmi
+        cs:
+            regex:
+                class: /^[\S\n]*(?:final|static|abstract|private|protected|public|[^\S\n])*\s?class\s([\w]+(\s?:\s?[\w]*)?)/gmi
+                function: /^[^\S\n]*(?:final|static|abstract|private|protected|public)*\s?(?:\w+\s)+(\w+\s*\([^\)]*\))[\s\n]*{/gmi
         ini:
             regex:
                 structure: /^\[([^\]]+)]/gmi
         python:
             regex:
                 commentaire: /^[^\S\n]*# ! (.+)/gmi
-                class: /^[^\S\n]*class ([\w]+):/gmi
-                function: /^[^\S\n]*def ([\w]+ *\(.*\)):/gmi
+                class: /^[^\S\n]*class[\W]+([\w]+)(:| *\([\w\s.,]*\):)/gmi
+                function: /^[^\S\n]*def +([\w]+ *\((?!\s*self\s*(?=(,|\))))(.|\s)*?\)):/gmi
+                method: /^[^\S\n]*def +([\w]+ *\((?=\s*self\s*(?=(,|\))))(.|\s)*?\)):/gmi
         ruby:
             regex:
                 attr: /^[^\S\n]*(?:attr_reader|attr_writer|attr_accessor) ([\w:]+)/gmi
                 class: /^[^\S\n]*class ([\w:]+)/gmi
                 module: /^[^\S\n]*module ([\w:]+)/gmi
                 method: /^[^\S\n]*def ([\w]+ *(\(.*\))?)/gmi
+        gfm:
+            regex:
+                structure: /^#+[^\S\n]+(.+)/gmi

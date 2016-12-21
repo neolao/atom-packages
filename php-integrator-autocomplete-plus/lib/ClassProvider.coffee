@@ -1,4 +1,3 @@
-Utility = require './Utility'
 AbstractProvider = require './AbstractProvider'
 
 module.exports =
@@ -28,11 +27,6 @@ class ClassProvider extends AbstractProvider
     traitUseRegex: /use\s+(?:\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\[a-zA-Z_][a-zA-Z0-9_]*)*\\?,\s*)*(\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\[a-zA-Z_][a-zA-Z0-9_]*)*\\?)?$/
 
     ###*
-     # Regular expression matching class names after the namespace keyword.
-    ###
-    namespaceRegex: /namespace\s+(\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\[a-zA-Z_][a-zA-Z0-9_]*)*\\?)?$/
-
-    ###*
      # Regular expression that extracts the classlike keyword and the class being extended from after the extends
      # keyword.
     ###
@@ -42,6 +36,11 @@ class ClassProvider extends AbstractProvider
      # Regular expression matching (only the last) interface name after the implements keyword.
     ###
     implementsRegex: /implements\s+(?:\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\[a-zA-Z_][a-zA-Z0-9_]*)*\\?,\s*)*(\\?[a-zA-Z_][a-zA-Z0-9_]*(?:\\[a-zA-Z_][a-zA-Z0-9_]*)*\\?)?$/
+
+    ###*
+     * @inheritdoc
+    ###
+    disableForScopeSelector: '.source.php .comment.line.double-slash, .source.php .comment.block:not(.phpdoc), .source.php .string'
 
     ###*
      # Cache object to help improve responsiveness of autocompletion.
@@ -175,7 +174,6 @@ class ClassProvider extends AbstractProvider
             regexesToTry = [
                 ['getExtendsSuggestions',    @extendsRegex]
                 ['getImplementsSuggestions', @implementsRegex]
-                ['getNamespaceSuggestions',  @namespaceRegex]
                 [dynamicKey,                 dynamicRegex]
                 ['getNewSuggestions',        @newRegex]
                 ['getClassSuggestions',      @regex]
@@ -252,28 +250,6 @@ class ClassProvider extends AbstractProvider
             suggestion.replacementPrefix = prefix
 
             @applyAutomaticImportData(suggestion, prefix)
-
-            suggestions.push(suggestion)
-
-        return suggestions
-
-    ###*
-     * Retrieves suggestions for namespace names.
-     *
-     * @param {Array} classes
-     * @param {Array} matches
-     *
-     * @return {Array}
-    ###
-    getNamespaceSuggestions: (classes, matches) ->
-        prefix = if matches[1]? then matches[1] else ''
-
-        suggestions = []
-
-        for name, element of classes
-            suggestion = @getSuggestionForData(element)
-            suggestion.type = 'import'
-            suggestion.replacementPrefix = prefix
 
             suggestions.push(suggestion)
 
@@ -382,14 +358,19 @@ class ClassProvider extends AbstractProvider
      * @return {Array}
     ###
     getSuggestionForData: (data) ->
+        fqcnWithoutLeadingSlash = data.name
+
+        if fqcnWithoutLeadingSlash[0] == '\\'
+            fqcnWithoutLeadingSlash = fqcnWithoutLeadingSlash.substring(1)
+
         suggestionData =
-            text               : data.name
+            text               : fqcnWithoutLeadingSlash
             type               : if data.type == 'trait' then 'mixin' else 'class'
             description        : if data.isBuiltin then 'Built-in PHP structural data.' else data.shortDescription
             leftLabel          : data.type
             descriptionMoreURL : if data.isBuiltin then @config.get('php_documentation_base_urls').classes + @getNormalizeFqcnDocumentationUrl(data.name) else null
             className          : if data.isDeprecated then 'php-integrator-autocomplete-plus-strike' else ''
-            displayText        : data.name
+            displayText        : fqcnWithoutLeadingSlash
             data               : {}
 
     ###*
@@ -483,25 +464,34 @@ class ClassProvider extends AbstractProvider
         return unless suggestion.data?.nameToImport
         return unless @config.get('automaticallyAddUseStatements')
 
-        successHandler = (currentClassName) =>
-            if currentClassName
-                currentNamespaceParts = currentClassName.split('\\')
-                currentNamespaceParts.pop()
+        successHandler = (currentNamespaceName) =>
+            if not currentNamespaceName?
+                currentNamespaceName = ''
 
-                currentNamespace = currentNamespaceParts.join('\\')
+            else if currentNamespaceName[0] == '\\'
+                currentNamespaceName = currentNamespaceName.substring(1)
 
-                if suggestion.data.nameToImport.indexOf(currentNamespace) == 0
-                     nameToImportRelativeToNamespace = suggestion.displayText.substr(currentNamespace.length + 1)
+            # When we have no namespace or are in an anonymous namespace, adding use statements for "non-compound"
+            # namespaces, such as "DateTime" will generate a warning.
+            if currentNamespaceName.length == 0
+                return if suggestion.displayText.split('\\').length == 1
 
-                     # If a user is in A\B and wants to import A\B\C\D, we don't need to add a use statement if he is typing
-                     # C\D, as it will be relative, but we will need to add one when he typed just D as it won't be
-                     # relative.
-                     return if nameToImportRelativeToNamespace.split('\\').length == suggestion.text.split('\\').length
+            else if suggestion.data.nameToImport.indexOf(currentNamespaceName) == 0
+                 nameToImportRelativeToNamespace = suggestion.displayText.substr(currentNamespaceName.length + 1)
+
+                 # If a user is in A\B and wants to import A\B\C\D, we don't need to add a use statement if he is typing
+                 # C\D, as it will be relative, but we will need to add one when he typed just D as it won't be
+                 # relative.
+                 return if nameToImportRelativeToNamespace.split('\\').length == suggestion.text.split('\\').length
 
             editor.transact () =>
-                linesAdded = Utility.addUseClass(editor, suggestion.data.nameToImport, @config.get('insertNewlinesForUseStatements'))
+                linesAdded = @service.getUseStatementHelper().addUseClass(
+                    editor,
+                    suggestion.data.nameToImport,
+                    @config.get('insertNewlinesForUseStatements')
+                )
 
         failureHandler = () ->
             # Do nothing.
 
-        @service.determineCurrentClassName(editor, triggerPosition).then(successHandler, failureHandler)
+        @service.determineCurrentNamespaceName(editor, triggerPosition).then(successHandler, failureHandler)

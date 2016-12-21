@@ -18,17 +18,23 @@ class Provider extends AbstractProvider
         getInvocationInfoHandler = (invocationInfo) =>
             return if not invocationInfo?
 
-            callStack = invocationInfo.callStack.slice()
+            if invocationInfo.type == 'function'
+                successHandler = (globalFunctions) =>
+                    itemName = invocationInfo.name
 
-            method = null
-            itemName = callStack.pop()
+                    if itemName[0] != '\\'
+                        itemName = '\\' + itemName
 
-            return if not callStack
+                    if itemName of globalFunctions
+                        callTipText = @getFunctionCallTip(globalFunctions[itemName], invocationInfo.argumentIndex)
 
-            if callStack.length > 0 or invocationInfo.type == 'instantiation'
-                if invocationInfo.type == 'instantiation'
-                    callStack.push(itemName)
-                    itemName = '__construct'
+                        @removeCallTip()
+                        @showCallTip(editor, newBufferPosition, callTipText)
+
+                return @service.getGlobalFunctions().then(successHandler, failureHandler)
+
+            else if invocationInfo.type == 'method'
+                methodName = invocationInfo.name
 
                 offset = @service.getCharacterOffsetFromByteOffset(invocationInfo.offset, editor.getBuffer().getText())
 
@@ -37,13 +43,8 @@ class Provider extends AbstractProvider
                         for classInfo in classInfoArray
                             callTipText = null
 
-                            if itemName of classInfo.methods
-                                callTipText = @getFunctionCallTip(classInfo.methods[itemName], invocationInfo.argumentIndex)
-
-                            else if itemName == '__construct'
-                                # Not all classes have an explicit constructor, if none is specified, a public one
-                                # exists, so pretend there are no parameters.
-                                callTipText = @getFunctionCallTip({parameters : []}, 0)
+                            if invocationInfo.name of classInfo.methods
+                                callTipText = @getFunctionCallTip(classInfo.methods[invocationInfo.name], invocationInfo.argumentIndex)
 
                             if callTipText?
                                 @removeCallTip()
@@ -56,22 +57,51 @@ class Provider extends AbstractProvider
 
                     return Promise.all(getClassInfoPromises).then(successHandler, failureHandler)
 
-                @service.deduceTypes(callStack, editor.getPath(), editor.getBuffer().getText(), offset).then(
+                return @service.deduceTypes(invocationInfo.expression, editor.getPath(), editor.getBuffer().getText(), offset, true).then(
                     deduceTypesSuccessHandler,
                     failureHandler
                 )
 
-            else
-              successHandler = (globalFunctions) =>
-                  if itemName of globalFunctions
-                      callTipText = @getFunctionCallTip(globalFunctions[itemName], invocationInfo.argumentIndex)
+            else if invocationInfo.type == 'instantiation'
+                resolveTypeAtSuccessHandler = (fqcn) =>
+                    successHandler = (classInfo) =>
+                        callTipText = null
 
-                      @removeCallTip()
-                      @showCallTip(editor, newBufferPosition, callTipText)
+                        if '__construct' of classInfo.methods
+                            callTipText = @getFunctionCallTip(classInfo.methods['__construct'], invocationInfo.argumentIndex)
 
-              @service.getGlobalFunctions().then(successHandler, failureHandler)
+                        else
+                            # Not all classes have an explicit constructor, if none is specified, a public one
+                            # exists, so pretend there are no parameters.
+                            callTipText = @getFunctionCallTip({parameters : []}, 0)
 
-        @service.getInvocationInfoAt(editor, newBufferPosition).then(getInvocationInfoHandler, failureHandler)
+                        if callTipText?
+                            @removeCallTip()
+                            @showCallTip(editor, newBufferPosition, callTipText)
+
+                    return @service.getClassInfo(fqcn).then(successHandler, failureHandler)
+
+                return @service.resolveTypeAt(editor, newBufferPosition, invocationInfo.expression, 'classlike').then(
+                    resolveTypeAtSuccessHandler,
+                    failureHandler
+                )
+
+        if @isValidBufferPosition(editor, newBufferPosition)
+            @service.getInvocationInfoAt(editor, newBufferPosition).then(getInvocationInfoHandler, failureHandler)
+
+    ###*
+     * @param {TextEditor}  editor
+     * @param {Point}       bufferPosition
+     *
+     * @return {Boolean}
+    ###
+    isValidBufferPosition: (editor, bufferPosition) ->
+        scopeChain = editor.scopeDescriptorForBufferPosition(bufferPosition).getScopeChain()
+
+        if scopeChain.indexOf('.comment') != -1
+            return false
+
+        return true
 
     ###*
      * Builds the call tip for a PHP function or method.
@@ -87,7 +117,7 @@ class Provider extends AbstractProvider
 
         body = ''
 
-        isInOptionalList = false
+        # isInOptionalList = false
 
         for param, index in info.parameters
             isCurrentArgument = false
@@ -98,17 +128,30 @@ class Provider extends AbstractProvider
             else if activeArgumentNumber > index and param.isVariadic
                 isCurrentArgument = true
 
-            body += '['   if param.isOptional and not isInOptionalList
+            # body += '['   if param.isOptional and not isInOptionalList
             body += ', '  if index != 0
-            body += '<strong>' if isCurrentArgument
-            body += (param.types.map((type) -> return type.type).join('|') + ' ') if param.types.length > 0
+            body += '<span class="php-integrator-call-tip-inactive-argument">' if not isCurrentArgument
+
+            if param.types.length > 0
+                body += '<em>'
+                body += (param.types.map((type) -> return type.type).join('|') + '&nbsp;')
+                body += '</em>'
+
+            body += '<strong>'
             body += '...' if param.isVariadic
             body += '&'   if param.isReference
             body += '$' + param.name
-            body += ' = ' + param.defaultValue if param.defaultValue
-            body += '</strong>' if isCurrentArgument
-            body += ']'  if param.isOptional and index == (info.parameters.length - 1)
+            body += '</strong>'
 
-            isInOptionalList = param.isOptional
+            if param.defaultValue
+                body += '&nbsp;'
+                body += '<span class="keystroke php-integrator-call-tip-default-value">'
+                body += param.defaultValue
+                body += '</span>'
+
+            body += '</span>' if not isCurrentArgument
+            # body += ']'  if param.isOptional and index == (info.parameters.length - 1)
+
+            # isInOptionalList = param.isOptional
 
         return body

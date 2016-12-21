@@ -1,3 +1,5 @@
+shell = require 'shell'
+
 {Range} = require 'atom'
 
 AbstractProvider = require './AbstractProvider'
@@ -14,13 +16,13 @@ class MethodProvider extends AbstractProvider
     registerAnnotations: (editor) ->
         path = editor.getPath()
 
-        return if not path
+        return null if not path
 
         successHandler = (classInfo) =>
-            return if not classInfo
+            return null if not classInfo
 
             for name, method of classInfo.methods
-                continue if not method.override and not method.implementation
+                continue if not method.override and method.implementations?.length == 0
                 continue if method.declaringStructure.name != classInfo.name
 
                 range = new Range([method.startLine - 1, 0], [method.startLine, -1])
@@ -31,10 +33,14 @@ class MethodProvider extends AbstractProvider
             # Just do nothing.
 
         getClassListHandler = (classesInEditor) =>
-            for name,classInfo of classesInEditor
-                @service.getClassInfo(name).then(successHandler, failureHandler)
+            promises = []
 
-        @service.getClassListForFile(path).then(getClassListHandler, failureHandler)
+            for name,classInfo of classesInEditor
+                promises.push @service.getClassInfo(name).then(successHandler, failureHandler)
+
+            return Promise.all(promises)
+
+        return @service.getClassListForFile(path).then(getClassListHandler, failureHandler)
 
     ###*
      * Fetches annotation info for the specified context.
@@ -69,9 +75,11 @@ class MethodProvider extends AbstractProvider
 
         else
             # NOTE: We deliberately show the declaring class here, not the structure (which could be a trait).
-            extraData = context.implementation
-            lineNumberClass = 'implementation'
-            tooltipText = 'Implements method for ' + extraData.declaringClass.name
+            extraData = context.implementations[0]
+            lineNumberClass = 'implementations'
+            tooltipText = 'Implements method for ' + extraData.declaringStructure.name
+
+        extraData.name = context.name
 
         return {
             lineNumberClass : lineNumberClass
@@ -89,6 +97,14 @@ class MethodProvider extends AbstractProvider
                 initialLine    : annotationInfo.extraData.declaringStructure.startLineMember - 1,
                 searchAllPanes : true
             })
+
+        else
+            url = @service.getDocumentationUrlForClassMethod(
+                annotationInfo.extraData.declaringStructure.name,
+                annotationInfo.extraData.name
+            )
+
+            shell.openExternal(url)
 
     ###*
      * @inheritdoc

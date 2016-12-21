@@ -12,7 +12,7 @@ class AbstractProvider
     ###*
      * The class selectors for which autocompletion triggers.
     ###
-    selector: '.source.php'
+    scopeSelector: '.source.php'
 
     ###*
      * The inclusion priority of the provider.
@@ -26,9 +26,9 @@ class AbstractProvider
     filterSuggestions: true
 
     ###*
-     * The class selectors autocompletion is explicitly disabled for (overrules the {@see selector}).
+     * The class selectors autocompletion is explicitly disabled for (overrules the {@see scopeSelector}).
     ###
-    disableForSelector: '.source.php .comment, .source.php .string'
+    disableForScopeSelector: '.source.php .comment, .source.php .string'
 
     ###*
      * The service (that can be used to query the source code and contains utility methods).
@@ -122,18 +122,7 @@ class AbstractProvider
         declaringStructureShortName = ''
 
         if info.declaringStructure and info.declaringStructure.name
-            declaringStructure = null
-
-            if info.override
-                declaringStructure = info.override.declaringStructure
-
-            else if info.implementation
-                declaringStructure = info.implementation.declaringStructure
-
-            else
-                declaringStructure = info.declaringStructure
-
-            declaringStructureShortName = @getClassShortName(declaringStructure.name)
+            return @getClassShortName(info.declaringStructure.name)
 
         return declaringStructureShortName
 
@@ -207,6 +196,10 @@ class AbstractProvider
 
         if matches
             # We always want the last match, as that's closest to the cursor itself.
-            return matches[matches.length - 1]
+            match = matches[matches.length - 1]
+
+            # Turn undefined, which happens if the capture group has nothing to catch, into a valid string.
+            return '' if not match?
+            return match
 
         return null

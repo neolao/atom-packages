@@ -24,6 +24,9 @@ class AtomConfig extends Config
     ###
     load: () ->
         @set('phpCommand', atom.config.get("#{@packageName}.phpCommand"))
+        @set('additionalIndexingDelay', atom.config.get("#{@packageName}.additionalIndexingDelay"))
+        @set('memoryLimit', atom.config.get("#{@packageName}.memoryLimit"))
+        @set('insertNewlinesForUseStatements', atom.config.get("#{@packageName}.insertNewlinesForUseStatements"))
         @set('packagePath', atom.packages.resolvePackagePath("#{@packageName}"))
 
     ###*
@@ -32,3 +35,12 @@ class AtomConfig extends Config
     attachListeners: () ->
         atom.config.onDidChange "#{@packageName}.phpCommand", () =>
             @set('phpCommand', atom.config.get("#{@packageName}.phpCommand"))
+
+        atom.config.onDidChange "#{@packageName}.additionalIndexingDelay", () =>
+            @set('additionalIndexingDelay', atom.config.get("#{@packageName}.additionalIndexingDelay"))
+
+        atom.config.onDidChange "#{@packageName}.memoryLimit", () =>
+            @set('memoryLimit', atom.config.get("#{@packageName}.memoryLimit"))
+
+        atom.config.onDidChange "#{@packageName}.insertNewlinesForUseStatements", () =>
+            @set('insertNewlinesForUseStatements', atom.config.get("#{@packageName}.insertNewlinesForUseStatements"))

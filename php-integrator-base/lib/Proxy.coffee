@@ -1,4 +1,5 @@
 fs            = require 'fs'
+net           = require 'net'
 stream        = require 'stream'
 child_process = require 'child_process'
 
@@ -10,18 +11,57 @@ module.exports =
 class Proxy
     ###*
      * The config to use.
+     *
+     * @var {Object}
     ###
     config: null
 
     ###*
      * The name (without path or extension) of the database file to use.
+     *
+     * @var {Object}
     ###
     indexDatabaseName: null
 
     ###*
-     * The name of the project.
+     * @var {Object}
     ###
-    projectName: null
+    phpServer: null
+
+    ###*
+     * @var {Promise}
+    ###
+    phpServerPromise: null
+
+    ###*
+     * @var {Object}
+    ###
+    client: null
+
+    ###*
+     * @var {Object}
+    ###
+    requestQueue: null
+
+    ###*
+     * @var {Number}
+    ###
+    nextRequestId: 1
+
+    ###*
+     * @var {Object}
+    ###
+    response: null
+
+    ###*
+     * @var {String}
+    ###
+    HEADER_DELIMITER: "\r\n"
+
+    ###*
+     * @var {Number}
+    ###
+    FATAL_SERVER_ERROR: -32000
 
     ###*
      * Constructor.
@@ -29,110 +69,413 @@ class Proxy
      * @param {Config} config
     ###
     constructor: (@config) ->
+        @requestQueue = {}
+        @port = @getRandomServerPort()
+
+        @resetResponseState()
 
     ###*
-     * Prepares parameters for execution.
+     * Spawns the PHP socket server process.
+     *
+     * @param {Number} port
+     *
+     * @return {Promise}
+    ###
+    spawnPhpServer: (port) ->
+        php = @config.get('phpCommand')
+        memoryLimit = @config.get('memoryLimit')
+
+        parameters = [
+             '-d memory_limit=' + memoryLimit + 'M',
+             @getCorePackagePath() + "/src/Main.php",
+             '--port=' + port
+        ]
+
+        process = child_process.spawn(php, parameters)
+
+        return new Promise (resolve, reject) =>
+            process.stdout.on 'data', (data) =>
+                console.debug('The PHP server has something to say:', data.toString())
+
+                # Assume the server has successfully spawned the moment it says its first words.
+                resolve(process)
+
+            process.stderr.on 'data', (data) =>
+                console.warn('The PHP server has errors to report:', data.toString())
+
+            process.on 'close', (code) =>
+                if code == 2
+                    console.error('Port ' + port + ' is already taken')
+                    return
+
+                console.warn('PHP socket server exited by itself, a fatal error must have occurred.')
+
+    ###*
+     * @return {Number}
+    ###
+    getRandomServerPort: () ->
+        minPort = 10000
+        maxPort = 40000
+
+        return Math.floor(Math.random() * (maxPort - minPort) + minPort)
+
+    ###*
+     * Spawns the PHP socket server process.
+     *
+     * @param {Number} port
+     *
+     * @return {Promise}
+    ###
+    spawnPhpServerIfNecessary: (port) ->
+        if @phpServer
+            return new Promise (resolve, reject) =>
+                resolve(@phpServer)
+
+        else if @phpServerPromise
+            return @phpServerPromise
+
+        @phpServerPromise = @spawnPhpServer(port).then (phpServer) =>
+            @phpServer = phpServer
+
+            return phpServer
+
+        return @phpServerPromise
+
+    ###*
+     * Sends the kill signal to the socket server.
+     *
+     * Note that this is a signal, the process may ignore it (but it usually will not, unless it's really persistent in
+     * continuing whatever it's doing).
      *
      * @param {Array} parameters
      *
      * @return {Array}
     ###
-    prepareParameters: (args) ->
-        parameters = [
-            '-d memory_limit=-1',
-            __dirname + "/../php/src/Main.php"
-        ]
+    stopPhpServer: (port) ->
+        if @client
+            @client.destroy()
 
-        for a in args
-            parameters.push(a)
+        return if not @phpServer
 
-        return parameters
+        @phpServer.kill()
+        @phpServer = null
+
+    ###*
+     * @return {String}
+    ###
+    getCorePackagePath: () ->
+        return atom.packages.resolvePackagePath("php-integrator-core")
+
+    ###*
+     * @return {Object}
+    ###
+    getSocketConnection: () ->
+        return new Promise (resolve, reject) =>
+            @spawnPhpServerIfNecessary(@port).then () =>
+                if @client?
+                    resolve(@client)
+                    return
+
+                @client = net.createConnection {port: @port}, () =>
+                    resolve(@client)
+
+                @client.setNoDelay(true)
+                @client.on('data', @onDataReceived.bind(this))
+                @client.on('close', @onConnectionClosed.bind(this))
+
+    ###*
+     * @param {String} data
+    ###
+    onDataReceived: (data) ->
+        try
+            @processDataBuffer(data)
+
+        catch error
+            console.warn('Encountered some invalid data, resetting state. Error: ', error)
+
+            @resetResponseState()
+
+    ###*
+     * @param {Boolean} hadError
+    ###
+    onConnectionClosed: (hadError) ->
+        if hadError
+            detail =
+                "The socket connection with the PHP server could not be established. This means the PHP server could " +
+                "not be spawned. This is most likely an issue with your setup, such as your PHP binary not being " +
+                "found, an extension missing on your system, ..."
+
+        else
+            detail =
+                "The socket connection to the PHP server was unexpectedly closed. Either something caused the process to " +
+                "stop, the socket to close, or the PHP process may have crashed. If you're sure it's the last one, feel " +
+                "free to report a bug.\n \n" +
+
+                'An attempt will be made to restart the server and reestablish the connection.'
+
+        atom.notifications.addError('PHP Integrator - Oops, something went wrong!', {
+            dismissable : true
+            detail      : detail
+        })
+
+        @client = null
+
+    ###*
+     * @param {Buffer} dataBuffer
+    ###
+    processDataBuffer: (dataBuffer) ->
+        if not @response.length?
+            contentLengthHeader = @readRawHeader(dataBuffer)
+            @response.length = @getLengthFromContentLengthHeader(contentLengthHeader)
+
+            bytesRead = contentLengthHeader.length + @HEADER_DELIMITER.length
+
+        else if not @response.wasBoundaryFound
+            header = @readRawHeader(dataBuffer)
+
+            if header.length == 0
+                @response.wasBoundaryFound = true
+
+            bytesRead = header.length + @HEADER_DELIMITER.length
+
+        else
+            bytesRead = Math.min(dataBuffer.length, @response.length - @response.bytesRead)
+
+            @response.content = Buffer.concat([@response.content, dataBuffer.slice(0, bytesRead)])
+            @response.bytesRead += bytesRead
+
+            if @response.bytesRead == @response.length
+                jsonRpcResponse = @getJsonRpcResponseFromResponseBuffer(@response.content)
+
+                @processJsonRpcResponse(jsonRpcResponse)
+
+                @resetResponseState()
+
+        dataBuffer = dataBuffer.slice(bytesRead)
+
+        if dataBuffer.length > 0
+            @processDataBuffer(dataBuffer)
+
+    ###*
+     * @param {Object} jsonRpcResponse
+    ###
+    processJsonRpcResponse: (jsonRpcResponse) ->
+        if jsonRpcResponse.id?
+            jsonRpcRequest = @requestQueue[jsonRpcResponse.id]
+
+            @processJsonRpcResponseForRequest(jsonRpcResponse, jsonRpcRequest)
+
+            delete @requestQueue[jsonRpcResponse.id]
+
+        else
+            @processNotificationJsonRpcResponse(jsonRpcResponse)
+
+    ###*
+     * @param {Object} jsonRpcResponse
+     * @param {Object} jsonRpcRequest
+    ###
+    processJsonRpcResponseForRequest: (jsonRpcResponse, jsonRpcRequest) ->
+        if jsonRpcResponse.error?
+            jsonRpcRequest.promise.reject({
+                request  : jsonRpcRequest
+                response : jsonRpcResponse
+                error    : jsonRpcResponse.error
+            })
+
+            if jsonRpcResponse.error.code == @FATAL_SERVER_ERROR
+                @showUnexpectedSocketResponseError(jsonRpcResponse.error.message)
+
+        else
+            jsonRpcRequest.promise.resolve(jsonRpcResponse.result)
+
+    ###*
+     * @param {Object} jsonRpcResponse
+     * @param {Object} jsonRpcRequest
+    ###
+    processNotificationJsonRpcResponse: (jsonRpcResponse) ->
+        if not jsonRpcResponse.result?
+            console.warn('Received a server notification without a result', jsonRpcResponse)
+            return
+
+        if jsonRpcResponse.result.type == 'reindexProgressInformation'
+            if not jsonRpcResponse.result.requestId?
+                console.warn('Received progress information without a request ID to go with it', jsonRpcResponse)
+                return
+
+            relatedJsonRpcRequest = @requestQueue[jsonRpcResponse.result.requestId]
+
+            if not relatedJsonRpcRequest.streamCallback?
+                console.warn('Received progress information for a request that isn\'t interested in it')
+                return
+
+            relatedJsonRpcRequest.streamCallback(jsonRpcResponse.result.progress)
+
+        else
+            console.warn('Received a server notification with an unknown type', jsonRpcResponse)
+
+    ###*
+     * @param {Buffer} dataBuffer
+     *
+     * @return {Object}
+    ###
+    getJsonRpcResponseFromResponseBuffer: (dataBuffer) ->
+        jsonRpcResponseString = dataBuffer.toString()
+
+        return @getJsonRpcResponseFromResponseContent(jsonRpcResponseString)
+
+    ###*
+     * @param {String} content
+     *
+     * @return {Object}
+    ###
+    getJsonRpcResponseFromResponseContent: (content) ->
+        return JSON.parse(content)
+
+    ###*
+     * @param {Buffer} dataBuffer
+     *
+     * @throws {Error}
+     *
+     * @return {String}
+    ###
+    readRawHeader: (dataBuffer) ->
+        end = dataBuffer.indexOf(@HEADER_DELIMITER)
+
+        if end == -1
+          throw new Error('Header delimiter not found');
+
+        return dataBuffer.slice(0, end).toString()
+
+    ###*
+     * @param {String} rawHeader
+     *
+     * @throws {Error}
+     *
+     * @return {Number}
+    ###
+    getLengthFromContentLengthHeader: (rawHeader) ->
+        parts = rawHeader.split(':')
+
+        if parts.length != 2
+            throw new Error('Unexpected amount of header parts found')
+
+        contentLength = parseInt(parts[1])
+
+        if not contentLength?
+            throw new Error('Content length header does not have an integer as value')
+
+        return contentLength
+
+    ###*
+     * Resets the current response's state.
+    ###
+    resetResponseState: () ->
+        @response =
+            length           : null
+            wasBoundaryFound : false
+            bytesRead        : 0
+            content          : new Buffer([])
 
     ###*
      * Performs an asynchronous request to the PHP side.
      *
-     * @param {String}   command        The command to execute.
-     * @param {Array}    parameters     The arguments to pass.
-     * @param {Callback} streamCallback A method to invoke each time streaming data is received.
-     * @param {String}   stdinData      The data to pass to STDIN.
+     * @param {Number}   id
+     * @param {String}   method
+     * @param {Object}   parameters
+     * @param {Callback} streamCallback
      *
      * @return {Promise}
     ###
-    performRequestAsync: (command, parameters, streamCallback = null, stdinData = null) ->
+    performJsonRpcRequest: (id, method, parameters, streamCallback = null) ->
         return new Promise (resolve, reject) =>
-            proc = child_process.spawn(command, parameters)
+            JsonRpcRequest =
+                jsonrpc : 2.0
+                id      : id
+                method  : method
+                params  : parameters
 
-            buffer = ''
-            errorBuffer = ''
+            @requestQueue[id] = {
+                id             : id
+                streamCallback : streamCallback
+                request        : JsonRpcRequest
 
-            proc.stdout.on 'data', (data) =>
-                buffer += data
+                promise: {
+                    resolve : resolve
+                    reject  : reject
+                }
+            }
 
-            proc.on 'close', (code) =>
-                if errorBuffer or not buffer or buffer.length == 0
-                    @showUnexpectedOutputError(errorBuffer)
-                    reject({rawOutput: buffer, message: "No output received from the PHP side!"})
-                    return
+            content = @getContentForJsonRpcRequest(JsonRpcRequest)
 
-                try
-                    response = JSON.parse(buffer)
-
-                catch error
-                    @showUnexpectedOutputError(buffer)
-
-                if not response or not response.success
-                    reject({rawOutput: buffer, message: 'An unsuccessful status code was returned by the PHP side!'})
-                    return
-
-                resolve(response.result)
-
-            if streamCallback
-                proc.stderr.on 'data', (data) =>
-                    streamCallback(data)
-
-            else
-                proc.stderr.on 'data', (data) =>
-                    errorBuffer += data
-
-            if stdinData?
-                proc.stdin.write(stdinData, 'utf-8')
-                proc.stdin.end()
+            @writeRawRequest(content)
 
     ###*
-     * @param {String} rawOutput
+     * @param {Object} request
+     *
+     * @return {String}
     ###
-    showUnexpectedOutputError: (rawOutput) ->
-        atom.notifications.addError('php-integrator - Oops, something went wrong!', {
+    getContentForJsonRpcRequest: (request) ->
+        return JSON.stringify(request)
+
+    ###*
+     * Writes a raw request to the connection.
+     *
+     * This may not happen immediately if the connection is not available yet. In that case, the request will be
+     * dispatched as soon as the connection becomes available.
+     *
+     * @param {String} content The content (body) of the request.
+    ###
+    writeRawRequest: (content) ->
+        @getSocketConnection().then (connection) =>
+            lengthInBytes = (new TextEncoder('utf-8').encode(content)).length
+
+            connection.write("Content-Length: " + lengthInBytes + @HEADER_DELIMITER)
+            connection.write(@HEADER_DELIMITER);
+            connection.write(content)
+
+    ###*
+     * @param {String}     rawOutput
+     * @param {Array|null} parameters
+    ###
+    showUnexpectedSocketResponseError: (rawOutput, parameters = null) ->
+        detail =
+            "The socket server sent back something unexpected. This could be a bug, but it could also be a problem " +
+            "with your setup. If you're sure it is a bug, feel free to report it on the bug tracker."
+
+        if parameters?
+            detail += "\n \nCommand\n  → " + parameters.join(' ')
+
+        detail += "\n \nOutput\n  → " + rawOutput
+
+        atom.notifications.addError('PHP Integrator - Oops, something went wrong!', {
             dismissable : true
-            detail      :
-                "PHP sent back something unexpected. This is most likely an issue with your setup. If you're sure " +
-                "this is a bug, feel free to report it on the bug tracker.\n \n→ " + rawOutput
+            detail      : detail
         })
 
     ###*
-     * Performs a request to the PHP side.
-     *
-     * @param {Array}    args           The arguments to pass.
-     * @param {Callback} streamCallback A method to invoke each time streaming data is received.
-     * @param {String}   stdinData      The data to pass to STDIN.
-     *
-     * @todo Support stdinData for synchronous requests as well.
+     * @param {String}      method
+     * @param {Object}      parameters
+     * @param {Callback}    streamCallback A method to invoke each time streaming data is received.
+     * @param {String|null} stdinData      The data to pass to STDIN.
      *
      * @return {Promise}
     ###
-    performRequest: (args, streamCallback = null, stdinData = null) ->
-        php = @config.get('phpCommand')
-
-        args.unshift(@projectName)
-
-        parameters = @prepareParameters(args)
-
-        if not @projectName
+    performRequest: (method, parameters, streamCallback = null, stdinData = null) ->
+        if not @getCorePackagePath()?
             return new Promise (resolve, reject) ->
-                reject()
+                reject('''
+                    The core package was not found, it is currently being installed. This only needs to happen once at
+                    initialization, but the service is not available yet in the meantime.
+                ''')
+                return
 
+        if stdinData?
+            parameters.stdin = true
+            parameters.stdinData = stdinData
 
-        return @performRequestAsync(php, parameters, streamCallback, stdinData)
+        requestId = @nextRequestId++
+
+        return @performJsonRpcRequest(requestId, method, parameters, streamCallback)
 
     ###*
      * Retrieves a list of available classes.
@@ -140,12 +483,15 @@ class Proxy
      * @return {Promise}
     ###
     getClassList: () ->
-        parameters = [
-            '--class-list',
-            '--database=' + @getIndexDatabasePath()
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters)
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('classList', parameters)
 
     ###*
      * Retrieves a list of available classes in the specified file.
@@ -156,15 +502,58 @@ class Proxy
     ###
     getClassListForFile: (file) ->
         if not file
-            throw new Error('No file passed!')
+            return new Promise (resolve, reject) ->
+                reject('No file passed!')
 
-        parameters = [
-            '--class-list',
-            '--database=' + @getIndexDatabasePath(),
-            '--file=' + file
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters)
+        parameters = {
+            database : @getIndexDatabasePath()
+            file     : file
+        }
+
+        return @performRequest('classList', parameters)
+
+    ###*
+     * Retrieves a list of namespaces.
+     *
+     * @return {Promise}
+    ###
+    getNamespaceList: () ->
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('namespaceList', parameters)
+
+    ###*
+     * Retrieves a list of namespaces in the specified file.
+     *
+     * @param {String} file
+     *
+     * @return {Promise}
+    ###
+    getNamespaceListForFile: (file) ->
+        if not file
+            return new Promise (resolve, reject) ->
+                reject('No file passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+            file     : file
+        }
+
+        return @performRequest('namespaceList', parameters)
 
     ###*
      * Retrieves a list of available global constants.
@@ -172,12 +561,15 @@ class Proxy
      * @return {Promise}
     ###
     getGlobalConstants: () ->
-        parameters = [
-            '--constants',
-            '--database=' + @getIndexDatabasePath()
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters)
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('globalConstants', parameters)
 
     ###*
      * Retrieves a list of available global functions.
@@ -185,12 +577,15 @@ class Proxy
      * @return {Promise}
     ###
     getGlobalFunctions: () ->
-        parameters = [
-            '--functions',
-            '--database=' + @getIndexDatabasePath()
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters)
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('globalFunctions', parameters)
 
     ###*
      * Retrieves a list of available members of the class (or interface, trait, ...) with the specified name.
@@ -201,15 +596,19 @@ class Proxy
     ###
     getClassInfo: (className) ->
         if not className
-            throw new Error('No class name passed!')
+            return new Promise (resolve, reject) ->
+                reject('No class name passed!')
 
-        parameters = [
-            '--class-info',
-            '--database=' + @getIndexDatabasePath(),
-            '--name=' + className
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters)
+        parameters = {
+            database : @getIndexDatabasePath()
+            name     : className
+        }
+
+        return @performRequest('classInfo', parameters)
 
     ###*
      * Resolves a local type in the specified file, based on use statements and the namespace.
@@ -217,23 +616,40 @@ class Proxy
      * @param {String}  file
      * @param {Number}  line The line the type is located at. The first line is 1, not 0.
      * @param {String}  type
+     * @param {String}  kind The kind of element. Either 'classlike', 'constant' or 'function'.
      *
      * @return {Promise}
     ###
-    resolveType: (file, line, type) ->
-        throw new Error('No file passed!') if not file
-        throw new Error('No line passed!') if not line
-        throw new Error('No type passed!') if not type
+    resolveType: (file, line, type, kind = 'classlike') ->
+        if not file
+            return new Promise (resolve, reject) ->
+                reject('No file passed!')
 
-        parameters = [
-            '--resolve-type',
-            '--database=' + @getIndexDatabasePath(),
-            '--file=' + file,
-            '--line=' + line,
-            '--type=' + type
-        ]
+        if not line
+            return new Promise (resolve, reject) ->
+                reject('No line passed!')
 
-        return @performRequest(parameters)
+        if not type
+            return new Promise (resolve, reject) ->
+                reject('No type passed!')
+
+        if not kind
+            return new Promise (resolve, reject) ->
+                reject('No kind passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+            file     : file
+            line     : line
+            type     : type
+            kind     : kind
+        }
+
+        return @performRequest('resolveType', parameters)
 
     ###*
      * Localizes a type to the specified file, making it relative to local use statements, if possible. If not possible,
@@ -242,23 +658,40 @@ class Proxy
      * @param {String}  file
      * @param {Number}  line The line the type is located at. The first line is 1, not 0.
      * @param {String}  type
+     * @param {String}  kind The kind of element. Either 'classlike', 'constant' or 'function'.
      *
      * @return {Promise}
     ###
-    localizeType: (file, line, type) ->
-        throw new Error('No file passed!') if not file
-        throw new Error('No line passed!') if not line
-        throw new Error('No type passed!') if not type
+    localizeType: (file, line, type, kind = 'classlike') ->
+        if not file
+            return new Promise (resolve, reject) ->
+                reject('No file passed!')
 
-        parameters = [
-            '--localize-type',
-            '--database=' + @getIndexDatabasePath(),
-            '--file=' + file,
-            '--line=' + line,
-            '--type=' + type
-        ]
+        if not line
+            return new Promise (resolve, reject) ->
+                reject('No line passed!')
 
-        return @performRequest(parameters)
+        if not type
+            return new Promise (resolve, reject) ->
+                reject('No type passed!')
+
+        if not kind
+            return new Promise (resolve, reject) ->
+                reject('No kind passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+            file     : file
+            line     : line
+            type     : type
+            kind     : kind
+        }
+
+        return @performRequest('localizeType', parameters)
 
     ###*
      * Performs a semantic lint of the specified file.
@@ -272,38 +705,39 @@ class Proxy
      * @return {Promise}
     ###
     semanticLint: (file, source, options = {}) ->
-        throw new Error('No file passed!') if not file
+        if not file
+            return new Promise (resolve, reject) ->
+                reject('No file passed!')
 
-        parameters = [
-            '--semantic-lint',
-            '--database=' + @getIndexDatabasePath(),
-            '--file=' + file,
-            '--stdin'
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+            file     : file
+            stdin    : true
+        }
 
         if options.noUnknownClasses == true
-            parameters.push('--no-unknown-classes')
+            parameters['no-unknown-classes'] = true
 
         if options.noUnknownMembers == true
-            parameters.push('--no-unknown-members')
+            parameters['no-unknown-members'] = true
 
         if options.noUnknownGlobalFunctions == true
-            parameters.push('--no-unknown-global-functions')
+            parameters['no-unknown-global-functions'] = true
 
         if options.noUnknownGlobalConstants == true
-            parameters.push('--no-unknown-global-constants')
+            parameters['no-unknown-global-constants'] = true
 
         if options.noDocblockCorrectness == true
-            parameters.push('--no-docblock-correctness')
+            parameters['no-docblock-correctness'] = true
 
         if options.noUnusedUseStatements == true
-            parameters.push('--no-unused-use-statements')
+            parameters['no-unused-use-statements'] = true
 
-        return @performRequest(
-            parameters,
-            null,
-            source
-        )
+        return @performRequest('semanticLint', parameters, null, source)
 
     ###*
      * Fetches all available variables at a specific location.
@@ -316,45 +750,29 @@ class Proxy
     ###
     getAvailableVariables: (file, source, offset) ->
         if not file? and not source?
-            throw 'Either a path to a file or source code must be passed!'
+            return new Promise (resolve, reject) ->
+                reject('Either a path to a file or source code must be passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database   : @getIndexDatabasePath()
+            offset     : offset
+            charoffset : true
+        }
 
         if file?
-            parameter = '--file=' + file
+            parameters.file = file
 
-        if source?
-            parameter = '--stdin'
-
-        parameters = [
-            '--available-variables',
-            '--database=' + @getIndexDatabasePath(),
-            parameter,
-            '--offset=' + offset,
-            '--charoffset'
-        ]
-
-        return @performRequest(parameters, null, source)
+        return @performRequest('availableVariables', parameters, null, source)
 
     ###*
-     * Fetches the types of the specified variable at the specified location.
+     * Deduces the resulting types of an expression.
      *
-     * @deprecated Use deduceTypes instead.
-     *
-     * @param {String}      name   The variable to fetch, including its leading dollar sign.
-     * @param {String}      file   The path to the file to examine.
-     * @param {String|null} source The source code to search. May be null if a file is passed instead.
-     * @param {Number}      offset The character offset into the file to examine.
-     *
-     * @return {Promise}
-    ###
-    getVariableTypes: (name, file, source, offset) ->
-        return @deduceTypes([name], file, source, offset)
-
-    ###*
-     * Deduces the resulting types of an expression based on its parts.
-     *
-     * @param {Array|null}  parts             One or more strings that are part of the expression, e.g.
-     *                                        ['$this', 'foo()']. If null, the expression will automatically be deduced
-     *                                        based on the offset.
+     * @param {String|null} expression        The expression to deduce the type of, e.g. '$this->foo()'. If null, the
+     *                                        expression just before the specified offset will be used.
      * @param {String}      file              The path to the file to examine.
      * @param {String|null} source            The source code to search. May be null if a file is passed instead.
      * @param {Number}      offset            The character offset into the file to examine.
@@ -366,35 +784,31 @@ class Proxy
      *
      * @return {Promise}
     ###
-    deduceTypes: (parts, file, source, offset, ignoreLastElement) ->
+    deduceTypes: (expression, file, source, offset, ignoreLastElement) ->
         if not file?
-            throw 'A path to a file must be passed!'
+            return new Promise (resolve, reject) ->
+                reject('A path to a file must be passed!')
 
-        parameters = [
-            '--deduce-types',
-            '--database=' + @getIndexDatabasePath(),
-            '--offset=' + offset,
-            '--charoffset'
-        ]
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database   : @getIndexDatabasePath()
+            offset     : offset
+            charoffset : true
+        }
 
         if file?
-            parameters.push('--file=' + file)
-
-        if source?
-            parameters.push('--stdin')
+            parameters.file = file
 
         if ignoreLastElement
-            parameters.push('--ignore-last-element')
+            parameters['ignore-last-element'] = true
 
-        if parts?
-            for part in parts
-                parameters.push('--part=' + part)
+        if expression?
+            parameters.expression = expression
 
-        return @performRequest(
-            parameters,
-            null,
-            source
-        )
+        return @performRequest('deduceTypes', parameters, null, source)
 
     ###*
      * Fetches invocation information of a method or function call.
@@ -407,47 +821,82 @@ class Proxy
     ###
     getInvocationInfo: (file, source, offset) ->
         if not file? and not source?
-            throw 'Either a path to a file or source code must be passed!'
+            return new Promise (resolve, reject) ->
+                reject('Either a path to a file or source code must be passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database   : @getIndexDatabasePath()
+            offset     : offset
+            charoffset : true
+        }
 
         if file?
-            parameter = '--file=' + file
+            parameters.file = file
 
-        if source?
-            parameter = '--stdin'
-
-        parameters = [
-            '--invocation-info',
-            '--database=' + @getIndexDatabasePath(),
-            parameter,
-            '--offset=' + offset,
-            '--charoffset'
-        ]
-
-        return @performRequest(parameters, null, source)
+        return @performRequest('invocationInfo', parameters, null, source)
 
     ###*
-     * Truncates the database.
+     * Initializes a project.
      *
      * @return {Promise}
     ###
-    truncate: () ->
-        parameters = [
-            '--truncate',
-            '--database=' + @getIndexDatabasePath()
-        ]
+    initialize: () ->
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
-        return @performRequest(parameters, null, null)
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('initialize', parameters, null, null)
+
+    ###*
+     * Vacuums a project, cleaning up the index database (e.g. pruning files that no longer exist).
+     *
+     * @return {Promise}
+    ###
+    vacuum: () ->
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('vacuum', parameters, null, null)
+
+    ###*
+     * Tests a project, to see if it is in a properly usable state.
+     *
+     * @return {Promise}
+    ###
+    test: () ->
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
+
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
+
+        return @performRequest('test', parameters, null, null)
 
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
-     * @param {String|Array} path                   The full path to the file  or folder to refresh. Alternatively,
+     * @param {String|Array}  path                   The full path to the file  or folder to refresh. Alternatively,
      *                                              this can be a list of items to index at the same time.
-     * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
+     * @param {String|null}   source                 The source code of the file to index. May be null if a directory is
      *                                              passed instead.
-     * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
-     * @param {Array}        excludedPaths          A list of paths to exclude from indexing.
-     * @param {Array}        fileExtensionsToIndex  A list of file extensions (without leading dot) to index.
+     * @param {Callback|null} progressStreamCallback A method to invoke each time progress streaming data is received.
+     * @param {Array}         excludedPaths          A list of paths to exclude from indexing.
+     * @param {Array}         fileExtensionsToIndex  A list of file extensions (without leading dot) to index.
      *
      * @return {Promise}
     ###
@@ -462,43 +911,29 @@ class Proxy
             pathsToIndex = path
 
         if path.length == 0
-            throw new Error('No filename passed!')
+            return new Promise (resolve, reject) ->
+                reject('No filename passed!')
+
+        if not @getIndexDatabasePath()?
+            return new Promise (resolve, reject) ->
+                reject('Request aborted as there is no project active (yet)')
 
         progressStreamCallbackWrapper = null
 
-        parameters = [
-            '--reindex',
-            '--database=' + @getIndexDatabasePath()
-        ]
+        parameters = {
+            database : @getIndexDatabasePath()
+        }
 
         if progressStreamCallback?
-            parameters.push('--stream-progress')
+            parameters['stream-progress'] = true
 
-            progressStreamCallbackWrapper = (output) =>
-                # Sometimes we receive multiple lines in bulk, so we must ensure it remains split correctly.
-                percentages = output.toString('ascii').split("\n")
-                percentages.pop() # Ditch the empty value.
+            progressStreamCallbackWrapper = progressStreamCallback
 
-                for percentage in percentages
-                    progressStreamCallback(percentage)
+        parameters.source = pathsToIndex
+        parameters.exclude = excludedPaths
+        parameters.extension = fileExtensionsToIndex
 
-        for pathToIndex in pathsToIndex
-            parameters.push('--source=' + pathToIndex)
-
-        if source?
-            parameters.push('--stdin')
-
-        for excludedPath in excludedPaths
-            parameters.push('--exclude=' + excludedPath)
-
-        for fileExtensionToIndex in fileExtensionsToIndex
-            parameters.push('--extension=' + fileExtensionToIndex)
-
-        return @performRequest(
-            parameters,
-            progressStreamCallbackWrapper,
-            source
-        )
+        return @performRequest('reindex', parameters, progressStreamCallbackWrapper, source)
 
     ###*
      * Sets the name (without path or extension) of the database file to use.
@@ -507,14 +942,6 @@ class Proxy
     ###
     setIndexDatabaseName: (name) ->
         @indexDatabaseName = name
-
-    ###*
-     * Sets the project name to pass.
-     *
-     * @param {String} name
-    ###
-    setProjectName: (name) ->
-        @projectName = name
 
     ###*
      * Retrieves the full path to the database file to use.

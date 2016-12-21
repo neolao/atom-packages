@@ -8,22 +8,57 @@ module.exports =
 ##
 class Service
     ###*
-     * The proxy to use to contact the PHP side.
+     * @var {Object}
+    ###
+    config: null
+
+    ###*
+     * @var {Object}
     ###
     proxy: null
 
     ###*
-     * The emitter to use to emit indexing events.
+     * @var {Object}
     ###
-    indexingEventEmitter: null
+    projectManager: null
+
+    ###*
+     * @var {Object}
+    ###
+    indexingMediator: null
+
+    ###*
+     * @var {Object}
+    ###
+    useStatementHelper: null
 
     ###*
      * Constructor.
      *
+     * @param {AtomConfig}   config
      * @param {CachingProxy} proxy
-     * @param {Emitter}      indexingEventEmitter
+     * @param {Object}       projectManager
+     * @param {Object}       indexingMediator
+     * @param {Object}       useStatementHelper
     ###
-    constructor: (@proxy, @indexingEventEmitter) ->
+    constructor: (@config, @proxy, @projectManager, @indexingMediator, @useStatementHelper) ->
+
+    ###*
+     * Retrieves the use statement helper, which contains utility methods for dealing with use statements.
+     *
+     * @return {Object}
+    ###
+    getUseStatementHelper: () ->
+        return @useStatementHelper
+
+    ###*
+     * Retrieves the settings (that are specific to this package) for the currently active project. If there is no
+     * active project or the project does not have any settings, null is returned.
+     *
+     * @return {Object|null}
+    ###
+    getCurrentProjectSettings: () ->
+        return @projectManager.getCurrentProjectSettings()
 
     ###*
      * Clears the autocompletion cache. Most fetching operations such as fetching constants, autocompletion, fetching
@@ -50,6 +85,24 @@ class Service
     ###
     getClassListForFile: (file) ->
         return @proxy.getClassListForFile(file)
+
+    ###*
+     * Retrieves a list of namespaces.
+     *
+     * @return {Promise}
+    ###
+    getNamespaceList: () ->
+        return @proxy.getNamespaceList()
+
+    ###*
+     * Retrieves a list of namespaces in the specified file.
+     *
+     * @param {String} file
+     *
+     * @return {Promise}
+    ###
+    getNamespaceListForFile: (file) ->
+        return @proxy.getNamespaceListForFile(file)
 
     ###*
      * Retrieves a list of available global constants.
@@ -83,11 +136,12 @@ class Service
      * @param {String}  file
      * @param {Number}  line The line the type is located at. The first line is 1, not 0.
      * @param {String}  type
+     * @param {String}  kind The kind of element. Either 'classlike', 'constant' or 'function'.
      *
      * @return {Promise}
     ###
-    resolveType: (file, line, type) ->
-        return @proxy.resolveType(file, line, type)
+    resolveType: (file, line, type, kind) ->
+        return @proxy.resolveType(file, line, type, kind)
 
     ###*
      * Localizes a type to the specified file, making it relative to local use statements, if possible. If not possible,
@@ -96,11 +150,12 @@ class Service
      * @param {String}  file
      * @param {Number}  line The line the type is located at. The first line is 1, not 0.
      * @param {String}  type
+     * @param {String}  kind The kind of element. Either 'classlike', 'constant' or 'function'.
      *
      * @return {Promise}
     ###
-    localizeType: (file, line, type) ->
-        return @proxy.localizeType(file, line, type)
+    localizeType: (file, line, type, kind) ->
+        return @proxy.localizeType(file, line, type, kind)
 
     ###*
      * Performs a semantic lint of the specified file.
@@ -129,26 +184,10 @@ class Service
         return @proxy.getAvailableVariables(file, source, offset)
 
     ###*
-     * Fetches the types of the specified variable at the specified location.
+     * Deduces the resulting types of an expression.
      *
-     * @deprecated Use deduceTypes instead.
-     *
-     * @param {String}      name   The variable to fetch, including its leading dollar sign.
-     * @param {String}      file   The path to the file to examine.
-     * @param {String|null} source The source code to search. May be null if a file is passed instead.
-     * @param {Number}      offset The character offset into the file to examine.
-     *
-     * @return {Promise}
-    ###
-    getVariableTypesByOffset: (name, file, source, offset) ->
-        return @proxy.getVariableTypes(name, file, source, offset)
-
-    ###*
-     * Deduces the resulting types of an expression based on its parts.
-     *
-     * @param {Array|null}  parts             One or more strings that are part of the expression, e.g.
-     *                                        ['$this', 'foo()']. If null, the expression will automatically be deduced
-     *                                        based on the offset.
+     * @param {String|null} expression        The expression to deduce the type of, e.g. '$this->foo()'. If null, the
+     *                                        expression just before the specified offset will be used.
      * @param {String}      file              The path to the file to examine.
      * @param {String|null} source            The source code to search. May be null if a file is passed instead.
      * @param {Number}      offset            The character offset into the file to examine.
@@ -156,12 +195,12 @@ class Service
      *                                        is still writing code, e.g. "$this->foo()->b" would normally return the
      *                                        type (class) of 'b', as it is the last element, but as the user is still
      *                                        writing code, you may instead be interested in the type of 'foo()'
-     *                                       instead.
+     *                                        instead.
      *
      * @return {Promise}
     ###
-    deduceTypes: (parts, file, source, offset, ignoreLastElement) ->
-        return @proxy.deduceTypes(parts, file, source, offset, ignoreLastElement)
+    deduceTypes: (expression, file, source, offset, ignoreLastElement) ->
+        return @proxy.deduceTypes(expression, file, source, offset, ignoreLastElement)
 
     ###*
      * Retrieves the call stack of the function or method that is being invoked at the specified position. This can be
@@ -178,67 +217,72 @@ class Service
         return @proxy.getInvocationInfo(file, source, offset)
 
     ###*
-     * Truncates the database.
-     *
-     * @return {Promise}
-    ###
-    truncate: () ->
-        return @proxy.truncate()
-
-    ###*
      * Convenience alias for {@see deduceTypes}.
      *
+     * @param {String}     expression
      * @param {TextEditor} editor
      * @param {Range}      bufferPosition
-     * @param {String}     name
      *
      * @return {Promise}
     ###
-    deduceTypesAt: (parts, editor, bufferPosition) ->
+    deduceTypesAt: (expression, editor, bufferPosition) ->
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
         bufferText = editor.getBuffer().getText()
 
-        return @deduceTypes(parts, editor.getPath(), bufferText, offset)
+        return @deduceTypes(expression, editor.getPath(), bufferText, offset)
 
     ###*
      * Refreshes the specified file or folder. This method is asynchronous and will return immediately.
      *
-     * @param {String|Array} path                   The full path to the file  or folder to refresh. Alternatively,
+     * @param {String|Array}  path                  The full path to the file  or folder to refresh. Alternatively,
      *                                              this can be a list of items to index at the same time.
-     * @param {String|null}  source                 The source code of the file to index. May be null if a directory is
+     * @param {String|null}   source                The source code of the file to index. May be null if a directory is
      *                                              passed instead.
-     * @param {Callback}     progressStreamCallback A method to invoke each time progress streaming data is received.
-     * @param {Array}        excludedPaths          A list of paths to exclude from indexing.
-     * @param {Array}        fileExtensionsToIndex  A list of file extensions (without leading dot) to index.
+     * @param {Array}         excludedPaths         A list of paths to exclude from indexing.
+     * @param {Array}         fileExtensionsToIndex A list of file extensions (without leading dot) to index.
      *
      * @return {Promise}
     ###
-    reindex: (path, source, progressStreamCallback, excludedPaths, fileExtensionsToIndex) ->
-        return new Promise (resolve, reject) =>
-            successHandler = (output) =>
-                @indexingEventEmitter.emit('php-integrator-base:indexing-finished', {
-                    output : output
-                    path   : path
-                })
+    reindex: (path, source, excludedPaths, fileExtensionsToIndex) ->
+        return @indexingMediator.reindex(path, source, excludedPaths, fileExtensionsToIndex)
 
-                resolve(output)
+    ###*
+     * Initializes a project.
+     *
+     * @return {Promise}
+    ###
+    initialize: () ->
+        return @indexingMediator.initialize()
 
-            failureHandler = (error) =>
-                @indexingEventEmitter.emit('php-integrator-base:indexing-failed', {
-                    error : error
-                    path  : path
-                })
+    ###*
+     * Vacuums a project, cleaning up the index database (e.g. pruning files that no longer exist).
+     *
+     * @return {Promise}
+    ###
+    vacuum: () ->
+        return @indexingMediator.vacuum()
 
-                reject(error)
+    ###*
+     * Attaches a callback to indexing started event. The returned disposable can be used to detach your event handler.
+     *
+     * @param {Callback} callback A callback that takes one parameter which contains a 'path' property.
+     *
+     * @return {Disposable}
+    ###
+    onDidStartIndexing: (callback) ->
+        return @indexingMediator.onDidStartIndexing(callback)
 
-            return @proxy.reindex(
-                path,
-                source,
-                progressStreamCallback,
-                excludedPaths,
-                fileExtensionsToIndex
-            ).then(successHandler, failureHandler)
+    ###*
+     * Attaches a callback to indexing progress event. The returned disposable can be used to detach your event handler.
+     *
+     * @param {Callback} callback A callback that takes one parameter which contains a 'path' and a 'percentage'
+     *                            property.
+     *
+     * @return {Disposable}
+    ###
+    onDidIndexingProgress: (callback) ->
+        return @indexingMediator.onDidIndexingProgress(callback)
 
     ###*
      * Attaches a callback to indexing finished event. The returned disposable can be used to detach your event handler.
@@ -248,7 +292,7 @@ class Service
      * @return {Disposable}
     ###
     onDidFinishIndexing: (callback) ->
-        @indexingEventEmitter.on('php-integrator-base:indexing-finished', callback)
+        return @indexingMediator.onDidFinishIndexing(callback)
 
     ###*
      * Attaches a callback to indexing failed event. The returned disposable can be used to detach your event handler.
@@ -258,7 +302,7 @@ class Service
      * @return {Disposable}
     ###
     onDidFailIndexing: (callback) ->
-        @indexingEventEmitter.on('php-integrator-base:indexing-failed', callback)
+        return @indexingMediator.onDidFailIndexing(callback)
 
     ###*
      * Determines the current class' FQCN based on the specified buffer position.
@@ -289,19 +333,48 @@ class Service
             return @getClassListForFile(path).then(successHandler, failureHandler)
 
     ###*
+     * Determines the current namespace on the specified buffer position.
+     *
+     * @param {TextEditor} editor         The editor that contains the class (needed to resolve relative class names).
+     * @param {Point}      bufferPosition
+     *
+     * @return {Promise}
+    ###
+    determineCurrentNamespaceName: (editor, bufferPosition) ->
+        return new Promise (resolve, reject) =>
+            path = editor.getPath()
+
+            if not path?
+                reject()
+                return
+
+            successHandler = (namespacesInFile) =>
+                for namespace in namespacesInFile
+                    if bufferPosition.row >= namespace.startLine and (bufferPosition.row <= namespace.endLine or not namespace.endLine?)
+                        resolve(namespace.name)
+
+                resolve(null)
+
+            failureHandler = () =>
+                reject()
+
+            return @getNamespaceListForFile(path).then(successHandler, failureHandler)
+
+    ###*
      * Convenience function that resolves types using {@see resolveType}, automatically determining the correct
      * parameters for the editor and buffer position.
      *
      * @param {TextEditor} editor         The editor.
      * @param {Point}      bufferPosition The location of the type.
      * @param {String}     type           The (local) type to resolve.
+     * @param {String}  kind The kind of element. Either 'classlike', 'constant' or 'function'.
      *
      * @return {Promise}
      *
      * @example In a file with namespace A\B, determining C could lead to A\B\C.
     ###
-    resolveTypeAt: (editor, bufferPosition, type) ->
-        return @resolveType(editor.getPath(), bufferPosition.row + 1, type)
+    resolveTypeAt: (editor, bufferPosition, type, kind) ->
+        return @resolveType(editor.getPath(), bufferPosition.row + 1, type, kind)
 
     ###*
      * Retrieves all variables that are available at the specified buffer position.
@@ -315,25 +388,6 @@ class Service
         offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
 
         return @getAvailableVariablesByOffset(editor.getPath(), editor.getBuffer().getText(), offset)
-
-    ###*
-     * Retrieves the types of a variable, relative to the context at the specified buffer location. Class names will
-     * be returned in their full form (full class name, with a leading slash).
-     *
-     * @deprecated Use deduceTypesAt instead.
-     *
-     * @param {TextEditor} editor
-     * @param {Range}      bufferPosition
-     * @param {String}     name
-     *
-     * @return {Promise}
-    ###
-    getVariableTypes: (editor, bufferPosition, name) ->
-        offset = editor.getBuffer().characterIndexForPosition(bufferPosition)
-
-        bufferText = editor.getBuffer().getText()
-
-        return @getVariableTypesByOffset(name, editor.getPath(), bufferText, offset)
 
     ###*
      * Retrieves the types that are being used (called) at the specified location in the buffer. Note that this does not
@@ -418,3 +472,47 @@ class Service
         buffer = new Buffer(string)
 
         return buffer.slice(0, byteOffset).toString().length
+
+    ###*
+     * @param {String} fqcn
+     *
+     * @return {String}
+    ###
+    getDocumentationUrlForClass: (fqcn) ->
+        return @config.get('php_documentation_base_urls').classes + @getNormalizedFqcnDocumentationUrl(fqcn)
+
+    ###*
+     * @param {String} fqcn
+     *
+     * @return {String}
+    ###
+    getDocumentationUrlForFunction: (fqcn) ->
+        return @config.get('php_documentation_base_urls').functions + @getNormalizedFqcnDocumentationUrl(fqcn)
+
+    ###*
+     * @param {String} classlikeFqcn
+     * @param {String} name
+     *
+     * @return {String}
+    ###
+    getDocumentationUrlForClassMethod: (classlikeFqcn, name) ->
+        return @config.get('php_documentation_base_urls').root + @getNormalizedFqcnDocumentationUrl(classlikeFqcn) + '.' + @getNormalizeMethodDocumentationUrl(name)
+
+    ###*
+     * @param {String} name
+     *
+     * @return {String}
+    ###
+    getNormalizedFqcnDocumentationUrl: (name) ->
+        if name.length > 0 and name[0] == '\\'
+            name = name.substr(1)
+
+        return name.replace(/\\/g, '-').toLowerCase()
+
+    ###*
+     * @param {String} name
+     *
+     * @return {String}
+    ###
+    getNormalizeMethodDocumentationUrl: (name) ->
+        return name.replace(/^__/, '')

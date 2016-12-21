@@ -1,3 +1,16 @@
+## 2.3.5 - Bugfixes for C#
+* Quick adjustement on C# regex to avoid control structures matching
+
+## 2.3.4 - Basics for C#
+* Added regex for C#
+
+## 2.3.3 - Bugfixes
+* List height bugfix
+
+## 2.3.2 - Resizing and moar Python
+* [Resizable?](https://github.com/7ute/symbols-list/issues/19) Resizable!
+* Improve Python source regex strings, courtesy of @ajoubertza
+* Added Github Markup regex
 
 ## 2.3.1 - Position highlight and ES2016 tweak
 * Added cursor position highlight, courtesy of @JeroenOnstuimig

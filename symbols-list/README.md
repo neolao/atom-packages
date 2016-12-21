@@ -17,6 +17,8 @@ If you want to see more languages or added, open a ticket, or feel free to do a 
 * Python( source.python )
 * Ruby( source.ruby )
 * INI/conf ( source.ini )
+* Github Markdown ( source.gfm )
+* C# ( source.cs )
 
 ## Settings
 * `Start Up` Set panel visibility at startup
@@ -24,9 +26,9 @@ If you want to see more languages or added, open a ticket, or feel free to do a 
 
 ## TO DO
 * Add the choice of active keyword per language in the settings
-* Add sidebar resizing
 * Add more languages/symbols :
   * shell
   * java
   * swift
+  * typescript
   * …

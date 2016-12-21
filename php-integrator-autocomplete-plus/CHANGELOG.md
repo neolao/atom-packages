@@ -1,3 +1,16 @@
+## 1.2.0 (base 2.0.0)
+* The functionality for importing use statements has been moved to the base package. This also caused the setting `insertNewlinesForUseStatements` to be moved to the base package.
+  * If you had this enabled, you will need to reenable it in the base package after upgrading.
+  * If you had a shortcut attached to sorting menu items, you will need to point it to `php-integrator-base` instead of `php-integrator-autocomplete-plus` after upgrading.
+* Actual namespaces will now be suggested after the namespace keyword instead of a list of classes.
+* Fix use statements unnecessarily being added for classes in the same namespace when the cursor was outside a class.
+* Member autocompletion suggestions will now show an icon indicating the access modifier of the method (public, private or protected).
+* Fix use statements being added for non-compound classnames in anonymous namespaces or files without a namespace. This would result in PHP warnings on execution.
+* Member autocompletion suggestions will no longer be filtered out based on their accessibility from the current scope.
+  * It wasn't transparant that this check was even happening. Instead, all suggestions are always available and if something is not accessible, the linter will show it [in the future](https://github.com/php-integrator/core/issues/20) instead.
+* [Version 3.0 of the `autocomplete-plus` provider specification](https://github.com/atom/autocomplete-plus/issues/776) is now used.
+* Fix the right label not always showing precisely where the method is defined. Instead, it was sometimes showing the overriden method's location, sometimes an implemented interface method location and sometimes the actual location of the method.
+
 ## 1.1.5
 ### Bugs fixed
 * Rename the package and repository.

@@ -1,0 +1,81 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+        "type": "local"
+      },
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161112-29602-18ood8o"
+    ]
+  ],
+  "_from": "../d-1161112-29602-3txu8m/package.tgz",
+  "_id": "api-docs@0.0.6",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/api-docs",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161112-29602-3txu8m/package.tgz",
+  "_shasum": "88982cf271cda852045089d8a26fab8719850ae0",
+  "_shrinkwrap": null,
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-29602-3txu8m/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161112-29602-18ood8o",
+  "activationCommands": {},
+  "author": {
+    "name": "Sharvil Nanavati",
+    "email": "sharvil.nanavati@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/sharvil/api-docs/issues"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.0.0",
+    "follow-redirects": "^0.0.1",
+    "fuzzaldrin": "^2.0.0",
+    "jquery": "^2",
+    "mkdirp": "^0.5.0",
+    "prismjs": "^0.0.1",
+    "rmdir": "^1.0.0"
+  },
+  "description": "Documentation browser for popular APIs and languages.",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=0.174.0"
+  },
+  "homepage": "https://github.com/sharvil/api-docs",
+  "keywords": [
+    "docs",
+    "documentation",
+    "man",
+    "api",
+    "language",
+    "devdocs"
+  ],
+  "license": "Apache 2.0",
+  "main": "./src/main",
+  "name": "api-docs",
+  "optionalDependencies": {},
+  "readme": "# API Documentation\nA beautiful, lightweight, offline documentation browser for Atom. Place\nyour cursor on the phrase you want to search for and press `ctrl+d`\nto search.\n\n![api-docs demo](http://i.imgur.com/mQ0TFWr.gif)\n\nThis Atom package uses content and search data provided by [DevDocs](http://devdocs.io).\nCheck out the website to see which APIs and languages are supported.\nYou might need to enable specific languages in the settings page of this package.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharvil/api-docs.git"
+  },
+  "version": "0.0.6"
+}

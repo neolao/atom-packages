@@ -1,5 +1,4 @@
-$ = require 'jquery'
-
+Utility = require './Utility'
 AbstractProvider = require './AbstractProvider'
 
 module.exports =
@@ -25,37 +24,9 @@ class ClassProvider extends AbstractProvider
 
             successHandler = (currentClassName) =>
                 successHandler = (classInfo) =>
-                    type = ''
+                    tooltipText = Utility.buildTooltipForClasslike(classInfo)
 
-                    if classInfo.type == 'class'
-                        type = (if classInfo.isAbstract then 'abstract ' else '') + 'class'
-
-                    else if classInfo.type == 'trait'
-                        type = 'trait'
-
-                    else if classInfo.type == 'interface'
-                        type = 'interface'
-
-                    # Create a useful description to show in the tooltip.
-                    description = ''
-
-                    description += "<p><div>"
-                    description +=     type + ' ' + '<strong>' + classInfo.shortName + '</strong> &mdash; ' + classInfo.name
-                    description += '</div></p>'
-
-                    # Show the summary (short description).
-                    description += '<div>'
-                    description +=     (if classInfo.shortDescription then classInfo.shortDescription else '(No documentation available)')
-                    description += '</div>'
-
-                    # Show the (long) description.
-                    if classInfo.longDescription?.length > 0
-                        description += '<div class="section">'
-                        description +=     "<h4>Description</h4>"
-                        description +=     "<div>" + classInfo.longDescription + "</div>"
-                        description += "</div>"
-
-                    resolve(description)
+                    resolve(tooltipText)
 
                 firstPromise = null
 
@@ -63,7 +34,7 @@ class ClassProvider extends AbstractProvider
                 # statements and actual "import" use statements are the same, so we have no choice but to use class
                 # information for this: if we are inside a class, we can't be looking at a use statement.
                 if scopeChain.indexOf('.support.other.namespace.use') == -1 or currentClassName?
-                    firstPromise = @service.resolveTypeAt(editor, bufferPosition, name)
+                    firstPromise = @service.resolveTypeAt(editor, bufferPosition, name, 'classlike')
 
                 else
                     firstPromise = new Promise (resolve, reject) ->
@@ -106,12 +77,17 @@ class ClassProvider extends AbstractProvider
         if $(selector).prev().hasClass('namespace') || $(selector).next().hasClass('inherited-class')
             return $(selector).parent().children('.namespace, .inherited-class')
 
+        if $(selector).next().hasClass('constant') && $(selector).hasClass('namespace')
+           return null
+
         return selector
 
     ###*
      * @inheritdoc
     ###
     getPopoverElementFromSelector: (selector) ->
+        $ = require 'jquery'
+
         # getSelectorFromEvent can return multiple items because namespaces and class names are different HTML elements.
         # We have to select one to attach the popover to.
         array = $(selector).toArray()

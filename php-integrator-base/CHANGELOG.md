@@ -1,3 +1,54 @@
+### Note
+Starting with version **2.0.0**, this repository only contains the CoffeeScript or _client_ side (for Atom) of the indexer. Most of the interesting chnages are happening on the PHP or _server_ side. You can view its changelog [here](https://github.com/php-integrator/core/blob/master/CHANGELOG.md) for the master branch or [here](https://github.com/php-integrator/core/blob/development/CHANGELOG.md) for the development branch.
+
+## 2.0.2
+* Update to core 2.0.2.
+
+## 2.0.1
+* Update to core 2.0.1.
+
+## 2.0.0
+### Features and enhancements
+* The PHP side is no longer part of the base package. Instead, it has been separated into the [php-integrator/core](https://github.com/php-integrator/core) repository so it can be more easily installed via Composer for use in other projects.
+  * This change should not impact users as they upgrade, as this package will be automatically installed and upgraded along with this one if necessary (a notification will be shown whenever that happens).
+* Communication with the core now happens via sockets. This means only a single process is spawned on startup and kept active throughout the lifetime of Atom.
+  * This should reduce latency across the board as process spawning is rather expensive in comparison. It will also ensure there is never more than one process active when multiple requests are fired simultaneously (they will simply be queued and handled one by one, which will not freeze up Atom as communication is completely asynchronous).
+  * It is now also possible to specify an additional indexing delay via the settings screen.
+    * It's currently set to `200 ms` by default. As Atom's default delay before invoking an event after an editor stopped changing is about `300 ms`, this results in indexing happening after `500 ms` by default. Increasing this will reduce the load of constant reindexing happening, but will also make results from autocompletion and linting less current.
+* Error messages will now be shown if setting up the current project fails because there is no active project or the project manager service is not available.
+* Caching has been improved, improving performance and responsiveness.
+  * Previously, similar queries to the PHP side that were happening closely in succession did not hit the cache because the promise of the similar query had not resolved yet. In this case, two promises were resolved, fetching the same information.
+* A memory limit for the PHP process is now configurable in the package settings.
+
+### Bugs fixed
+* The status bar was not showing progress when a project index happened through a repository status change.
+* Popovers will no longer go beyond the left or top part of the screen. They will move respectively right or down in that case.
+
+### Changes for developers (see also the core)
+* `getVariableTypes` has been removed as it was deprecated and just an alias for `deduceTypes`.
+* The `truncate` call was removed as you can now simply call `initialize` again to reinitialize a project.
+* The `deduceTypes` call now expects the (optional) entire expression to be passed rather than just its parts.
+* The `reindex` call no longer automatically indexes built-in structural elements, nor will it automatically prune removed files from the database.
+  * A new call, `vacuum`, can be used to vacuum a project and prune removed files from its index.
+  * A new call, `initialize`, can be used to initialize a project and index built-in structural elements.
+* The `reindex` call no longer takes a `progressStreamCallback`, this was necessary because it was holding back refactoring and it really did not belong there.
+  * It also wasn't really useful in its current form, as the only the one doing the indexing could register a callback.
+  * As a better alternative, you can now register a callback with `onDidIndexingProgress` to listen to the progress, even if you did not spawn the reindex yourself.
+* A new call, `onDidStartIndexing`, has been added that allows you to listen to an indexing action starting.
+* A new service method, `getCurrentProjectSettings`, allows retrieving the settings (specific to this package) of a project. This includes things such as the PHP version, paths and excluded folders.
+* A new service method `getUseStatementHelper`, can be used to retrieve an object that handles adding use statements and sorting them. This has been imported from the autocompletion package so it can be reused in other packages as well (and bugfixes are centralized).
+* A couple of new service methods have been added to allow fetching namespace information:
+  * `getNamespaceList`
+  * `getNamespaceListForFile`
+  * `determineCurrentNamespaceName`
+* A couple of new service methods have been added to allow fetching documentation URL's for built-in structural elements. These were imported from php-integrator-navigation so they can be reused by other packages as well:
+  * `getDocumentationUrlForClass`
+  * `getDocumentationUrlForFunction`
+  * `getDocumentationUrlForClassMethod`
+* The `resolveType` and `localizeType` commands now have a `kind` parameter that indicates what type of element te resolve. This is required as duplicate use statements may exist in PHP as long as the 'kind' is different (i.e. a `use const A\FOO` may exist alongside a `use A\FOO`).
+* Built-in interfaces no longer have `isAbstract` set to true. They _are_ abstract in a certain sense, but this property is meant to indicate if a classlike has been defined using the abstract keyword. It was also not consistent with the behavior for non-built-in interfaces.
+* Proxy methods will no longer throw exceptions if some parameters are missing or invalid. Instead, a promise rejection will occur.
+
 ## 1.2.6
 ### Bugs fixed
 * Rename the package and repository.
@@ -21,6 +72,7 @@
                 "php"
             ]
   ```
+>>>>>>> master
 
 ## 1.2.3
 ### Bugs fixed
@@ -131,7 +183,7 @@ $c = some_condition() ? $a : $b;
 * The strictness on `instanceof` has been lifted. The variable type deducer is now able to parse somewhat more complex if statements:
 
 ```php
-if ((1 ^ 0) && true && $b instanceof B && ($test || false && true)) {    
+if ((1 ^ 0) && true && $b instanceof B && ($test || false && true)) {
     // $b will now be recognized as an instance of B.
 }
 ```
@@ -139,7 +191,7 @@ if ((1 ^ 0) && true && $b instanceof B && ($test || false && true)) {
 * If-statements containing variable handling functions such as `is_string`, `is_bool` will now influence type deduction:
 
 ```php
-if (is_string($b) || is_array($b)) {    
+if (is_string($b) || is_array($b)) {
     // $b is now of type string|array.
 }
 ```

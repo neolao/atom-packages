@@ -1,0 +1,86 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+        "type": "local"
+      },
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161115-1833-b03ubt"
+    ]
+  ],
+  "_from": "../d-1161115-1833-gcmpru/package.tgz",
+  "_id": "define-jump@1.0.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/define-jump",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161115-1833-gcmpru/package.tgz",
+  "_shasum": "32063c32268d6d8cee9f0575284474ba8a84328f",
+  "_shrinkwrap": null,
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161115-1833-gcmpru/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161115-1833-b03ubt",
+  "activationCommands": {
+    "atom-text-editor": [
+      "define-jump:to-original-definition"
+    ]
+  },
+  "author": {
+    "name": "Hugh Kennedy",
+    "email": "hughskennedy@gmail.com",
+    "url": "http://hughsk.io/"
+  },
+  "bugs": {
+    "url": "https://github.com/hughsk/atom-define-jump/issues"
+  },
+  "dependencies": {
+    "acorn": "^1.1.0",
+    "ast-declaration-source": "^1.0.0",
+    "astw": "^2.0.0",
+    "atom-selection-ast": "^1.0.1",
+    "loophole": "^1.0.0"
+  },
+  "description": "Atom plugin to jump to the local declaration of a variable. Similar to Atom's built in Symbols view, but local to the current file and without the need for any configuration.",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=0.199.0"
+  },
+  "homepage": "https://github.com/hughsk/atom-define-jump",
+  "keywords": [
+    "symbol",
+    "declaration",
+    "syntax",
+    "jump",
+    "goto",
+    "variable",
+    "find"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "define-jump",
+  "optionalDependencies": {},
+  "private": true,
+  "readme": "# atom-define-jump\n![](http://img.shields.io/badge/stability-stable-orange.svg?style=flat)\n\nAtom plugin to jump to the local declaration of a variable. Similar to\nAtom's built in Symbols view, but local to the current file and without the\nneed for any configuration.\n\n![define-jump](http://i.imgur.com/Wmn81fx.gif)\n\n## Usage\n\n1. Move your cursor to the variable you'd like to find the definition of.\n2. Open the Command Palette and run \"Define Jump: To Original Definition\".\n\n## Keybindings\n\nBy default, there aren't any keybindings enabled. If you'd like to add some of\nyour own, open your keymap file via `Atom > Open Your Keymap` and include\nthe following:\n\n``` coffee\n'.workspace':\n  'ctrl-alt-shift-m': 'define-jump:to-original-definition'\n```\n\n## License\n\nMIT. See [LICENSE.md](http://github.com/hughsk/atom-define-jump/blob/master/LICENSE.md) for details.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hughsk/atom-define-jump.git"
+  },
+  "version": "1.0.1"
+}

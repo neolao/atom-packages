@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17190-p7lz00"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90118-rnzu41"
     ]
   ],
-  "_from": "../d-116822-17190-btthsl/package.tgz",
-  "_id": "symbols-list@2.3.1",
+  "_from": "../d-1161121-90118-9e1tc4/package.tgz",
+  "_id": "symbols-list@2.3.5",
   "_inCache": true,
   "_installable": true,
   "_location": "/symbols-list",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-116822-17190-btthsl/package.tgz",
-  "_shasum": "8aa7580cf4acd67e4af9b09ca0f4fecc314e014e",
+  "_resolved": "file:../d-1161121-90118-9e1tc4/package.tgz",
+  "_shasum": "4534a6c9bbd7b29f8ccbab1dfb29a639d699659f",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-116822-17190-btthsl/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-116822-17190-p7lz00",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90118-9e1tc4/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90118-rnzu41",
   "bugs": {
     "url": "https://github.com/7ute/symbols-list/issues"
   },
@@ -57,11 +57,11 @@
   "main": "./lib/symbols-list",
   "name": "symbols-list",
   "optionalDependencies": {},
-  "readme": "# symbols-list package\r\n\r\nAn alternative symbol list for Atom.io\r\nIt is a visual code navigator sidebar build to be as succinct as possible.\r\nUnlike the embed symbol tagger, symbols-list uses a custom list of regexes to match only the essential symbols.\r\n\r\nIf you want to see more languages or added, open a ticket, or feel free to do a pull request.\r\n\r\n![Symbols List](https://raw.githubusercontent.com/7ute/symbols-list/master/package_screenshot.png)\r\n\r\n## Currently supported languages / source format\r\n* HTML ( text.html )\r\n* PHP ( text.html.php )\r\n* CSS ( source.css )\r\n* JS ( source.js )\r\n* CoffeeScript ( source.coffee )\r\n* Python( source.python )\r\n* Ruby( source.ruby )\r\n* INI/conf ( source.ini )\r\n\r\n## Settings\r\n* `Start Up` Set panel visibility at startup\r\n* `Alphabetical Sorting` Sorts the symbols alphabetically\r\n\r\n## TO DO\r\n* Add the choice of active keyword per language in the settings\r\n* Add sidebar resizing\r\n* Add more languages/symbols :\r\n  * shell\r\n  * java\r\n  * swift\r\n  * …\r\n",
+  "readme": "# symbols-list package\r\n\r\nAn alternative symbol list for Atom.io\r\nIt is a visual code navigator sidebar build to be as succinct as possible.\r\nUnlike the embed symbol tagger, symbols-list uses a custom list of regexes to match only the essential symbols.\r\n\r\nIf you want to see more languages or added, open a ticket, or feel free to do a pull request.\r\n\r\n![Symbols List](https://raw.githubusercontent.com/7ute/symbols-list/master/package_screenshot.png)\r\n\r\n## Currently supported languages / source format\r\n* HTML ( text.html )\r\n* PHP ( text.html.php )\r\n* CSS ( source.css )\r\n* JS ( source.js )\r\n* CoffeeScript ( source.coffee )\r\n* Python( source.python )\r\n* Ruby( source.ruby )\r\n* INI/conf ( source.ini )\r\n* Github Markdown ( source.gfm )\r\n* C# ( source.cs )\r\n\r\n## Settings\r\n* `Start Up` Set panel visibility at startup\r\n* `Alphabetical Sorting` Sorts the symbols alphabetically\r\n\r\n## TO DO\r\n* Add the choice of active keyword per language in the settings\r\n* Add more languages/symbols :\r\n  * shell\r\n  * java\r\n  * swift\r\n  * typescript\r\n  * …\r\n",
   "readmeFilename": "README.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/7ute/symbols-list.git"
   },
-  "version": "2.3.1"
+  "version": "2.3.5"
 }

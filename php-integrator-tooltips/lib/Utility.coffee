@@ -2,6 +2,53 @@ Utility = require './Utility'
 
 module.exports =
     ###*
+     * Builds a tooltip for a classlike structural element.
+     *
+     * @param {Object} value
+     *
+     * @return {string}
+    ###
+    buildTooltipForClasslike: (value) ->
+        description = ''
+
+        # Show the summary (short description).
+        description += '<div>'
+        description +=     (if value.shortDescription then value.shortDescription else '(No documentation available)')
+        description += '</div>'
+
+        # Show the (long) description.
+        if value.longDescription?.length > 0
+            description += '<div class="section">'
+            description +=     "<h4>Description</h4>"
+            description +=     "<div>" + value.longDescription + "</div>"
+            description += "</div>"
+
+        # Shwo the FQCN.
+        description += '<div class="section">'
+        description +=     "<h4>Full Name</h4>"
+        description +=     "<div>" + value.name + "</div>"
+        description += "</div>"
+
+        # Show the type.
+        type = ''
+
+        if value.type == 'class'
+            type = (if value.isAbstract then 'Abstract ' else '') + 'Class'
+
+        else if value.type == 'trait'
+            type = 'Trait'
+
+        else if value.type == 'interface'
+            type = 'Interface'
+
+        description += '<div class="section">'
+        description +=     "<h4>Type</h4>"
+        description +=     "<div>" + type + "</div>"
+        description += "</div>"
+
+        return description
+
+    ###*
      * Builds a tooltip for a function.
      *
      * @param {Object} value
@@ -10,44 +57,6 @@ module.exports =
     ###
     buildTooltipForFunction: (value) ->
         description = ""
-
-        # Show the method's signature.
-        accessModifier = ''
-        returnType = ''
-
-        if value.returnTypes.length > 0
-            returnType = @buildTypeSpecificationFromTypeArray(value.returnTypes)
-
-        if value.isPublic
-            accessModifier = 'public '
-
-        else if value.isProtected
-            accessModifier = 'protected '
-
-        else if value.isPrivate
-            accessModifier = 'private '
-
-        description += "<p><div>"
-
-        # Show the signature.
-        description += accessModifier + returnType + ' <strong>' + value.name + '</strong>' + '('
-
-        isFirst = true
-        isInOptionalList = false
-
-        for param, index in value.parameters
-            description += '['  if param.isOptional and not isInOptionalList
-            description += ', ' if not isFirst
-            description += '&'   if param.isReference
-            description += '$' + param.name
-            description += '...' if param.isVariadic
-            description += ']'   if param.isOptional and index == (value.parameters.length - 1)
-
-            isFirst = false
-            isInOptionalList = param.isOptional
-
-        description += ')'
-        description += '</div></p>'
 
         # Show the summary (short description).
         description += '<div>'
@@ -65,9 +74,9 @@ module.exports =
         parametersDescription = ""
 
         for param in value.parameters
-            parametersDescription += "<tr>"
+            parametersDescription += '<tr>'
 
-            parametersDescription += "<td>•&nbsp;<strong>"
+            parametersDescription += '<td class="php-integrator-tooltips-parameter-name">•&nbsp;'
 
             if param.isOptional
                 parametersDescription += '['
@@ -83,10 +92,10 @@ module.exports =
             if param.isOptional
                 parametersDescription += ']'
 
-            parametersDescription += "</strong></td>"
+            parametersDescription += "</td>"
 
-            parametersDescription += "<td>" + (if param.types.length > 0 then @buildTypeSpecificationFromTypeArray(param.types) else '&nbsp;') + '</td>'
-            parametersDescription += "<td>" + (if param.description then param.description else '&nbsp;') + '</td>'
+            parametersDescription += '<td class="php-integrator-tooltips-parameter-type">' + (if param.types.length > 0 then @buildTypeSpecificationFromTypeArray(param.types) else '&nbsp;') + '</td>'
+            parametersDescription += '<td class="php-integrator-tooltips-parameter-description">' + (if param.description then param.description else '&nbsp;') + '</td>'
 
             parametersDescription += "</tr>"
 
@@ -98,12 +107,14 @@ module.exports =
 
         returnValue = @buildTypeSpecificationFromTypeArray(value.returnTypes)
 
+        returnDescription = ''
+
         if value.returnDescription
-            returnValue += ' &mdash; ' + value.returnDescription
+            returnDescription = ' &mdash; ' + value.returnDescription
 
         description += '<div class="section">'
-        description +=     "<h4>Returns</h4>"
-        description +=     "<div>" + returnValue + "</div>"
+        description +=     '<h4>Returns</h4>'
+        description +=     '<div><span class="php-integrator-tooltips-return-type">' + returnValue + '</span>' + returnDescription + '</div>'
         description += "</div>"
 
         # Show an overview of the exceptions the method can throw.
@@ -134,27 +145,8 @@ module.exports =
      * @return {string}
     ###
     buildTooltipForProperty: (value) ->
-        accessModifier = ''
-        returnType = ''
-
-        if value.types.length > 0
-            returnType = @buildTypeSpecificationFromTypeArray(value.types)
-
-        if value.isPublic
-            accessModifier = 'public'
-
-        else if value.isProtected
-            accessModifier = 'protected'
-
-        else
-            accessModifier = 'private'
-
         # Create a useful description to show in the tooltip.
         description = ''
-
-        description += "<p><div>"
-        description += accessModifier + ' ' + returnType + '<strong>' + ' $' + value.name + '</strong>'
-        description += '</div></p>'
 
         # Show the summary (short description).
         description += '<div>'
@@ -170,12 +162,14 @@ module.exports =
 
         returnValue = @buildTypeSpecificationFromTypeArray(value.types)
 
-        if value.typeDescription
-            returnValue += ' &mdash; ' + value.typeDescription
+        returnDescription = ''
+
+        if value.returnDescription
+            returnDescription = ' &mdash; ' + value.returnDescription
 
         description += '<div class="section">'
-        description +=     "<h4>Type</h4>"
-        description +=     "<div>" + returnValue + "</div>"
+        description +=     '<h4>Type</h4>'
+        description +=     '<div><span class="php-integrator-tooltips-return-type">' + returnValue + '</span>' + returnDescription + '</div>'
         description += "</div>"
 
     ###*
@@ -186,17 +180,8 @@ module.exports =
      * @return {string}
     ###
     buildTooltipForConstant: (value) ->
-        returnType = ''
-
-        if value.types.length > 0
-            returnType = @buildTypeSpecificationFromTypeArray(value.types)
-
         # Create a useful description to show in the tooltip.
         description = ''
-
-        description += "<p><div>"
-        description += 'const ' + returnType + '<strong>' + ' ' + value.name + '</strong>'
-        description += '</div></p>'
 
         # Show the summary (short description).
         description += '<div>'
@@ -212,12 +197,14 @@ module.exports =
 
         returnValue = @buildTypeSpecificationFromTypeArray(value.types)
 
-        if value.typeDescription
-            returnValue += ' &mdash; ' + value.typeDescription
+        returnDescription = ''
+
+        if value.returnDescription
+            returnDescription = ' &mdash; ' + value.returnDescription
 
         description += '<div class="section">'
-        description +=     "<h4>Type</h4>"
-        description +=     "<div>" + returnValue + "</div>"
+        description +=     '<h4>Type</h4>'
+        description +=     '<div><span class="php-integrator-tooltips-return-type">' + returnValue + '</span>' + returnDescription + '</div>'
         description += "</div>"
 
         return description
