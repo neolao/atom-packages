@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90063-p260cl"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161124-18785-1a62e73"
     ]
   ],
-  "_from": "../d-1161121-90063-11z9m1y/package.tgz",
-  "_id": "linter-phpcs@1.5.4",
+  "_from": "../d-1161124-18785-1wm3ors/package.tgz",
+  "_id": "linter-phpcs@1.5.5",
   "_inCache": true,
   "_installable": true,
   "_location": "/linter-phpcs",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-1161121-90063-11z9m1y/package.tgz",
-  "_shasum": "9329f5ca3def6a0f61c9cc9308b93604e28877ec",
+  "_resolved": "file:../d-1161124-18785-1wm3ors/package.tgz",
+  "_shasum": "a2817ce6f12c629d419adb00714a0cd0be803ad0",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161121-90063-11z9m1y/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161121-90063-p260cl",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-18785-1wm3ors/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161124-18785-1a62e73",
   "bugs": {
     "url": "https://github.com/AtomLinter/linter-phpcs/issues"
   },
@@ -205,5 +205,5 @@
     "lint": "eslint .",
     "test": "apm test"
   },
-  "version": "1.5.4"
+  "version": "1.5.5"
 }

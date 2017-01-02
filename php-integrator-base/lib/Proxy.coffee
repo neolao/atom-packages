@@ -24,6 +24,16 @@ class Proxy
     indexDatabaseName: null
 
     ###*
+     * @var {Boolean}
+    ###
+    isActive: false
+
+    ###*
+     * @var {String}
+    ###
+    corePath: null
+
+    ###*
      * @var {Object}
     ###
     phpServer: null
@@ -87,7 +97,7 @@ class Proxy
 
         parameters = [
              '-d memory_limit=' + memoryLimit + 'M',
-             @getCorePackagePath() + "/src/Main.php",
+             @corePath + "/src/Main.php",
              '--port=' + port
         ]
 
@@ -95,20 +105,32 @@ class Proxy
 
         return new Promise (resolve, reject) =>
             process.stdout.on 'data', (data) =>
-                console.debug('The PHP server has something to say:', data.toString())
+                message = data.toString()
 
-                # Assume the server has successfully spawned the moment it says its first words.
-                resolve(process)
+                console.debug('The PHP server has something to say:', message)
+
+                if message.startsWith('Starting socket server')
+                    # Assume the server has successfully spawned the moment it says its first words.
+                    resolve(process)
 
             process.stderr.on 'data', (data) =>
                 console.warn('The PHP server has errors to report:', data.toString())
+
+            process.on 'error', (error) =>
+                console.error('An error ocurred whilst invoking PHP', error)
+                reject()
 
             process.on 'close', (code) =>
                 if code == 2
                     console.error('Port ' + port + ' is already taken')
                     return
 
-                console.warn('PHP socket server exited by itself, a fatal error must have occurred.')
+                console.error('PHP socket server exited by itself, a fatal error must have occurred.')
+
+                @closeServerConnection()
+
+                @phpServer = null
+                reject()
 
     ###*
      * @return {Number}
@@ -128,16 +150,23 @@ class Proxy
     ###
     spawnPhpServerIfNecessary: (port) ->
         if @phpServer
+            @phpServerPromise = null
+
             return new Promise (resolve, reject) =>
                 resolve(@phpServer)
 
         else if @phpServerPromise
             return @phpServerPromise
 
-        @phpServerPromise = @spawnPhpServer(port).then (phpServer) =>
+        successHandler = (phpServer) =>
             @phpServer = phpServer
 
             return phpServer
+
+        failureHandler = () =>
+            @phpServerPromise = null
+
+        @phpServerPromise = @spawnPhpServer(port).then(successHandler, failureHandler)
 
         return @phpServerPromise
 
@@ -152,8 +181,7 @@ class Proxy
      * @return {Array}
     ###
     stopPhpServer: (port) ->
-        if @client
-            @client.destroy()
+        @closeServerConnection()
 
         return if not @phpServer
 
@@ -161,10 +189,24 @@ class Proxy
         @phpServer = null
 
     ###*
-     * @return {String}
+     * Closes the socket connection to the server.
     ###
-    getCorePackagePath: () ->
-        return atom.packages.resolvePackagePath("php-integrator-core")
+    closeServerConnection: () ->
+        @rejectAllOpenRequests()
+
+        return if not @client
+
+        @client.destroy()
+        @client = null
+
+    ###*
+     * Rejects all currently open requests.
+    ###
+    rejectAllOpenRequests: () ->
+        for id,request of @requestQueue
+            request.promise.reject('The socket connection was closed and had to reconnect')
+
+        @requestQueue = {}
 
     ###*
      * @return {Object}
@@ -180,6 +222,7 @@ class Proxy
                     resolve(@client)
 
                 @client.setNoDelay(true)
+                @client.on('error', @onSocketError.bind(this))
                 @client.on('data', @onDataReceived.bind(this))
                 @client.on('close', @onConnectionClosed.bind(this))
 
@@ -196,6 +239,14 @@ class Proxy
             @resetResponseState()
 
     ###*
+     * @param {Object} error
+    ###
+    onSocketError: (error) ->
+        # Do nothing here, this should silence socket errors such as ECONNRESET. After this is called, the socket will
+        # be closed and all handling is performed there.
+        console.warn('The socket connection notified us of an error', error)
+
+    ###*
      * @param {Boolean} hadError
     ###
     onConnectionClosed: (hadError) ->
@@ -205,20 +256,22 @@ class Proxy
                 "not be spawned. This is most likely an issue with your setup, such as your PHP binary not being " +
                 "found, an extension missing on your system, ..."
 
+            atom.notifications.addError('PHP Integrator - Oops, something went wrong!', {
+                dismissable : true
+                detail      : detail
+            })
+
         else
             detail =
-                "The socket connection to the PHP server was unexpectedly closed. Either something caused the process to " +
-                "stop, the socket to close, or the PHP process may have crashed. If you're sure it's the last one, feel " +
-                "free to report a bug.\n \n" +
+                "The socket connection to the PHP server was unexpectedly closed. Either something caused the " +
+                "process to stop, it crashed, or the socket closed. In case of the first two, you should see " +
+                "additional output indicating this is the case and you can report a bug. If there is no additional " +
+                "output, the socket connection should automatically be reestablished and everything should continue " +
+                "working."
 
-                'An attempt will be made to restart the server and reestablish the connection.'
+            console.warn(detail)
 
-        atom.notifications.addError('PHP Integrator - Oops, something went wrong!', {
-            dismissable : true
-            detail      : detail
-        })
-
-        @client = null
+        @closeServerConnection()
 
     ###*
      * @param {Buffer} dataBuffer
@@ -388,6 +441,10 @@ class Proxy
     ###
     performJsonRpcRequest: (id, method, parameters, streamCallback = null) ->
         return new Promise (resolve, reject) =>
+            if not @getIsActive()
+                reject('The proxy is not yet active, the core may be in the process of being downloaded')
+                return
+
             JsonRpcRequest =
                 jsonrpc : 2.0
                 id      : id
@@ -461,14 +518,6 @@ class Proxy
      * @return {Promise}
     ###
     performRequest: (method, parameters, streamCallback = null, stdinData = null) ->
-        if not @getCorePackagePath()?
-            return new Promise (resolve, reject) ->
-                reject('''
-                    The core package was not found, it is currently being installed. This only needs to happen once at
-                    initialization, but the service is not available yet in the meantime.
-                ''')
-                return
-
         if stdinData?
             parameters.stdin = true
             parameters.stdinData = stdinData
@@ -950,3 +999,21 @@ class Proxy
     ###
     getIndexDatabasePath: () ->
         return @config.get('packagePath') + '/indexes/' + @indexDatabaseName + '.sqlite'
+
+    ###*
+     * @param {String} corePath
+    ###
+    setCorePath: (corePath) ->
+        @corePath = corePath
+
+    ###*
+     * @return {Boolean}
+    ###
+    getIsActive: (isActive) ->
+        return @isActive
+
+    ###*
+     * @param {Boolean} isActive
+    ###
+    setIsActive: (isActive) ->
+        @isActive = isActive

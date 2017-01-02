@@ -1,0 +1,74 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+        "type": "local"
+      },
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161124-25636-19dciul"
+    ]
+  ],
+  "_from": "../d-1161124-25636-1vvlo6u/package.tgz",
+  "_id": "aligner-scss@1.1.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/aligner-scss",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161124-25636-1vvlo6u/package.tgz",
+  "_shasum": "f4efc0c38bed54e7e489f63477fbbbc0a77383da",
+  "_shrinkwrap": null,
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161124-25636-1vvlo6u/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161124-25636-19dciul",
+  "bugs": {
+    "url": "https://github.com/adrianlee44/atom-aligner-scss/issues"
+  },
+  "dependencies": {},
+  "description": "SCSS/SASS support for aligner",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=0.174.0 <2.0.0"
+  },
+  "homepage": "https://github.com/adrianlee44/atom-aligner-scss#readme",
+  "keywords": [
+    "aligner",
+    "alignment",
+    "align",
+    "scss",
+    "sass"
+  ],
+  "license": "MIT",
+  "main": "./lib/main",
+  "name": "aligner-scss",
+  "optionalDependencies": {},
+  "providedServices": {
+    "aligner.provider": {
+      "versions": {
+        "1.0.0": "getProvider"
+      }
+    }
+  },
+  "readme": "# aligner-scss\n\n[Aligner](https://github.com/adrianlee44/atom-aligner) add-on to support SASS and SCSS.\n\n## Installation\nAligner must be installed along with this package. For more information, please check out [Aligner](https://github.com/adrianlee44/atom-aligner)\n\n## Changelog\n- 2015-09-13   v1.1.0   Add support for `{` (disabled by default)\n- 2015-07-28   v1.0.2   Add operator scope to `:`\n- 2015-03-26   v1.0.1   Fixed invalid main script\n- 2015-03-26   v1.0.0   Initial release\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adrianlee44/atom-aligner-scss.git"
+  },
+  "version": "1.1.0"
+}
