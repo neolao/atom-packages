@@ -1,5 +1,30 @@
 ## Changelog
 
+### 7.2.0
+- Fixes [#596](https://github.com/akonwi/git-plus/issues/596)
+  - __BREAKING__ the config option of `Pull From Upstream` is now the default behavior.
+  - If your git config for 'push.default' is set to nothing or you want to intentionally choose a branch, turn on the 'Prompt for branch...' option
+- Merges [#604](https://github.com/akonwi/git-plus/issues/604) thanks to (@lgeiger)
+
+### 7.1.1
+- Fixes [#598](https://github.com/akonwi/git-plus/issues/598)
+- Fixes [#599](https://github.com/akonwi/git-plus/issues/599)
+
+### 7.1.0
+- Fixes [#573](https://github.com/akonwi/git-plus/issues/573)
+
+### 7.0.7
+- [[#587]](https://github.com/akonwi/git-plus/issues/587) - Refactoring around tree-view context actions
+
+### 7.0.6
+- [[#584]](https://github.com/akonwi/git-plus/issues/584)-The COMMIT_EDITMSG file is kept after commit attempts so in case of failure the previously typed message is easily retrievable
+- Fixes [#591](https://github.com/akonwi/git-plus/issues/591)
+- Fixes [#593](https://github.com/akonwi/git-plus/issues/593)
+
+### 7.0.5
+- [[#587]](https://github.com/akonwi/git-plus/issues/587) Gracefully handle unavailable repo error
+- Fixes [#578](https://github.com/akonwi/git-plus/issues/578)
+
 ### 7.0.4
 - Minor changes
 

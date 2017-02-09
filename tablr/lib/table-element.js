@@ -75,7 +75,7 @@ class TableElement extends HTMLElement {
     this.pool('headerCell', 'headerCells')
     this.pool('gutterCell', 'gutterCells')
 
-    this.registerCommands()
+    if (!atom.inSpecMode()) { this.registerCommands() }
 
     return element(this, 'tablr-editor')
   }
@@ -155,10 +155,10 @@ class TableElement extends HTMLElement {
       'tablr:select-to-beginning-of-table' () { this.expandSelectionToBeginningOfTable() },
       'tablr:insert-row-before' () { this.insertRowBefore() },
       'tablr:insert-row-after' () { this.insertRowAfter() },
-      'tablr:delete-row' () { this.deleteRowAtCursor() },
+      'tablr:delete-row' () { this.deleteSelectedRows() },
       'tablr:insert-column-before' () { this.insertColumnBefore() },
       'tablr:insert-column-after' () { this.insertColumnAfter() },
-      'tablr:delete-column' () { this.deleteColumnAtCursor() },
+      'tablr:delete-column' () { this.deleteSelectedColumns() },
       'tablr:align-left' () { this.alignLeft() },
       'tablr:align-center' () { this.alignCenter() },
       'tablr:align-right' () { this.alignRight() },
@@ -628,6 +628,10 @@ class TableElement extends HTMLElement {
     if (!this.readOnly) { this.tableEditor.deleteRowAtCursor() }
   }
 
+  deleteSelectedRows () {
+    if (!this.readOnly) { this.tableEditor.deleteSelectedRows() }
+  }
+
   getFirstVisibleRow () {
     return this.tableEditor.getScreenRowIndexAtPixelPosition(
       this.getRowsScrollContainer().scrollTop
@@ -752,6 +756,10 @@ class TableElement extends HTMLElement {
 
   deleteColumnAtCursor () {
     if (!this.readOnly) { this.tableEditor.deleteColumnAtCursor() }
+  }
+
+  deleteSelectedColumns () {
+    if (!this.readOnly) { this.tableEditor.deleteSelectedColumns() }
   }
 
   getFirstVisibleColumn () {
@@ -1109,10 +1117,10 @@ class TableElement extends HTMLElement {
     this.ellipsisDisplay.className = 'ellipsis-display'
     this.ellipsisDisplay.textContent = cellElement.textContent
     this.ellipsisDisplay.style.cssText = `
-      top: ${cellRect.top + bounds.top}px
-      left: ${cellRect.left + bounds.left}px
-      min-width: ${cellRect.width}px
-      min-height: ${cellRect.height}px
+      top: ${Math.round(cellRect.top + bounds.top)}px;
+      left: ${Math.round(cellRect.left + bounds.left)}px;
+      min-width: ${cellRect.width}px;
+      min-height: ${cellRect.height}px;
     `
 
     this.appendChild(this.ellipsisDisplay)

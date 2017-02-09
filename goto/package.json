@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161112-19971-uuia0g"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-117020-36662-pa5bj"
     ]
   ],
-  "_from": "../d-1161112-19971-jdaqll/package.tgz",
-  "_id": "goto@1.8.2",
+  "_from": "../d-117020-36662-146qvvu/package.tgz",
+  "_id": "goto@1.8.3",
   "_inCache": true,
   "_installable": true,
   "_location": "/goto",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-1161112-19971-jdaqll/package.tgz",
-  "_shasum": "25eed3f7a9b31f81b71108e866f285b37f0dd143",
+  "_resolved": "file:../d-117020-36662-146qvvu/package.tgz",
+  "_shasum": "b96b3bbc7b7f6c6ff5b0659305bca0e56ffbbf3a",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161112-19971-jdaqll/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161112-19971-uuia0g",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-117020-36662-146qvvu/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-117020-36662-pa5bj",
   "activationCommands": {
     "atom-text-editor": [
       "goto:file-symbol",
@@ -75,5 +75,5 @@
     "type": "git",
     "url": "git+https://github.com/v3ss0n/goto.git"
   },
-  "version": "1.8.2"
+  "version": "1.8.3"
 }

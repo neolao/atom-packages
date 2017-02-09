@@ -1,6 +1,30 @@
 ### Note
 Starting with version **2.0.0**, this repository only contains the CoffeeScript or _client_ side (for Atom) of the indexer. Most of the interesting changes are happening on the PHP or _server_ side. You can view its changelog [here](https://github.com/php-integrator/core/blob/master/CHANGELOG.md) for the master branch or [here](https://github.com/php-integrator/core/blob/development/CHANGELOG.md) for the development branch.
 
+## 2.1.10
+* Update to core [2.1.5](https://github.com/php-integrator/core/releases/tag/2.1.5).
+
+## 2.1.9
+* Nothing changed, `apm` just failed to publish 2.1.8 and decided to bump the version, even though I explicitly asked it to try and publish 2.1.8 again.
+
+## 2.1.8
+* Update to core [2.1.4](https://github.com/php-integrator/core/releases/tag/2.1.4).
+
+## 2.1.7
+* Update to core [2.1.3](https://github.com/php-integrator/core/releases/tag/2.1.3).
+
+## 2.1.6
+* Update to core [2.1.2](https://github.com/php-integrator/core/releases/tag/2.1.2).
+* Socket closes and reconnections will no longer display errors to the user. See also 46fc09f9b072a601dd6f6b02ee753a9785bfa397.
+
+## 2.1.5
+* When the socket connection closes and a reconnect happens, the state of response reading is now reset.
+  * Previously, the base package kept accumulating response data in a buffer, never seeing the end of the one that was interrupted.
+
+## 2.1.4
+* Update to core [2.1.1](https://github.com/php-integrator/core/releases/tag/2.1.1).
+* Composer output will no longer be silenced when installing the core.
+
 ## 2.1.3
 * Fix incorrect method call that only occurred on shutdown or when deactivating the package.
 * All open requests will now be rejected whenever the socket is unexpectedly closed.
@@ -18,15 +42,15 @@ Starting with version **2.0.0**, this repository only contains the CoffeeScript 
 * Explicitly close open socket connections when the server dies as a safety measure (as the port is reused when the server is spawned again).
 
 ## 2.1.0
-* Update to core 2.1.0.
+* Update to core [2.1.0](https://github.com/php-integrator/core/releases/tag/2.1.0).
 * The server wasn't always being restarted automatically when it died or the connection failed. This should be fixed now.
 * The core is now downloaded using Composer instead of apm, which is more robust and allows properly selecting the right version to download.
 
 ## 2.0.2
-* Update to core 2.0.2.
+* Update to core [2.0.2](https://github.com/php-integrator/core/releases/tag/2.0.2).
 
 ## 2.0.1
-* Update to core 2.0.1.
+* Update to core [2.0.1](https://github.com/php-integrator/core/releases/tag/2.0.1).
 
 ## 2.0.0
 ### Features and enhancements

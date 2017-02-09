@@ -200,6 +200,15 @@ export default {
           parameters.push('-q');
         }
 
+        // --encoding is available since 1.3.0 (RC1, but we ignore that for simplicity)
+        if (version.major > 1
+          || (version.major === 1 && version.minor >= 3)
+        ) {
+          // actual file encoding is irrelevant, as PHPCS will always get UTF-8 as its input
+          // see analysis here: https://github.com/AtomLinter/linter-phpcs/issues/235
+          parameters.push('--encoding=UTF-8');
+        }
+
         // Check if file should be ignored
         if (version.major > 2) {
           // PHPCS v3 and up support this with STDIN files
@@ -244,7 +253,7 @@ export default {
           // PHPCS 2.6 and above support sending the filename in a flag
           parameters.push(`--stdin-path="${filePath}"`);
           text = fileText;
-        } else if ((version.major === 2 && version.minor < 6) || version.major < 2) {
+        } else if (version.major === 2 && version.minor < 6) {
           // PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
           const eolChar = textEditor.getBuffer().lineEndingForRow(0);
           text = `phpcs_input_file: ${filePath}${eolChar}${fileText}`;

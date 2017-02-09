@@ -1,3 +1,12 @@
+## 1.1.4
+* Fix tooltips for FQCN's not working.
+
+## 1.1.3
+* Fix tooltips no longer working due to updated syntax class selectors.
+
+## 1.1.2
+* Fix deprecations.
+
 ## 1.1.1
 * Ensure the subAtom property is always initialized.
 

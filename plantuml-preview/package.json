@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161022-71754-54bwcf"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11716-18166-1xxwq95"
     ]
   ],
-  "_from": "../d-1161022-71754-snonxo/package.tgz",
-  "_id": "plantuml-preview@0.12.2",
+  "_from": "../d-11716-18166-ckkonj/package.tgz",
+  "_id": "plantuml-preview@0.12.3",
   "_inCache": true,
   "_installable": true,
   "_location": "/plantuml-preview",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-1161022-71754-snonxo/package.tgz",
-  "_shasum": "eed4abfad56413a7b15d520ee4374515df1d2075",
+  "_resolved": "file:../d-11716-18166-ckkonj/package.tgz",
+  "_shasum": "7a8083fe10962c482e7326c7e5333b94dcd68fb1",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-1161022-71754-snonxo/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-1161022-71754-54bwcf",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11716-18166-ckkonj/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11716-18166-1xxwq95",
   "activationCommands": {
     "atom-workspace": "plantuml-preview:toggle"
   },
@@ -68,5 +68,5 @@
     "type": "git",
     "url": "git+https://github.com/peele/plantuml-preview.git"
   },
-  "version": "0.12.2"
+  "version": "0.12.3"
 }

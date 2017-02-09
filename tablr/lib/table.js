@@ -89,7 +89,7 @@ class Table {
 
   serialize () {
     const out = {
-      columns: this.columns,
+      columns: this.columns.map(c => c || null),
       rows: this.rows,
       id: this.id,
       deserializer: 'Table'
@@ -277,6 +277,21 @@ class Table {
     }
 
     return column
+  }
+
+  columnRangeFrom (range) {
+    if (range == null) { throw new Error('Null range') }
+
+    if (Array.isArray(range)) { range = {start: range[0], end: range[1]} }
+
+    if ((range.start == null) || (range.end == null)) {
+      throw new Error(`Invalid range ${range}`)
+    }
+
+    if (range.start < 0) { range.start = 0 }
+    if (range.end > this.getColumnCount()) { range.end = this.getColumnCount() }
+
+    return range
   }
 
   changeColumnName (column, newName, transaction = true, event = true) {
@@ -492,8 +507,10 @@ class Table {
 
   removeRowsAtIndices (indices, transaction = true) {
     indices = indices.slice().sort()
-    const removedRows = (indices.map((index) => this.rows[index]))
-    if (transaction) { var rowsValues = removedRows.map(row => row.slice()) }
+    const removedRows = indices.map((index) => this.rows[index])
+    const rowsValues = transaction
+      ? removedRows.map(row => row.slice())
+      : []
 
     removedRows.forEach(row => row && this.removeRow(row, true, false))
 
@@ -569,7 +586,7 @@ class Table {
   }
 
   rowRangeFrom (range) {
-    if (range == null) { throw new Error("Can't remove rows with a range") }
+    if (range == null) { throw new Error('Null range') }
 
     if (Array.isArray(range)) { range = {start: range[0], end: range[1]} }
 

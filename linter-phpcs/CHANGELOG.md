@@ -1,5 +1,37 @@
 # Change Log
 
+## [v1.5.8](https://github.com/AtomLinter/linter-phpcs/tree/v1.5.8) (2017-01-30)
+[Full Changelog](https://github.com/AtomLinter/linter-phpcs/compare/v1.5.7...v1.5.8)
+
+**Fixed bugs:**
+
+- Encodings again [\#236](https://github.com/AtomLinter/linter-phpcs/pull/236) ([weirdan](https://github.com/weirdan))
+
+**Closed issues:**
+
+- conversion from `utf8' to `UCS-4LE' is not allowed [\#232](https://github.com/AtomLinter/linter-phpcs/issues/232)
+
+## [v1.5.7](https://github.com/AtomLinter/linter-phpcs/tree/v1.5.7) (2017-01-25)
+[Full Changelog](https://github.com/AtomLinter/linter-phpcs/compare/v1.5.6...v1.5.7)
+
+**Implemented enhancements:**
+
+- Update CONTRIBUTING.md [\#230](https://github.com/AtomLinter/linter-phpcs/pull/230) ([weirdan](https://github.com/weirdan))
+
+**Fixed bugs:**
+
+- Error: Invalid point encountered - consistently with PHPCS 1.x [\#234](https://github.com/AtomLinter/linter-phpcs/pull/234) ([driskell](https://github.com/driskell))
+- Added encoding name translation [\#233](https://github.com/AtomLinter/linter-phpcs/pull/233) ([weirdan](https://github.com/weirdan))
+- Fix composer PATH and disable XDebug warning [\#231](https://github.com/AtomLinter/linter-phpcs/pull/231) ([Arcanemagus](https://github.com/Arcanemagus))
+
+## [v1.5.6](https://github.com/AtomLinter/linter-phpcs/tree/v1.5.6) (2017-01-10)
+[Full Changelog](https://github.com/AtomLinter/linter-phpcs/compare/v1.5.5...v1.5.6)
+
+**Fixed bugs:**
+
+- € symbol in a line over 120 characters induce `Error: Invalid point encountered!` [\#211](https://github.com/AtomLinter/linter-phpcs/issues/211)
+- Added --encoding option [\#228](https://github.com/AtomLinter/linter-phpcs/pull/228) ([weirdan](https://github.com/weirdan))
+
 ## [v1.5.5](https://github.com/AtomLinter/linter-phpcs/tree/v1.5.5) (2016-12-22)
 [Full Changelog](https://github.com/AtomLinter/linter-phpcs/compare/v1.5.4...v1.5.5)
 
