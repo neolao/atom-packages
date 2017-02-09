@@ -2,40 +2,40 @@
   "_args": [
     [
       {
-        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
+        "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
-        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
+        "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
+        "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
         "type": "local"
       },
-      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11717-47576-1ujpbqb"
+      "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11719-4251-1r9plgp"
     ]
   ],
-  "_from": "../d-11717-47576-1xsuzcx/package.tgz",
-  "_id": "php-integrator-tooltips@1.1.4",
+  "_from": "../d-11719-4251-1yjtkm9/package.tgz",
+  "_id": "php-integrator-tooltips@1.1.5",
   "_inCache": true,
   "_installable": true,
   "_location": "/php-integrator-tooltips",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
+    "raw": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
-    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
+    "rawSpec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
+    "spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-11717-47576-1xsuzcx/package.tgz",
-  "_shasum": "201563390129a6515e4f615f63e33c3b0f30dd4b",
+  "_resolved": "file:../d-11719-4251-1yjtkm9/package.tgz",
+  "_shasum": "dbfdec4711382635bbc6e217efe9e558cd8c71a6",
   "_shrinkwrap": null,
-  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11717-47576-1xsuzcx/package.tgz",
-  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11717-47576-1ujpbqb",
+  "_spec": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/d-11719-4251-1yjtkm9/package.tgz",
+  "_where": "/private/var/folders/1m/gg40qvl54rz8ppd5r7585v7c0000gn/T/apm-install-dir-11719-4251-1r9plgp",
   "bugs": {
     "url": "https://github.com/php-integrator/atom-tooltips/issues"
   },
@@ -73,5 +73,5 @@
     "type": "git",
     "url": "git+https://github.com/php-integrator/atom-tooltips.git"
   },
-  "version": "1.1.4"
+  "version": "1.1.5"
 }
